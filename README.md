@@ -35,9 +35,9 @@ FAST-NUCES Lahore | Spring 2026
 - Language: C++
 - IDE: Microsoft Visual Studio
 - Version Control: Git & GitHub
+-  GUI - QT
 
 ---
 
 > Course: Object Oriented Programming
-> GUI - QT
 > FAST-NUCES Lahore
