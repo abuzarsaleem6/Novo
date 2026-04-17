@@ -1,0 +1,27 @@
+.vs/
+bin/
+obj/
+
+# User files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+Debug/
+Release/
+x64/
+x86/
+
+# Logs & temp
+*.log
+*.tmp
+
+# IntelliSense
+*.VC.db
+*.VC.opendb
+
+# OS files
+Thumbs.db
+.DS_Store
