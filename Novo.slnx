@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Novo.vcxproj" Id="f1fba470-efb4-40ff-8842-93db7164e487" />
+</Solution>
