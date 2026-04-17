@@ -9,7 +9,6 @@ class User {
 private:
 	string username;
 	string password;
-	string email;
 	string bio;
 	bool isLoggedIn;
 	bool isReported;
