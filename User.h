@@ -35,6 +35,7 @@ public:
 	void updateUsername();
 	void updatePassword();
 	void updateBio();
+	void displayProfile();
 	
 };
 

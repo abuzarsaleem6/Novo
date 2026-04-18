@@ -8,6 +8,7 @@ User::User(string username, string password) {
 	validateUsername(this->username);
 	validatePassWord(this->password);
 	InputBio(this->bio);
+	validateBio(this->bio);
 	this->isLoggedIn = true;
 }
 void User::InputUserName(string& username) {
@@ -149,4 +150,10 @@ void User::updateBio() {
 	validateBio(updateBio);
 	cout << "Bio Updated Successfully" << endl;
 	this->bio = updateBio;
+}
+void User::displayProfile() {
+	cout << "---------------------------" << endl;
+	cout << "Username : " << this->username << endl;
+	cout << "Bio  : " << this->bio << endl;
+	cout << "---------------------------" << endl;
 }

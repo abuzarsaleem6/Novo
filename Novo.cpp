@@ -4,5 +4,6 @@
 #include"Post.h"
 using namespace std;
 int main() {
-	User Ali("Ali 90", "12345678");
+	User Ali("Ali_90", "12345678");
+	Ali.displayProfile();
 }
