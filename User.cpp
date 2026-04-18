@@ -39,7 +39,7 @@ User::User(string username, string password) {
 	this->postCount = 0;
 
 	this->saveToFile();
-
+	this->addToUserList();
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;
@@ -183,10 +183,12 @@ void User::updatePassword() {
 void User::updateBio() {
 	string updateBio;
 	cout << "Enter New Bio for Your Profile" << endl;
-	cin >> updateBio;
+	cin.ignore();
+	getline(cin, updateBio);
 	validateBio(updateBio);
 	cout << "Bio Updated Successfully" << endl;
 	this->bio = updateBio;
+	saveToFile();
 }
 void User::displayProfile() {
 	cout << "---------------------------" << endl;
@@ -196,7 +198,6 @@ void User::displayProfile() {
 }
 void User::saveToFile() {
 	string path = "data/Users/" + this->username + ".txt";
-	cout << "Trying to save at: " << path << endl;
 	ofstream file(path);
 	if (file.is_open()) {
 		file << "username|" << this->username << "\n";
@@ -210,16 +211,16 @@ void User::saveToFile() {
 		file.close();
 		cout << "Profile saved successfully" << endl;
 
-		ofstream usersList("data/users_list.txt", ios::app);
-		if (usersList.is_open()) {
-			usersList << this->username << "\n";
-
-			usersList.close();
-		}
-
 	}
 	else {
-		cout << "File is not opening cant save profile at the moment" <<path << endl;
+		cout << "File is not opening cant save profile at the moment" << path << endl;
+	}
+}
+void User::addToUserList() {
+	ofstream usersList("data/users_list.txt", ios::app);
+	if (usersList.is_open()) {
+		usersList << this->username << "\n";
+		usersList.close();
 	}
 }
 void User::loadFromFile(string username) {
@@ -229,7 +230,7 @@ void User::loadFromFile(string username) {
 		cout << "User not found" << endl;
 		return;
 	}
-	
+
 	string line;
 	while (getline(file, line)) {
 		int separatorIndex = 0;
@@ -274,11 +275,12 @@ void loadAllUsers(User** allUsers, int& userCount) {
 		cout << "No Record Found" << endl;
 		return;
 	}
+	int index = 0;
 	string username;
 	while (getline(userList, username)) {
-		allUsers[userCount] = new User();
-		allUsers[userCount]->loadFromFile(username);
-		userCount++;
+		allUsers[index] = new User();
+		allUsers[index]->loadFromFile(username);
+		index++;
 	}
 	userList.close();
 }
@@ -297,4 +299,59 @@ void User::removeFromUser_List(string username) {
 	updatefile << updatedContent;
 	updatefile.close();
 
+}
+User* signUp(User**& allUsers, int& userCount) {
+	string username, password;
+	cout << "Enter Username: ";
+	cin >> username;
+	cout << "Enter Password: ";
+	cin >> password;
+	User* newUser = new User(username, password);
+	User** newArray = new User * [userCount + 1];
+	for (int i = 0; i < userCount; i++) {
+		newArray[i] = allUsers[i];
+	}
+	newArray[userCount] = newUser;
+	delete[] allUsers;
+	allUsers = newArray;
+	userCount++;
+	return newUser;
+
+}
+bool User::login(string  password) {
+	if (password == this->password) {
+		this->isLoggedIn = true;
+		return true;
+
+	}
+	else {
+		return false;
+	}
+
+}
+string User::getUsername() {
+	return this->username;
+}
+User* findAndLogin(User** allUsers, int userCount) {
+	string username;
+	string password;
+	cout << "Enter Username: ";
+	cin >> username;
+	cout << "Enter Password: ";
+	cin >> password;
+	for (int i = 0; i < userCount; i++) {
+		if ((*(allUsers + i))->getUsername() == username) {
+			if ((*(allUsers + i))->login(password)) {
+				cout << "Logged in successfully" << endl;
+				cout << "  Welcome back, " << username << "!" << endl;
+				return *(allUsers + i);
+			}
+			else {
+				cout << "Wrong password " << endl;
+				return nullptr;
+			}
+		}
+	}
+	cout << "User not found " << endl;
+	return nullptr;
 }
