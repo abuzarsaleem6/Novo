@@ -12,6 +12,8 @@ private:
 	string bio;
 	bool isLoggedIn;
 	bool isReported;
+	int isReportedCount=0;
+	bool isSuspended;
 	Notification* notifications;
 	int notificationCount;
 	User** following;
@@ -27,6 +29,13 @@ public:
 	void validateUsername(string& username);
 	void validatePassWord(string& username);
 	void InputBio(string &bio);
+	void validateBio(string& bio);
+	void logOut();
+	void reportUser();
+	void updateUsername();
+	void updatePassword();
+	void updateBio();
+	
 };
 
 
