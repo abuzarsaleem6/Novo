@@ -20,4 +20,13 @@ private:
 	int followersCount;
 	Posts* posts;
 	int postCount;
+public:
+	User(string username, string password);
+	void InputUserName(string& username);
+	void InputPassWord(string& password);
+	void validateUsername(string& username);
+	void validatePassWord(string& username);
+	void InputBio(string &bio);
 };
+
+
