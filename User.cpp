@@ -1,8 +1,27 @@
 #include<iostream>
+#include<fstream>
 #include<string>
 #include"User.h"
 using namespace std;
+User::User() {
+	this->username = "";
+	this->password = "";
+	this->bio = "";
+	this->isLoggedIn = false;
+	this->isReported = false;
+	this->isReportedCount = 0;
+	this->isSuspended = false;
+	this->notificationCount = 0;
+	this->followingCount = 0;
+	this->followersCount = 0;
+	this->postCount = 0;
+	this->posts = nullptr;
+	this->notifications = nullptr;
+	this->followers = nullptr;
+	this->following = nullptr;
+}
 User::User(string username, string password) {
+
 	this->username = username;
 	this->password = password;
 	validateUsername(this->username);
@@ -10,6 +29,17 @@ User::User(string username, string password) {
 	InputBio(this->bio);
 	validateBio(this->bio);
 	this->isLoggedIn = true;
+	this->isReported = false;
+	this->isReportedCount = 0;
+	this->isSuspended = false;
+	this->notificationCount = 0;
+	this->followingCount = 0;
+	this->followersCount = 0;
+	this->followersCount = 0;
+	this->postCount = 0;
+
+	this->saveToFile();
+
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;
@@ -20,7 +50,7 @@ void User::InputUserName(string& username) {
 	cout << "Enter Username Again" << endl;
 	cin >> username;
 }
-void User::InputPassWord (string& password) {
+void User::InputPassWord(string& password) {
 	cout << "---Password  Rules---" << endl;
 	cout << "[1] Cant have '|' in it " << endl;
 	cout << "[2] must be 8 or greater than 8 characters long  " << endl;
@@ -49,7 +79,7 @@ void User::validateUsername(string& username) {
 					break;
 				}
 			}
-			
+
 		}
 		if (!isValid) {
 			InputUserName(username);
@@ -89,8 +119,9 @@ void User::InputBio(string& bio) {
 	cout << "---Bio Rules---" << endl;
 	cout << "[1] Must contain less than or equal to 100 characters" << endl;
 	cout << "---------------" << endl;
-		cout << "Enter Bio for Your Profile Again " << endl;
-		getline(cin, bio);
+	cout << "Enter Bio for Your Profile Again " << endl;
+	cin.ignore();
+	getline(cin, bio);
 }
 void User::validateBio(string& bio) {
 	bool isBioValid = false;
@@ -122,16 +153,22 @@ void User::logOut() {
 void User::reportUser() {
 	isReported = true;
 	isReportedCount++;
+
 	if (isReportedCount >= 3) {
+		string path = "data/Users/" + this->username + ".txt";
+		remove(path.c_str());
+		removeFromUser_List(this->username);
+		cout << this->username << " Removed and deleted from Novo because of not following policy of Novo" << endl;
 		isSuspended = true;
 	}
+
 }
 void User::updateUsername() {
 	string updateusername;
 	cout << "Enter New Username" << endl;
 	cin >> updateusername;
 	validateUsername(updateusername);
-	cout << "Username changed successfullt from ["<< this->username<<"] To ["<<updateusername<<"]" << endl;
+	cout << "Username changed successfullt from [" << this->username << "] To [" << updateusername << "]" << endl;
 	this->username = updateusername;
 
 }
@@ -156,4 +193,108 @@ void User::displayProfile() {
 	cout << "Username : " << this->username << endl;
 	cout << "Bio  : " << this->bio << endl;
 	cout << "---------------------------" << endl;
+}
+void User::saveToFile() {
+	string path = "data/Users/" + this->username + ".txt";
+	cout << "Trying to save at: " << path << endl;
+	ofstream file(path);
+	if (file.is_open()) {
+		file << "username|" << this->username << "\n";
+		file << "password|" << this->password << "\n";
+		file << "bio|" << this->bio << "\n";
+		file << "isReportedCount|" << this->isReportedCount << "\n";
+		file << "notificationCount|" << this->notificationCount << "\n";
+		file << "followingCount|" << this->followingCount << "\n";
+		file << "followersCount|" << this->followersCount << "\n";
+		file << "postCount|" << this->postCount << "\n";
+		file.close();
+		cout << "Profile saved successfully" << endl;
+
+		ofstream usersList("data/users_list.txt", ios::app);
+		if (usersList.is_open()) {
+			usersList << this->username << "\n";
+
+			usersList.close();
+		}
+
+	}
+	else {
+		cout << "File is not opening cant save profile at the moment" <<path << endl;
+	}
+}
+void User::loadFromFile(string username) {
+	string path = "data/Users/" + username + ".txt";
+	ifstream file(path, ios::in);
+	if (!file.is_open()) {
+		cout << "User not found" << endl;
+		return;
+	}
+	
+	string line;
+	while (getline(file, line)) {
+		int separatorIndex = 0;
+		while (line[separatorIndex] != '|') {  // get separater index 
+			separatorIndex++;
+		}
+		string key = "";
+		for (int i = 0; i < separatorIndex; i++) {  // extracting key 
+			key += line[i];
+		}
+		string value = "";
+		int k = 0;
+		for (int j = separatorIndex + 1; line[j] != '\0'; j++) {  // extracting Value
+			value += line[j];
+			k++;
+		}
+
+
+		if (key == "username")
+			this->username = value;
+		else if (key == "password")
+			this->password = value;
+		else if (key == "bio")
+			this->bio = value;
+		else if (key == "isReportedCount")
+			this->isReportedCount = stoi(value);
+		else if (key == "notificationCount")
+			this->notificationCount = stoi(value);
+		else if (key == "followingCount")
+			this->followingCount = stoi(value);
+		else if (key == "followersCount")
+			this->followersCount = stoi(value);
+		else if (key == "postCount")
+			this->postCount = stoi(value);
+	}
+	file.close();
+}
+void loadAllUsers(User** allUsers, int& userCount) {
+
+	ifstream userList("data/users_list.txt");
+	if (!userList.is_open()) {
+		cout << "No Record Found" << endl;
+		return;
+	}
+	string username;
+	while (getline(userList, username)) {
+		allUsers[userCount] = new User();
+		allUsers[userCount]->loadFromFile(username);
+		userCount++;
+	}
+	userList.close();
+}
+void User::removeFromUser_List(string username) {
+	string line;
+	string updatedContent = "";
+	ifstream file("data/users_list.txt", ios::in);
+
+	while (getline(file, line)) {
+		if (line != username) {
+			updatedContent = updatedContent + line + "\n";
+		}
+	}
+	file.close();
+	ofstream updatefile("data/users_list.txt", ios::out);
+	updatefile << updatedContent;
+	updatefile.close();
+
 }

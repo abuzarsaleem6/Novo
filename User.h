@@ -1,5 +1,6 @@
 #pragma once
 #include<iostream>
+#include<fstream>
 #include<string>
 using namespace std;
 class Posts;
@@ -12,7 +13,7 @@ private:
 	string bio;
 	bool isLoggedIn;
 	bool isReported;
-	int isReportedCount=0;
+	int isReportedCount;
 	bool isSuspended;
 	Notification* notifications;
 	int notificationCount;
@@ -23,12 +24,13 @@ private:
 	Posts* posts;
 	int postCount;
 public:
+	User();
 	User(string username, string password);
 	void InputUserName(string& username);
 	void InputPassWord(string& password);
 	void validateUsername(string& username);
 	void validatePassWord(string& username);
-	void InputBio(string &bio);
+	void InputBio(string& bio);
 	void validateBio(string& bio);
 	void logOut();
 	void reportUser();
@@ -36,7 +38,10 @@ public:
 	void updatePassword();
 	void updateBio();
 	void displayProfile();
-	
-};
+	void saveToFile();
+	void loadFromFile(string username);
 
+	void removeFromUser_List(string username);
+};
+void loadAllUsers(User** allUsers, int& userCount);
 
