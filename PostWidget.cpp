@@ -1,6 +1,6 @@
 #include<iostream>
 #include<fstream>
-#include"Post.h"
+#include"PostWidget.h"
 
 #include<QFile>
 #include<QTextStream>
