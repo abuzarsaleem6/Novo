@@ -14,9 +14,9 @@ private:
 	bool isLoggedIn;
 	bool isReported;
 	int isReportedCount;
-	bool isSuspended;
-	string* followingUsernames;  
-	string* followerUsernames;
+	//bool isSuspended;
+	//string* followingUsernames;  
+	//string* followerUsernames;
 	Notification* notifications;
 	int notificationCount;
 	User** following;
@@ -31,7 +31,7 @@ public:
 	void InputUserName(string& username);
 	void InputPassWord(string& password);
 	void validateUsername(string& username);
-	void validatePassWord(string& username);
+	void validatePassWord(string& password);
 	void InputBio(string& bio);
 	void validateBio(string& bio);
 	void logOut();
@@ -46,6 +46,17 @@ public:
 	bool login(string  password);
 	void removeFromUser_List(string username);
 	string getUsername();
+	void followUser(User* target, User** allUsers, int userCount);
+	bool isFollowing(string username);
+	void addFollower(User* ptr);
+	//void saveFollowers();
+	void unfollowUser(string username);
+	void removeFollower(User* ptr);
+	void loadFollowing(User** allUsers, int userCount);
+	void loadFollowers(User** allusers, int userCount);
+	void deleteAccount(User**& allUsers, int& userCount);
+	void addToReviewList();
+	
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);
