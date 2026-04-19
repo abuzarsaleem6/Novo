@@ -1,3 +1,7 @@
+data/
+x64/
+*.user
+*.vcxproj.filters
 .vs/
 bin/
 obj/
