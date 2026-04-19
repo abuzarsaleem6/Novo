@@ -19,7 +19,7 @@ private:
     bool isReported;
     int reportCount;
     int likeCount;
-    Comment* comments;
+    //Comment* comments;
     QList<Comment> commentList;
     int commentsCount;
 

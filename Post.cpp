@@ -10,7 +10,7 @@ Posts::Posts(string authorUsername) {
     this->postId = generatePostId();
     this->creatorUsername = authorUsername;
     this->timeOfCreation = "";
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
     this->isReported = false;
     this->reportCount = 0;
@@ -61,7 +61,7 @@ Posts::Posts() {
     this->creatorUsername = "";
     this->isReported = false;
     this->reportCount = 0;
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
     this->likeCount = 0;
 }
