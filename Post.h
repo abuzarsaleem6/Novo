@@ -19,6 +19,7 @@ private:
 	int likeCount;
 public:
 	Posts();
+	~Posts();
 	Posts( string authorUsername);
 	void inputContent(string& content);
 	string generatePostId();

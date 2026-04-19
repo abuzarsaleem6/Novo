@@ -156,3 +156,6 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 string Posts::getPostId() const {
     return this->postId;
 }
+Posts::~Posts() {
+    
+}

@@ -591,30 +591,18 @@ void User::addToReviewList() {
 	}
 }
 void User::createPost() {
-	cout << "Step 1: before ignore" << endl;
 	cin.ignore();
-	cout << "Step 2: after ignore" << endl;
-
 	Posts** newPosts = new Posts * [postCount + 1];
-	cout << "Step 3: array allocated, postCount = " << postCount << endl;
-
 	if (posts != nullptr) {
-		cout << "Step 4: copying old posts" << endl;
 		for (int i = 0; i < postCount; i++) {
 			newPosts[i] = posts[i];
 		}
 		delete[] posts;
 	}
-	cout << "Step 5: creating new post" << endl;
-
 	newPosts[postCount] = new Posts(this->username);
-	cout << "Step 6: post created" << endl;
-
 	posts = newPosts;
 	postCount++;
 	posts[postCount - 1]->savePostToFile();
-	cout << "Step 7: saved to file" << endl;
-
 	string listPath = "data/Posts/" + this->username + "/posts_list.txt";
 	ofstream listFile(listPath, ios::app);
 	if (listFile.is_open()) {
@@ -622,7 +610,6 @@ void User::createPost() {
 		listFile.close();
 	}
 	saveToFile();
-	cout << "Step 8: done" << endl;
 }
 void User::displayAllPosts() {
 	if (postCount == 0 || posts == nullptr) {
