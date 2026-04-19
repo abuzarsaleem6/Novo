@@ -5,4 +5,4 @@ isReportedCount|0
 notificationCount|0
 followingCount|1
 followersCount|0
-postCount|2
+postCount|3

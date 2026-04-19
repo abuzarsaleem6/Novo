@@ -1,8 +1,11 @@
 ﻿#include<iostream>
 #include<fstream>
 #include<string>
+#include<QDebug>
 #include"User.h"
 #include"Post.h"
+#include"Comment.h"
+#include"SearchEngine.h"
 using namespace std;
 
 int main() {
@@ -120,7 +123,7 @@ int main() {
         }
 
         case '6': {
-
+            
             loggedInUser->createPost();
             break;
         }
@@ -178,7 +181,7 @@ int main() {
 
     // ── Step 6: Cleanup ──────────────────────────────
     for (int i = 0; i < userCount; i++) {
-        delete* (allUsers + i);
+        delete* (allUsers + i);  
     }
     delete[] allUsers;
 
