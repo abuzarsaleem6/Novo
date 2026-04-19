@@ -1,0 +1,8 @@
+postId|P1002
+content|Hey there its faah
+authorUsername|faah_ui
+timeOfCreation|
+isReported|0
+reportCount|0
+commentCount|0
+likeCount|1

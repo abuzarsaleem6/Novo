@@ -3,7 +3,7 @@
 #include<fstream>
 #include<string>
 using namespace std;
-class Post;
+class Posts;
 class Notification;
 class Comment;
 class User {
@@ -14,16 +14,13 @@ private:
 	bool isLoggedIn;
 	bool isReported;
 	int isReportedCount;
-	//bool isSuspended;
-	//string* followingUsernames;  
-	//string* followerUsernames;
 	Notification* notifications;
 	int notificationCount;
 	User** following;
 	int  followingCount;
 	User** followers;
 	int followersCount;
-	Post* posts;
+	Posts** posts;
 	int postCount;
 public:
 	User();
@@ -36,7 +33,6 @@ public:
 	void validateBio(string& bio);
 	void logOut();
 	void reportUser();
-	void updateUsername();
 	void updatePassword();
 	void updateBio();
 	void displayProfile();
@@ -49,14 +45,17 @@ public:
 	void followUser(User* target, User** allUsers, int userCount);
 	bool isFollowing(string username);
 	void addFollower(User* ptr);
-	//void saveFollowers();
 	void unfollowUser(string username);
 	void removeFollower(User* ptr);
 	void loadFollowing(User** allUsers, int userCount);
 	void loadFollowers(User** allusers, int userCount);
 	void deleteAccount(User**& allUsers, int& userCount);
 	void addToReviewList();
-	
+	void createPost();
+	void loadAllPosts();
+	void displayAllPosts();
+	Posts* getPostById(string postId);
+	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);

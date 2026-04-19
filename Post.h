@@ -7,15 +7,26 @@ class Notification;
 class Comment;
 class User;
 class Posts {
+private:
 	string content;
 	string postId;
 	string timeOfCreation;
 	string creatorUsername;
-	bool isSaved;
 	bool isReported;
-	int likeCount;
+	int reportCount;
 	Comment* comments;
 	int commentsCount;
-	User** likedBy;
-	int likedByCount;
+	int likeCount;
+public:
+	Posts();
+	~Posts();
+	Posts( string authorUsername);
+	void inputContent(string& content);
+	string generatePostId();
+	void savePostToFile();
+	void likePost();
+	void unlikePost();
+	void display() const;
+	void loadPostFromFile(string ownerUsername, string postId);
+	string getPostId() const;
 };
