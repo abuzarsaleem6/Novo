@@ -2,6 +2,7 @@
 #include<fstream>
 #include<string>
 #include"User.h"
+#include"Post.h"
 using namespace std;
 User::User() {
 	this->username = "";
@@ -10,13 +11,15 @@ User::User() {
 	this->isLoggedIn = false;
 	this->isReported = false;
 	this->isReportedCount = 0;
-	this->isSuspended = false;
+	//this->isSuspended = false;
 	this->notificationCount = 0;
 	this->followingCount = 0;
 	this->followersCount = 0;
 	this->postCount = 0;
 	this->posts = nullptr;
 	this->notifications = nullptr;
+	//this->followerUsernames = nullptr;
+	//this->followingUsernames = nullptr;
 	this->followers = nullptr;
 	this->following = nullptr;
 }
@@ -31,15 +34,15 @@ User::User(string username, string password) {
 	this->isLoggedIn = true;
 	this->isReported = false;
 	this->isReportedCount = 0;
-	this->isSuspended = false;
+	//this->isSuspended = false;
 	this->notificationCount = 0;
 	this->followingCount = 0;
 	this->followersCount = 0;
-	this->followersCount = 0;
+	this->followingCount = 0;
 	this->postCount = 0;
 
 	this->saveToFile();
-
+	this->addToUserList();
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;
@@ -151,27 +154,22 @@ void User::logOut() {
 
 }
 void User::reportUser() {
-	isReported = true;
-	isReportedCount++;
 
+	isReportedCount++;
+	saveToFile();
 	if (isReportedCount >= 3) {
-		string path = "data/Users/" + this->username + ".txt";
-		remove(path.c_str());
-		removeFromUser_List(this->username);
-		cout << this->username << " Removed and deleted from Novo because of not following policy of Novo" << endl;
-		isSuspended = true;
+		isReported = true;
+		addToReviewList();
+		// Iqra -- Admin class idr se age  handle kre gi 
+		cout << this->username << " reported 3 times Sent to Admin for review" << endl;
+	}
+	else {
+		cout << "Reported has been Submitted" << endl;
+
 	}
 
 }
-void User::updateUsername() {
-	string updateusername;
-	cout << "Enter New Username" << endl;
-	cin >> updateusername;
-	validateUsername(updateusername);
-	cout << "Username changed successfullt from [" << this->username << "] To [" << updateusername << "]" << endl;
-	this->username = updateusername;
 
-}
 void User::updatePassword() {
 	string updatepassword;
 	cout << "Enter New Password" << endl;
@@ -179,14 +177,17 @@ void User::updatePassword() {
 	validatePassWord(updatepassword);
 	cout << "Password Changed Successfully" << endl;
 	this->password = updatepassword;
+	saveToFile();
 }
 void User::updateBio() {
 	string updateBio;
 	cout << "Enter New Bio for Your Profile" << endl;
-	cin >> updateBio;
+	cin.ignore();
+	getline(cin, updateBio);
 	validateBio(updateBio);
 	cout << "Bio Updated Successfully" << endl;
 	this->bio = updateBio;
+	saveToFile();
 }
 void User::displayProfile() {
 	cout << "---------------------------" << endl;
@@ -196,7 +197,6 @@ void User::displayProfile() {
 }
 void User::saveToFile() {
 	string path = "data/Users/" + this->username + ".txt";
-	cout << "Trying to save at: " << path << endl;
 	ofstream file(path);
 	if (file.is_open()) {
 		file << "username|" << this->username << "\n";
@@ -210,16 +210,16 @@ void User::saveToFile() {
 		file.close();
 		cout << "Profile saved successfully" << endl;
 
-		ofstream usersList("data/users_list.txt", ios::app);
-		if (usersList.is_open()) {
-			usersList << this->username << "\n";
-
-			usersList.close();
-		}
-
 	}
 	else {
-		cout << "File is not opening cant save profile at the moment" <<path << endl;
+		cout << "File is not opening cant save profile at the moment" << path << endl;
+	}
+}
+void User::addToUserList() {
+	ofstream usersList("data/users_list.txt", ios::app);
+	if (usersList.is_open()) {
+		usersList << this->username << "\n";
+		usersList.close();
 	}
 }
 void User::loadFromFile(string username) {
@@ -229,7 +229,7 @@ void User::loadFromFile(string username) {
 		cout << "User not found" << endl;
 		return;
 	}
-	
+
 	string line;
 	while (getline(file, line)) {
 		int separatorIndex = 0;
@@ -274,11 +274,12 @@ void loadAllUsers(User** allUsers, int& userCount) {
 		cout << "No Record Found" << endl;
 		return;
 	}
+	int index = 0;
 	string username;
 	while (getline(userList, username)) {
-		allUsers[userCount] = new User();
-		allUsers[userCount]->loadFromFile(username);
-		userCount++;
+		allUsers[index] = new User();
+		allUsers[index]->loadFromFile(username);
+		index++;
 	}
 	userList.close();
 }
@@ -298,3 +299,334 @@ void User::removeFromUser_List(string username) {
 	updatefile.close();
 
 }
+User* signUp(User**& allUsers, int& userCount) {
+	string username, password;
+	cout << "Enter Username: ";
+	cin >> username;
+	cout << "Enter Password: ";
+	cin >> password;
+	User* newUser = new User(username, password);
+	User** newArray = new User * [userCount + 1];
+	for (int i = 0; i < userCount; i++) {
+		newArray[i] = allUsers[i];
+	}
+	newArray[userCount] = newUser;
+	delete[] allUsers;
+	allUsers = newArray;
+	userCount++;
+	return newUser;
+
+}
+bool User::login(string  password) {
+	if (password == this->password) {
+		this->isLoggedIn = true;
+		return true;
+
+	}
+	else {
+		return false;
+	}
+
+}
+string User::getUsername() {
+	return this->username;
+}
+User* findAndLogin(User** allUsers, int userCount) {
+	string username;
+	string password;
+	cout << "Enter Username: ";
+	cin >> username;
+	cout << "Enter Password: ";
+	cin >> password;
+	for (int i = 0; i < userCount; i++) {
+		if ((*(allUsers + i))->getUsername() == username) {
+			if ((*(allUsers + i))->login(password)) {
+				cout << "Logged in successfully" << endl;
+				cout << "  Welcome back, " << username << "!" << endl;
+				return *(allUsers + i);
+			}
+			else {
+				cout << "Wrong password " << endl;
+				return nullptr;
+			}
+		}
+	}
+	cout << "User not found " << endl;
+	return nullptr;
+}
+void User::followUser(User* target, User** allUsers, int userCount) {
+
+	if (isFollowing(target->getUsername())) {
+		cout << "Already following" << endl;
+		return;
+	}
+	User** newFollowing = new User * [followingCount + 1];
+	if (following != nullptr) {
+		for (int i = 0; i < followingCount; i++) {
+			*(newFollowing + i) = *(this->following + i);
+		}
+	}
+	*(newFollowing + followingCount) = target;
+	delete[] following;
+	following = newFollowing;
+	followingCount++;
+	target->addFollower(this);
+	string path = "data/Following/" + this->username + "_following.txt";
+	ofstream file(path, ios::app);
+	if (file.is_open()) {
+		file << target->getUsername() << "\n";
+		file.close();
+	}
+	saveToFile();
+}
+bool User::isFollowing(string usernamee) {
+	if (following == nullptr || followingCount == 0) return false;
+
+	for (int i = 0; i < followingCount; i++) {
+		if ((*(following + i))->getUsername() == usernamee) {
+			return true;
+		}
+	}
+	return false;
+}
+void User::addFollower(User* ptr) {
+	User** Newfollowers = new User * [followersCount + 1];
+	if (followers != nullptr) {
+		for (int i = 0; i < followersCount; i++) {
+			*(Newfollowers + i) = *(followers + i);
+		}
+	}
+	*(Newfollowers + followersCount) = ptr;
+	delete[] followers;
+	followers = Newfollowers;
+	followersCount++;
+	string path = "data/Following/" + this->username + "_followers.txt";
+	ofstream file(path, ios::app);
+	if (file.is_open()) {
+		file << ptr->getUsername() << "\n";
+		file.close();
+	}
+	saveToFile();
+}
+
+void User::unfollowUser(string username) {
+	if (!isFollowing(username)) {
+		cout << "You are not following " << username << endl;
+		return;
+	}
+	User* target = nullptr;
+	for (int i = 0; i < followingCount; i++) {
+		if ((*(following + i))->getUsername() == username) {
+			target = *(following + i);
+			break;
+		}
+	}
+	if (followingCount == 1) {
+		delete[] following;
+		following = nullptr;
+		followingCount = 0;
+	}
+	else {
+
+		User** newFollowing = new User * [followingCount - 1];
+		int index = 0;
+		for (int i = 0; i < followingCount; i++) {
+			if ((*(following + i))->getUsername() != username) {
+				*(newFollowing + index) = *(following + i);
+				index++;
+			}
+		}
+		delete[] following;
+		following = newFollowing;
+		newFollowing = nullptr;
+		followingCount--;
+	}
+	string path = "data/Following/" + this->username + "_following.txt";
+	ofstream file(path, ios::out);
+	if (file.is_open()) {
+		for (int i = 0; i < followingCount; i++) {
+			file << (*(following + i))->getUsername() << "\n";
+		}
+		file.close();
+	}
+	if (target != nullptr) {
+		target->removeFollower(this);
+	}
+	saveToFile();
+	cout << "Unfollowed " << username << endl;
+}
+void User::removeFollower(User* ptr) {
+	if (followersCount == 1) {
+		delete[] followers;
+		followers = nullptr;
+		followersCount = 0;
+		string path = "data/Following/" + this->username + "_followers.txt";
+		ofstream file(path, ios::out);
+		file.close();
+		saveToFile();
+	}
+	else {
+		User** newFollowers = new User * [followersCount - 1];
+		int index = 0;
+		for (int i = 0; i < followersCount; i++) {
+			if ((*(followers + i))->getUsername() != ptr->getUsername()) {
+				*(newFollowers + index) = *(followers + i);
+				index++;
+			}
+		}
+		delete[] followers;
+		followers = newFollowers;
+		newFollowers = NULL;
+		followersCount--;
+		string path = "data/Following/" + this->username + "_followers.txt";
+		ofstream file(path, ios::out);
+		if (file.is_open()) {
+			for (int i = 0; i < followersCount; i++) {
+				file << (*(followers + i))->getUsername() << "\n";
+			}
+			file.close();
+		}
+	}
+}
+void User::loadFollowing(User** allUsers, int userCount) {
+
+	string path = "data/Following/" + this->username + "_following.txt";
+	ifstream file(path);
+	if (!file.is_open()) {
+		followingCount = 0;
+		following = nullptr;
+		return;
+
+	}
+	int count = 0;
+	string temp;
+	while (getline(file, temp)) count++;
+	file.close();
+
+	if (count == 0) {
+		following = nullptr;
+		followingCount = 0;
+		return;
+	}
+	following = new User * [count];
+	followingCount = 0;
+	ifstream file2(path);
+	string line;
+	while (getline(file2, line)) {
+		for (int i = 0; i < userCount; i++) {
+			if ((*(allUsers + i))->getUsername() == line) {
+				*(following + followingCount) = *(allUsers + i);
+				followingCount++;
+				break;
+			}
+		}
+	}
+	file2.close();
+
+}
+void User::loadFollowers(User** allusers, int userCount) {
+	string path = "data/Following/" + this->username + "_followers.txt";
+	ifstream file(path);
+	if (!file.is_open()) {
+		followers = nullptr;
+		followersCount = 0;
+		return;
+	}
+
+	int count = 0;
+	string temp;
+	while (getline(file, temp)) count++;
+	file.close();
+
+	if (count == 0) {
+		followers = nullptr;
+		followersCount = 0;
+		return;
+	}
+
+	followers = new User * [count];
+	followersCount = 0;
+
+	ifstream file2(path);
+	string line;
+	while (getline(file2, line)) {
+		for (int i = 0; i < userCount; i++) {
+			if ((*(allusers + i))->getUsername() == line) {
+				*(followers + followersCount) = *(allusers + i);
+				followersCount++;
+				break;
+			}
+		}
+	}
+	file2.close();
+}
+void User::deleteAccount(User**& allUsers, int& userCount) {
+
+	for (int i = 0; i < followersCount; i++) {
+		(*(followers + i))->unfollowUser(this->username);   // remove myself from following of my followers
+	}
+	for (int i = 0; i < followingCount; i++) {    //removing myself from followers of them
+		(*(following + i))->removeFollower(this);
+	}
+	string followingPath = "data/Following/" + this->username + "_following.txt";
+	string followersPath = "data/Following/" + this->username + "_followers.txt";
+	remove(followingPath.c_str());
+	remove(followersPath.c_str());
+	string userPath = "data/Users/" + this->username + ".txt";
+	remove(userPath.c_str());
+	removeFromUser_List(this->username);
+	User** newArray = new User * [userCount - 1];
+	int index = 0;
+	for (int i = 0; i < userCount; i++) {
+		if ((*(allUsers + i))->getUsername() != this->username) {
+			*(newArray + index) = *(allUsers + i);
+			index++;
+		}
+	}
+	delete[] allUsers;
+	allUsers = newArray;
+	userCount--;
+	cout << username << " account deleted successfully." << endl;
+}
+void User::addToReviewList() {
+	ofstream file("data/users_to_review.txt", ios::app);
+	if (file.is_open()) {
+		file << this->username << "\n";
+		file.close();
+	}
+}
+
+bool User::getIsReported()const {
+	return this->isReported;
+}
+//void User::createPost(string content) {
+//	Posts* newPosts = new Posts[this->postCount + 1];
+//	for (int i = 0; i < postCount; i++) {
+//		*(newPosts + i) = *(posts + i);
+//	}
+//	*(newPosts + postCount) = Posts(content, this->username);
+//
+//	delete[] posts;
+//	posts = newPosts;
+//	postCount++;
+//
+//	(*(posts + postCount - 1)).savePostToFile(this->username);
+//	saveToFile();
+//}
+//void User::displayAllPosts() {
+//	if (postCount == 0 || posts == nullptr) {
+//		cout << "No posts yet" << endl;
+//		return;
+//	}
+//	for (int i = 0; i < postCount; i++) {
+//		(*(posts + i)).display();
+//	}
+//}
+//Posts* User::getPostById(string postId) {
+//	for (int i = 0; i < postCount; i++) {
+//		if ((*(posts + i)).getPostId() == postId) {
+//			return posts + i;
+//		}
+//	}
+//	return nullptr;
+//}
