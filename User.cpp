@@ -42,7 +42,6 @@ User::User(string username, string password) {
 
 	this->saveToFile();
 	this->addToUserList();
-
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;

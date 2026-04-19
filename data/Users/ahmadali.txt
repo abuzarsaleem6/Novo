@@ -1,0 +1,8 @@
+username|ahmadali
+password|123456789
+bio|family lashari
+isReportedCount|0
+notificationCount|0
+followingCount|0
+followersCount|0
+postCount|0
