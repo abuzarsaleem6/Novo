@@ -19,12 +19,13 @@ private:
     bool isReported;
     int reportCount;
     int likeCount;
+    Comment* comments;
     QList<Comment> commentList;
     int commentsCount;
 
 public:
     Posts();
-    Posts( string postContent);
+    Posts(string authorUsername);
     ~Posts();
     void inputContent(string& content);
     string generatePostId();
@@ -38,4 +39,6 @@ public:
     QList<Comment> getComments() const;
     void saveCommentsToFile() const;
     void loadCommentsFromFile();
+    void likePost();
+    void unlikePost();
 };
