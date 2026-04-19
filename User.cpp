@@ -168,15 +168,7 @@ void User::reportUser() {
 	}
 
 }
-void User::updateUsername() {
-	string updateusername;
-	cout << "Enter New Username" << endl;
-	cin >> updateusername;
-	validateUsername(updateusername);
-	cout << "Username changed successfullt from [" << this->username << "] To [" << updateusername << "]" << endl;
-	this->username = updateusername;
 
-}
 void User::updatePassword() {
 	string updatepassword;
 	cout << "Enter New Password" << endl;
@@ -184,6 +176,7 @@ void User::updatePassword() {
 	validatePassWord(updatepassword);
 	cout << "Password Changed Successfully" << endl;
 	this->password = updatepassword;
+	saveToFile();
 }
 void User::updateBio() {
 	string updateBio;
@@ -412,6 +405,7 @@ void User::addFollower(User* ptr) {
 		file << ptr->getUsername() << "\n";
 		file.close();
 	}
+	saveToFile();
 }
 
 void User::unfollowUser(string username) {
@@ -465,6 +459,10 @@ void User::removeFollower(User* ptr) {
 		delete[] followers;
 		followers = nullptr;
 		followersCount = 0;
+		string path = "data/Following/" + this->username + "_followers.txt";
+		ofstream file(path, ios::out);
+		file.close();  
+		saveToFile();  
 	}
 	else {
 		User** newFollowers = new User * [followersCount - 1];

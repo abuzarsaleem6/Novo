@@ -36,7 +36,6 @@ public:
 	void validateBio(string& bio);
 	void logOut();
 	void reportUser();
-	void updateUsername();
 	void updatePassword();
 	void updateBio();
 	void displayProfile();
@@ -49,7 +48,6 @@ public:
 	void followUser(User* target, User** allUsers, int userCount);
 	bool isFollowing(string username);
 	void addFollower(User* ptr);
-	//void saveFollowers();
 	void unfollowUser(string username);
 	void removeFollower(User* ptr);
 	void loadFollowing(User** allUsers, int userCount);

@@ -59,7 +59,6 @@ int main() {
         cout << "========================================" << endl;
         cout << "1. Display Profile" << endl;
         cout << "2. Update Bio" << endl;
-        cout << "3. Update Username" << endl;
         cout << "4. Update Password" << endl;
         cout << "5. Follow a User" << endl;
         cout << "6. Unfollow a User" << endl;
@@ -75,10 +74,6 @@ int main() {
 
         case '2':
             loggedInUser->updateBio();
-            break;
-
-        case '3':
-            loggedInUser->updateUsername();
             break;
 
         case '4':
