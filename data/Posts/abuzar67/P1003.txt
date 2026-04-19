@@ -1,0 +1,8 @@
+postId|P1003
+content|this is my second post 
+authorUsername|abuzar67
+timeOfCreation|
+isReported|0
+reportCount|0
+commentCount|0
+likeCount|0

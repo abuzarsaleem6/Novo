@@ -1,18 +1,16 @@
 #include<iostream>
 #include<fstream>
-#include"PostWidget.h"
-
+#include"Post.h"
 #include<QFile>
 #include<QTextStream>
-
 using namespace std;
 
-Posts::Posts(string content, string authorUsername) {
+Posts::Posts(string authorUsername) {
     inputContent(this->content);
     this->postId = generatePostId();
     this->creatorUsername = authorUsername;
     this->timeOfCreation = "";
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
     this->isReported = false;
     this->reportCount = 0;
@@ -61,11 +59,11 @@ Posts::Posts() {
     this->postId = "";
     this->content = "";
     this->creatorUsername = "";
-    this->creatorUsername = "";
     this->isReported = false;
     this->reportCount = 0;
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
+    this->likeCount = 0;
 }
 void Posts::savePostToFile() {
     string folder = "data/Posts/" + this->creatorUsername;
@@ -160,16 +158,16 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 }
 
 void Posts::addComment(const QString& commentContent, const QString& cUsername) {
-   if(commentContent.isEmpty()) {
+    if (commentContent.isEmpty()) {
         qDebug() << "Comment content cannot be empty.";
         return;
     }
 
-   QString commentId = "C" + QString::number(commentsCount + 1);
-   Comment c(commentContent, commentId, cUsername);
+    QString commentId = "C" + QString::number(commentsCount + 1);
+    Comment c(commentContent, commentId, cUsername);
     commentList.append(c);
     commentsCount++;
-	savePostToFile();
+    savePostToFile();
 }
 
 void Posts::deleteComment(int index, const QString& rUsername) {
@@ -224,9 +222,10 @@ void Posts::saveCommentsToFile()const {
             out << "----------------------------------------\n";
         }
         file.close();
-    } else {
+    }
+    else {
         qDebug() << "Error saving comments to file: " << path;
-	}
+    }
 }
 
 void Posts::loadCommentsFromFile() {
@@ -247,15 +246,15 @@ void Posts::loadCommentsFromFile() {
                 if (keyValue.size() != 2) continue;
                 QString key = keyValue[0].trimmed();
                 QString value = keyValue[1].trimmed();
-                if (key == "commentId") 
+                if (key == "commentId")
                     commentId = value;
                 else if (key == "content")
                     content = value;
                 else if (key == "creatorUsername")
                     creatorUsername = value;
-                else if (key == "timeOfCreation") 
+                else if (key == "timeOfCreation")
                     timeOfCreation = value;
-                else if (key == "isReported") 
+                else if (key == "isReported")
                     isReported = (value.toLower() == "true");
                 else if (key == "likeCount")
                     likeCount = value.toInt();
@@ -267,7 +266,14 @@ void Posts::loadCommentsFromFile() {
             commentList.append(c);
         }
         file.close();
-    } else {
+    }
+    else {
         qDebug() << "Error loading comments from file: " << path;
     }
+}
+Posts::~Posts() {
+
+}
+string Posts::getPostId() const {
+    return this->postId;
 }

@@ -20,7 +20,7 @@ private:
 	int  followingCount;
 	User** followers;
 	int followersCount;
-	Posts* posts;
+	Posts** posts;
 	int postCount;
 public:
 	User();
@@ -51,12 +51,12 @@ public:
 	void loadFollowers(User** allusers, int userCount);
 	void deleteAccount(User**& allUsers, int& userCount);
 	void addToReviewList();
-	//void createPost(string content);
-	//void loadAllPosts();
-	//void displayAllPosts();
-	//Posts* getPostById(string postId);
-
+	void createPost();
+	void loadAllPosts();
+	void displayAllPosts();
+	Posts* getPostById(string postId);
 	bool getIsReported()const;
+	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);

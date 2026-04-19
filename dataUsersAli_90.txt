@@ -1,8 +1,0 @@
-username|Ali_90
-password|12345678
-bio|hey Buddy
-isReportedCount|0
-notificationCount|0
-followingCount|0
-followersCount|0
-postCount|0
