@@ -29,6 +29,7 @@
     <ClCompile Include="Novo.cpp" />
     <ClCompile Include="PostWidget.cpp" />
     <ClCompile Include="SearchEngine.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
