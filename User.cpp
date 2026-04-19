@@ -2,7 +2,7 @@
 #include<fstream>
 #include<string>
 #include"User.h"
-#include"PostWidget.h"
+#include"Post.h"
 using namespace std;
 User::User() {
 	this->username = "";
