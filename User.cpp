@@ -628,8 +628,6 @@ void User::loadAllPosts() {
 		postCount = 0;
 		return;
 	}
-
-	// file se actual count karo
 	int count = 0;
 	string temp;
 	while (getline(listFile, temp)) {
