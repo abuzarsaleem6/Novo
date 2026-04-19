@@ -1,0 +1,8 @@
+postId|P1001
+content|This is first post on Novo
+authorUsername|abuzar67
+timeOfCreation|
+isReported|0
+reportCount|0
+commentCount|0
+likeCount|0

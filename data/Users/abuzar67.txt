@@ -1,0 +1,8 @@
+username|abuzar67
+password|90909090
+bio|hey i have some candies
+isReportedCount|0
+notificationCount|0
+followingCount|1
+followersCount|0
+postCount|4
