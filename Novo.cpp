@@ -2,6 +2,7 @@
 #include<fstream>
 #include<string>
 #include"User.h"
+#include"Post.h"
 using namespace std;
 
 int main() {
@@ -20,9 +21,15 @@ int main() {
         (*(allUsers + i))->loadFollowing(allUsers, userCount);
         (*(allUsers + i))->loadFollowers(allUsers, userCount);
     }
+
+    // ── Step 3: Load posts ──────────────────────────
+    for (int i = 0; i < userCount; i++) {
+        (*(allUsers + i))->loadAllPosts();
+    }
+
     cout << userCount << " users loaded." << endl;
 
-    // ── Step 3: Signup or Login ──────────────────────
+    // ── Step 4: Signup or Login ──────────────────────
     User* loggedInUser = nullptr;
     char choice;
     cout << "========================================" << endl;
@@ -50,7 +57,7 @@ int main() {
         return 0;
     }
 
-    // ── Step 4: Test features ────────────────────────
+    // ── Step 5: Main Menu ────────────────────────────
     char action;
     bool running = true;
     while (running) {
@@ -59,10 +66,14 @@ int main() {
         cout << "========================================" << endl;
         cout << "1. Display Profile" << endl;
         cout << "2. Update Bio" << endl;
-        cout << "4. Update Password" << endl;
-        cout << "5. Follow a User" << endl;
-        cout << "6. Unfollow a User" << endl;
-        cout << "7. Logout" << endl;
+        cout << "3. Update Password" << endl;
+        cout << "4. Follow a User" << endl;
+        cout << "5. Unfollow a User" << endl;
+        cout << "6. Create a Post" << endl;
+        cout << "7. Display My Posts" << endl;
+        cout << "8. Like a Post" << endl;
+        cout << "9. Unlike a Post" << endl;
+        cout << "0. Logout" << endl;
         cout << "Enter choice: ";
         cin >> action;
 
@@ -76,21 +87,14 @@ int main() {
             loggedInUser->updateBio();
             break;
 
-        case '4':
+        case '3':
             loggedInUser->updatePassword();
             break;
 
-        case '5': {
+        case '4': {
             string targetUsername;
             cout << "Enter username to follow: ";
             cin >> targetUsername;
-
-            // DEBUG — sab usernames print karo
-            cout << "Available users:" << endl;
-            for (int i = 0; i < userCount; i++) {
-                cout << "[" << i << "] " << (*(allUsers + i))->getUsername() << endl;
-            }
-
             User* target = nullptr;
             for (int i = 0; i < userCount; i++) {
                 if ((*(allUsers + i))->getUsername() == targetUsername) {
@@ -98,19 +102,16 @@ int main() {
                     break;
                 }
             }
-            if (target == nullptr) {
+            if (target == nullptr)
                 cout << "User not found." << endl;
-            }
-            else if (target == loggedInUser) {
+            else if (target == loggedInUser)
                 cout << "You cannot follow yourself." << endl;
-            }
-            else {
+            else
                 loggedInUser->followUser(target, allUsers, userCount);
-            }
             break;
         }
 
-        case '6': {
+        case '5': {
             string targetUsername;
             cout << "Enter username to unfollow: ";
             cin >> targetUsername;
@@ -118,7 +119,41 @@ int main() {
             break;
         }
 
+        case '6': {
+            
+            loggedInUser->createPost();
+            break;
+        }
+
         case '7':
+            loggedInUser->displayAllPosts();
+            break;
+
+        case '8': {
+            string postId;
+            cout << "Enter Post ID to like: ";
+            cin >> postId;
+            Posts* post = loggedInUser->getPostById(postId);
+            if (post == nullptr)
+                cout << "Post not found." << endl;
+            else
+                post->likePost();
+            break;
+        }
+
+        case '9': {
+            string postId;
+            cout << "Enter Post ID to unlike: ";
+            cin >> postId;
+            Posts* post = loggedInUser->getPostById(postId);
+            if (post == nullptr)
+                cout << "Post not found." << endl;
+            else
+                post->unlikePost();
+            break;
+        }
+
+        case '0':
             loggedInUser->logOut();
             cout << "Logged out successfully." << endl;
             running = false;
@@ -129,7 +164,7 @@ int main() {
         }
     }
 
-    // ── Step 5: Cleanup ──────────────────────────────
+    // ── Step 6: Cleanup ──────────────────────────────
     for (int i = 0; i < userCount; i++) {
         delete* (allUsers + i);
     }

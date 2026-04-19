@@ -2,7 +2,7 @@
 #include<fstream>
 #include"Post.h"
 using namespace std;
-Posts::Posts(string content, string authorUsername) {
+Posts::Posts(string authorUsername) {
     inputContent(this->content);
     this->postId = generatePostId();
     this->creatorUsername = authorUsername;
@@ -11,28 +11,26 @@ Posts::Posts(string content, string authorUsername) {
     this->commentsCount = 0;
     this->isReported = false;
     this->reportCount = 0;
-
+    this->likeCount = 0;
 }
 void Posts::inputContent(string& content) {
     bool isValid = false;
     do {
         isValid = true;
-        cout << "Enter Your Post Content  (You cant write '|' in it ) " << endl;
-        cin.ignore();
+        cout << "Enter Your Post Content (You can't write '|' in it): " << endl;
         getline(cin, content);
         for (int i = 0; content[i] != '\0'; i++) {
             if (content[i] == '|') {
-                cout << "You cant add '|' Enter Again " << endl;
+                cout << "You can't add '|' Enter again: " << endl;
                 isValid = false;
                 break;
             }
         }
-    } 
-    while (!isValid);
+    } while (!isValid);
 }
 string Posts::generatePostId() {
-    ifstream file("data/post_counter.txt",ios::in);
-    int  counter = 1000;  
+    ifstream file("data/post_counter.txt", ios::in);
+    int  counter = 1000;
     if (file.is_open()) {
         file >> counter;
         file.close();
@@ -57,14 +55,22 @@ Posts::Posts() {
     this->postId = "";
     this->content = "";
     this->creatorUsername = "";
-    this->creatorUsername = "";
     this->isReported = false;
     this->reportCount = 0;
     this->comments = nullptr;
     this->commentsCount = 0;
+    this->likeCount = 0;
 }
 void Posts::savePostToFile() {
-    string path = "data/Posts/" + this->creatorUsername + "/" + this->postId + ".txt";
+    
+    string folder = "data/Posts/" + this->creatorUsername;
+#ifdef _WIN32
+    system(("mkdir \"" + folder + "\" 2>nul").c_str());
+#else
+    system(("mkdir -p \"" + folder + "\"").c_str());
+#endif
+
+    string path = folder + "/" + this->postId + ".txt";
     ofstream file(path);
     if (file.is_open()) {
         file << "postId|" << this->postId << "\n";
@@ -75,7 +81,6 @@ void Posts::savePostToFile() {
         file << "reportCount|" << this->reportCount << "\n";
         file << "commentCount|" << this->commentsCount << "\n";
         file << "likeCount|" << this->likeCount << "\n";
-
         file.close();
         cout << "Post saved: " << this->postId << endl;
     }
@@ -85,8 +90,8 @@ void Posts::savePostToFile() {
 }
 void Posts::likePost() {
     likeCount++;
-    cout  << " liked post " << this->postId << endl;
-    savePostToFile();  
+    cout << " liked post " << this->postId << endl;
+    savePostToFile();
 }
 
 void Posts::unlikePost() {
@@ -96,13 +101,13 @@ void Posts::unlikePost() {
     }
     likeCount--;
     cout << " unliked post " << this->postId << endl;
-    savePostToFile();  
+    savePostToFile();
 }
 void Posts::display() const {
     cout << "========================================" << endl;
     cout << "Post ID  : " << this->postId << endl;
     cout << "Author   : " << this->creatorUsername << endl;
-   
+
     cout << "----------------------------------------" << endl;
     cout << this->content << endl;
     cout << "----------------------------------------" << endl;
@@ -133,18 +138,21 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
             value += line[j];
         }
 
-        if (key == "postId")         
-               this->postId = value;
-        else if (key == "content")        
-           this->content = value;
-        else if (key == "authorUsername") 
-              this->creatorUsername = value;
-        else if (key == "timestamp")      
+        if (key == "postId")
+            this->postId = value;
+        else if (key == "content")
+            this->content = value;
+        else if (key == "authorUsername")
+            this->creatorUsername = value;
+        else if (key == "timeOfCreation")
             this->timeOfCreation = value;
-        else if (key == "likeCount")     
+        else if (key == "likeCount")
             this->likeCount = stoi(value);
-        else if (key == "commentCount")   
+        else if (key == "commentCount")
             this->commentsCount = stoi(value);
     }
     file.close();
+}
+string Posts::getPostId() const {
+    return this->postId;
 }

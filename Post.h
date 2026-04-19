@@ -19,7 +19,7 @@ private:
 	int likeCount;
 public:
 	Posts();
-	Posts(string content, string authorUsername);
+	Posts( string authorUsername);
 	void inputContent(string& content);
 	string generatePostId();
 	void savePostToFile();
@@ -27,5 +27,5 @@ public:
 	void unlikePost();
 	void display() const;
 	void loadPostFromFile(string ownerUsername, string postId);
-
+	string getPostId() const;
 };
