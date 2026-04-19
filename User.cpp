@@ -661,6 +661,9 @@ Posts* User::getPostById(string postId) {
 	}
 	return nullptr;
 }
+bool User::getIsReported()const {
+	return this->isReported;
+}
 User::~User() {
 	for (int i = 0; i < postCount; i++) {
 		delete posts[i];

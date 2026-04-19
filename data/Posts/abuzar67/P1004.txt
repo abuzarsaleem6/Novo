@@ -1,0 +1,8 @@
+postId|P1004
+content|y 
+authorUsername|abuzar67
+timeOfCreation|
+isReported|0
+reportCount|0
+commentCount|0
+likeCount|-842150451

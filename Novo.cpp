@@ -3,7 +3,7 @@
 #include<string>
 #include<QDebug>
 #include"User.h"
-#include"PostWidget.h"
+#include"Post.h"
 #include"Comment.h"
 #include"SearchEngine.h"
 using namespace std;
