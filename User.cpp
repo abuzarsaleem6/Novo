@@ -2,6 +2,7 @@
 #include<fstream>
 #include<string>
 #include"User.h"
+#include"Post.h"
 using namespace std;
 User::User() {
 	this->username = "";
@@ -594,3 +595,34 @@ void User::addToReviewList() {
 		file.close();
 	}
 }
+//void User::createPost(string content) {
+//	Posts* newPosts = new Posts[this->postCount + 1];
+//	for (int i = 0; i < postCount; i++) {
+//		*(newPosts + i) = *(posts + i);
+//	}
+//	*(newPosts + postCount) = Posts(content, this->username);
+//
+//	delete[] posts;
+//	posts = newPosts;
+//	postCount++;
+//
+//	(*(posts + postCount - 1)).savePostToFile(this->username);
+//	saveToFile();
+//}
+//void User::displayAllPosts() {
+//	if (postCount == 0 || posts == nullptr) {
+//		cout << "No posts yet" << endl;
+//		return;
+//	}
+//	for (int i = 0; i < postCount; i++) {
+//		(*(posts + i)).display();
+//	}
+//}
+//Posts* User::getPostById(string postId) {
+//	for (int i = 0; i < postCount; i++) {
+//		if ((*(posts + i)).getPostId() == postId) {
+//			return posts + i;
+//		}
+//	}
+//	return nullptr;
+//}
