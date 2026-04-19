@@ -13,7 +13,7 @@ public:
 	~SearchEngine();
 	void addUser(User* user);
 	User* searchUsers(const QString& username) const;
-	//void displayResults(const QString& username) const;
+	void displayResults(const QString& username) const;
 };
 
 #endif

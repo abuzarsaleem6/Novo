@@ -1,5 +1,5 @@
 #include"SearchEngine.h"
-#include<QFile>
+#include<QDebug>
 
 SearchEngine::SearchEngine() {
 }
@@ -19,17 +19,17 @@ User* SearchEngine::searchUsers(const QString& username) const {
 	}
 	return nullptr;
 }
-//
-//void SearchEngine::displayResults(const QString& username) const {
-//	User* user = searchUsers(username);
-//	if (user) {
-//		// Display user information
-//		if(user->getIsReported()) {
-//			qDebug() << "Username: " << QString::fromStdString(user->getUsername()) << " (Reported)";
-//		} else {
-//			qDebug() << "Username: " << QString::fromStdString(user->getUsername());
-//		}	
-//	} else {
-//		qDebug()<<"No user found!";
-//	}
-//}
+
+void SearchEngine::displayResults(const QString& username) const {
+	User* user = searchUsers(username);
+	if (user) {
+		// Display user information
+		if(user->getIsReported()) {
+			qDebug() << "Username: " << QString::fromStdString(user->getUsername()) << " (Reported)";
+		} else {
+			qDebug() << "Username: " << QString::fromStdString(user->getUsername());
+		}	
+	} else {
+		qDebug()<<"No user found!";
+	}
+}
