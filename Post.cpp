@@ -62,7 +62,7 @@ Posts::Posts() {
     this->likeCount = 0;
 }
 void Posts::savePostToFile() {
-    
+
     string folder = "data/Posts/" + this->creatorUsername;
 #ifdef _WIN32
     system(("mkdir \"" + folder + "\" 2>nul").c_str());
