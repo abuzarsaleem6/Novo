@@ -1,20 +1,20 @@
+#define _CRT_SECURE_NO_WARNINGS 
 #include "Message.h"
 
+using namespace std; 
 
 Message::Message() {
-    content = nullptr; 
-    senderID = 0;
-    receiverID = 0;
+    content = nullptr;
+    senderUsername = "System";
+    receiverUsername = "System";
 }
 
+Message::Message(const char* text, string sender, string receiver) {
+    senderUsername = sender;
+    receiverUsername = receiver;
 
-Message::Message(const char* text, int sender, int receiver) {
-    senderID = sender;
-    receiverID = receiver;
-
-    
     if (text != nullptr) {
-        content = new char[strlen(text) + 1]; 
+        content = new char[strlen(text) + 1];
         strcpy(content, text);
     }
     else {
@@ -22,15 +22,13 @@ Message::Message(const char* text, int sender, int receiver) {
     }
 }
 
-
 Message::~Message() {
     delete[] content;
 }
 
-
 Message::Message(const Message& source) {
-    senderID = source.senderID;
-    receiverID = source.receiverID;
+    senderUsername = source.senderUsername;
+    receiverUsername = source.receiverUsername;
 
     if (source.content != nullptr) {
         content = new char[strlen(source.content) + 1];
@@ -41,18 +39,15 @@ Message::Message(const Message& source) {
     }
 }
 
-
 Message& Message::operator=(const Message& source) {
-    
     if (this == &source) {
         return *this;
     }
 
-    
     delete[] content;
 
-    senderID = source.senderID;
-    receiverID = source.receiverID;
+    senderUsername = source.senderUsername;
+    receiverUsername = source.receiverUsername;
 
     if (source.content != nullptr) {
         content = new char[strlen(source.content) + 1];
@@ -65,14 +60,11 @@ Message& Message::operator=(const Message& source) {
     return *this;
 }
 
-
 const char* Message::getContent() const { return content; }
-int Message::getSenderID() const { return senderID; }
-int Message::getReceiverID() const { return receiverID; }
-
+string Message::getSenderUsername() const { return senderUsername; }
+string Message::getReceiverUsername() const { return receiverUsername; }
 
 void Message::setContent(const char* text) {
-    
     delete[] content;
 
     if (text != nullptr) {
@@ -84,12 +76,11 @@ void Message::setContent(const char* text) {
     }
 }
 
-void Message::setSenderID(int sender) { senderID = sender; }
-void Message::setReceiverID(int receiver) { receiverID = receiver; }
+void Message::setSenderUsername(string sender) { senderUsername = sender; }
+void Message::setReceiverUsername(string receiver) { receiverUsername = receiver; }
 
-void Message::saveToFile(std::ofstream& out) const {
-    
-    out << senderID << " " << receiverID << "\n";
+void Message::saveToFile(ofstream& out) const {
+    out << senderUsername << " " << receiverUsername << "\n";
     if (content != nullptr) {
         out << content << "\n";
     }
@@ -98,15 +89,15 @@ void Message::saveToFile(std::ofstream& out) const {
     }
 }
 
-void Message::loadFromStream(std::ifstream& in) {
-    in >> senderID >> receiverID;
-    in.ignore(); 
+void Message::loadFromStream(ifstream& in) {
+    in >> senderUsername >> receiverUsername;
+    in.ignore();
 
-    char tempBuffer[1024]; 
+    char tempBuffer[1024];
     in.getline(tempBuffer, 1024);
 
     if (strcmp(tempBuffer, "NULL") != 0) {
-        setContent(tempBuffer); 
+        setContent(tempBuffer);
     }
     else {
         setContent(nullptr);

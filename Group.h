@@ -1,41 +1,37 @@
 #pragma once
 #include <iostream>
 #include <cstring>
-#include "Message.h" 
+#include <string>
 #include <fstream>
+#include "Message.h" 
 
 class Group {
 private:
-    char* groupName;        
+    char* groupName;
 
-    int* memberIDs;           
+    std::string* memberUsernames; 
     int memberCount;
     int memberCapacity;
 
-    Message* messageHistory;  
+    Message* messageHistory;
     int messageCount;
     int messageCapacity;
 
 public:
-    
     Group();
     Group(const char* name, int initialMemberCapacity = 100, int initialMessageCapacity = 500);
 
-    
     ~Group();
     Group(const Group& source);
     Group& operator=(const Group& source);
 
-    
-    void addMember(int userID);
+    void addMember(std::string username); 
     void addMessage(const Message& msg);
 
-    
     const char* getGroupName() const;
     int getMemberCount() const;
     int getMessageCount() const;
 
     void saveToFile(const char* filename) const;
     void loadFromFile(const char* filename);
-
 };

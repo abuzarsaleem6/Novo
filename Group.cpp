@@ -1,5 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Group.h"
-
 
 Group::Group() {
     groupName = new char[8];
@@ -7,16 +7,14 @@ Group::Group() {
 
     memberCapacity = 100;
     memberCount = 0;
-    memberIDs = new int[memberCapacity];
+    memberUsernames = new std::string[memberCapacity]; 
 
     messageCapacity = 500;
     messageCount = 0;
     messageHistory = new Message[messageCapacity];
 }
 
-
 Group::Group(const char* name, int initialMemberCapacity, int initialMessageCapacity) {
-    
     if (name != nullptr) {
         groupName = new char[strlen(name) + 1];
         strcpy(groupName, name);
@@ -28,19 +26,17 @@ Group::Group(const char* name, int initialMemberCapacity, int initialMessageCapa
 
     memberCapacity = (initialMemberCapacity > 0) ? initialMemberCapacity : 100;
     memberCount = 0;
-    memberIDs = new int[memberCapacity];
+    memberUsernames = new std::string[memberCapacity];
 
     messageCapacity = (initialMessageCapacity > 0) ? initialMessageCapacity : 500;
     messageCount = 0;
     messageHistory = new Message[messageCapacity];
 }
 
-
-
 Group::~Group() {
     delete[] groupName;
-    delete[] memberIDs;
-    delete[] messageHistory; 
+    delete[] memberUsernames;
+    delete[] messageHistory;
 }
 
 Group::Group(const Group& source) {
@@ -54,31 +50,28 @@ Group::Group(const Group& source) {
 
     memberCapacity = source.memberCapacity;
     memberCount = source.memberCount;
-    memberIDs = new int[memberCapacity];
+    memberUsernames = new std::string[memberCapacity];
     for (int i = 0; i < memberCount; i++) {
-        memberIDs[i] = source.memberIDs[i];
+        memberUsernames[i] = source.memberUsernames[i];
     }
 
     messageCapacity = source.messageCapacity;
     messageCount = source.messageCount;
     messageHistory = new Message[messageCapacity];
     for (int i = 0; i < messageCount; i++) {
-        messageHistory[i] = source.messageHistory[i]; 
+        messageHistory[i] = source.messageHistory[i];
     }
 }
 
 Group& Group::operator=(const Group& source) {
-
     if (this == &source) {
         return *this;
     }
 
-    
     delete[] groupName;
-    delete[] memberIDs;
+    delete[] memberUsernames;
     delete[] messageHistory;
 
- 
     if (source.groupName != nullptr) {
         groupName = new char[strlen(source.groupName) + 1];
         strcpy(groupName, source.groupName);
@@ -89,9 +82,9 @@ Group& Group::operator=(const Group& source) {
 
     memberCapacity = source.memberCapacity;
     memberCount = source.memberCount;
-    memberIDs = new int[memberCapacity];
+    memberUsernames = new std::string[memberCapacity];
     for (int i = 0; i < memberCount; i++) {
-        memberIDs[i] = source.memberIDs[i];
+        memberUsernames[i] = source.memberUsernames[i];
     }
 
     messageCapacity = source.messageCapacity;
@@ -104,29 +97,25 @@ Group& Group::operator=(const Group& source) {
     return *this;
 }
 
-
-
-void Group::addMember(int userID) {
-  
+void Group::addMember(std::string username) {
     if (memberCount >= memberCapacity) {
         int newCapacity = memberCapacity * 2;
-        int* newArray = new int[newCapacity];
+        std::string* newArray = new std::string[newCapacity];
 
         for (int i = 0; i < memberCount; i++) {
-            newArray[i] = memberIDs[i];
+            newArray[i] = memberUsernames[i];
         }
 
-        delete[] memberIDs;
-        memberIDs = newArray;
+        delete[] memberUsernames;
+        memberUsernames = newArray;
         memberCapacity = newCapacity;
     }
 
-    memberIDs[memberCount] = userID;
+    memberUsernames[memberCount] = username;
     memberCount++;
 }
 
 void Group::addMessage(const Message& msg) {
-   
     if (messageCount >= messageCapacity) {
         int newCapacity = messageCapacity * 2;
         Message* newArray = new Message[newCapacity];
@@ -149,23 +138,21 @@ int Group::getMemberCount() const { return memberCount; }
 int Group::getMessageCount() const { return messageCount; }
 
 void Group::saveToFile(const char* filename) const {
-    std::ofstream out(filename); 
+    std::ofstream out(filename);
 
-    if (!out.is_open()) return; 
+    if (!out.is_open()) return;
 
     out << groupName << "\n";
     out << memberCount << "\n";
 
-    
     for (int i = 0; i < memberCount; i++) {
-        out << memberIDs[i] << " ";
+        out << memberUsernames[i] << " ";
     }
     out << "\n";
 
-    
     out << messageCount << "\n";
     for (int i = 0; i < messageCount; i++) {
-        messageHistory[i].saveToFile(out); 
+        messageHistory[i].saveToFile(out);
     }
 
     out.close();
@@ -178,19 +165,15 @@ void Group::loadFromFile(const char* filename) {
     char tempName[256];
     in.getline(tempName, 256);
 
-   
     delete[] groupName;
     groupName = new char[strlen(tempName) + 1];
     strcpy(groupName, tempName);
 
-    
     in >> memberCount;
     for (int i = 0; i < memberCount; i++) {
-       
-        in >> memberIDs[i];
+        in >> memberUsernames[i];
     }
 
-    
     in >> messageCount;
     for (int i = 0; i < messageCount; i++) {
         messageHistory[i].loadFromStream(in);
