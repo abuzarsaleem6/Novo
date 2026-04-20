@@ -338,28 +338,18 @@ bool User::login(string  password) {
 string User::getUsername() {
 	return this->username;
 }
-User* findAndLogin(User** allUsers, int userCount) {
-	string username;
-	string password;
-	cout << "Enter Username: ";
-	cin >> username;
-	cout << "Enter Password: ";
-	cin >> password;
+User* findAndLogin(User**& allUsers, int userCount, string username, string password) {
 	for (int i = 0; i < userCount; i++) {
-		if ((*(allUsers + i))->getUsername() == username) {
-			if ((*(allUsers + i))->login(password)) {
-				cout << "Logged in successfully" << endl;
-				cout << "  Welcome back, " << username << "!" << endl;
-				return *(allUsers + i);
+		if (allUsers[i]->getUsername() == username) {
+			if (allUsers[i]->login(password)) {
+				return allUsers[i];
 			}
 			else {
-				cout << "Wrong password " << endl;
-				return nullptr;
+				return nullptr; 
 			}
 		}
 	}
-	cout << "User not found " << endl;
-	return nullptr;
+	return nullptr; 
 }
 void User::followUser(User* target, User** allUsers, int userCount) {
 

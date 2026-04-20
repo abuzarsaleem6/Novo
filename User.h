@@ -59,4 +59,4 @@ public:
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);
-User* findAndLogin(User** allUsers, int userCount);
+User* findAndLogin(User**& allUsers, int userCount, string username, string password);
