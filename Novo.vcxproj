@@ -28,6 +28,7 @@
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Comment.cpp" />
     <ClCompile Include="Feed.cpp" />
     <ClCompile Include="Notification.cpp" />
     <ClCompile Include="Novo.cpp" />
