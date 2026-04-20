@@ -20,7 +20,7 @@ private:
 	int  followingCount;
 	User** followers;
 	int followersCount;
-	Posts* posts;
+	Posts** posts;
 	int postCount;
 public:
 	User();
@@ -55,6 +55,8 @@ public:
 	void loadAllPosts();
 	void displayAllPosts();
 	Posts* getPostById(string postId);
+	bool getIsReported()const;
+	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);

@@ -22,7 +22,9 @@
     <ClInclude Include="Feed.h" />
     <ClInclude Include="Notification.h" />
     <ClInclude Include="PasswordChecker.h" />
+    <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
+    <ClInclude Include="SearchEngine.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +34,7 @@
     <ClCompile Include="PasswordChecker.cpp" />
     <ClCompile Include="Post.cpp" />
     <ClCompile Include="User.cpp" />
+    <ClCompile Include="SearchEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

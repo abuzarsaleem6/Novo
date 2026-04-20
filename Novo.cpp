@@ -1,8 +1,11 @@
-#include<iostream>
+﻿#include<iostream>
 #include<fstream>
 #include<string>
+#include<QDebug>
 #include"User.h"
 #include"Post.h"
+#include"Comment.h"
+#include"SearchEngine.h"
 using namespace std;
 
 int main() {
@@ -133,7 +136,13 @@ int main() {
             string postId;
             cout << "Enter Post ID to like: ";
             cin >> postId;
-            Posts* post = loggedInUser->getPostById(postId);
+
+            Posts* post = nullptr;
+            for (int i = 0; i < userCount; i++) {
+                post = allUsers[i]->getPostById(postId);
+                if (post != nullptr) break;
+            }
+
             if (post == nullptr)
                 cout << "Post not found." << endl;
             else
@@ -145,7 +154,13 @@ int main() {
             string postId;
             cout << "Enter Post ID to unlike: ";
             cin >> postId;
-            Posts* post = loggedInUser->getPostById(postId);
+
+            Posts* post = nullptr;
+            for (int i = 0; i < userCount; i++) {
+                post = allUsers[i]->getPostById(postId);
+                if (post != nullptr) break;
+            }
+
             if (post == nullptr)
                 cout << "Post not found." << endl;
             else
@@ -166,7 +181,7 @@ int main() {
 
     // ── Step 6: Cleanup ──────────────────────────────
     for (int i = 0; i < userCount; i++) {
-        delete* (allUsers + i);
+        delete* (allUsers + i);  
     }
     delete[] allUsers;
 

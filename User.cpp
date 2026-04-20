@@ -42,7 +42,6 @@ User::User(string username, string password) {
 
 	this->saveToFile();
 	this->addToUserList();
-	
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;
@@ -123,7 +122,7 @@ void User::InputBio(string& bio) {
 	cout << "[1] Must contain less than or equal to 100 characters" << endl;
 	cout << "---------------" << endl;
 	cout << "Enter Bio for Your Profile: ";
-	
+
 	cin.ignore();
 	getline(cin, bio);
 }
@@ -434,7 +433,7 @@ void User::unfollowUser(string username) {
 		followingCount = 0;
 	}
 	else {
-		
+
 		User** newFollowing = new User * [followingCount - 1];
 		int index = 0;
 		for (int i = 0; i < followingCount; i++) {
@@ -469,8 +468,8 @@ void User::removeFollower(User* ptr) {
 		followersCount = 0;
 		string path = "data/Following/" + this->username + "_followers.txt";
 		ofstream file(path, ios::out);
-		file.close();  
-		saveToFile();  
+		file.close();
+		saveToFile();
 	}
 	else {
 		User** newFollowers = new User * [followersCount - 1];
@@ -496,7 +495,7 @@ void User::removeFollower(User* ptr) {
 	}
 }
 void User::loadFollowing(User** allUsers, int userCount) {
-	if (followingCount == 0) {   
+	if (followingCount == 0) {
 		following = nullptr;
 		return;
 	}
@@ -505,11 +504,11 @@ void User::loadFollowing(User** allUsers, int userCount) {
 	ifstream file(path);
 	if (!file.is_open()) {
 		following = nullptr;
-		followingCount = 0;   
+		followingCount = 0;
 		return;
 	}
 
-	following = new User * [followingCount];  
+	following = new User * [followingCount];
 	int loaded = 0;
 
 	string line;
@@ -523,7 +522,7 @@ void User::loadFollowing(User** allUsers, int userCount) {
 		}
 	}
 	file.close();
-	followingCount = loaded;  
+	followingCount = loaded;
 }
 void User::loadFollowers(User** allusers, int userCount) {
 	if (followersCount == 0) {
@@ -591,34 +590,33 @@ void User::addToReviewList() {
 	}
 }
 void User::createPost() {
-	
 	cin.ignore();
-
-	Posts* newPosts = new Posts[this->postCount + 1];
-	for (int i = 0; i < postCount; i++) {
-		newPosts[i] = posts[i];
+	Posts** newPosts = new Posts * [postCount + 1];
+	if (posts != nullptr) {
+		for (int i = 0; i < postCount; i++) {
+			newPosts[i] = posts[i];
+		}
+		delete[] posts;
 	}
-	newPosts[postCount] = Posts(this->username);
-	delete[] posts;
+	newPosts[postCount] = new Posts(this->username);
 	posts = newPosts;
 	postCount++;
-	posts[postCount - 1].savePostToFile();
-
+	posts[postCount - 1]->savePostToFile();
 	string listPath = "data/Posts/" + this->username + "/posts_list.txt";
 	ofstream listFile(listPath, ios::app);
 	if (listFile.is_open()) {
-		listFile << posts[postCount - 1].getPostId() << "\n";
+		listFile << posts[postCount - 1]->getPostId() << "\n";
 		listFile.close();
 	}
 	saveToFile();
 }
-void User::displayAllPosts()   {
+void User::displayAllPosts() {
 	if (postCount == 0 || posts == nullptr) {
 		cout << "No posts yet" << endl;
 		return;
 	}
 	for (int i = 0; i < postCount; i++) {
-		(*(posts + i)).display();
+		posts[i]->display();
 	}
 }
 void User::loadAllPosts() {
@@ -629,11 +627,11 @@ void User::loadAllPosts() {
 		postCount = 0;
 		return;
 	}
-
-	// count karo
 	int count = 0;
 	string temp;
-	while (getline(listFile, temp)) count++;
+	while (getline(listFile, temp)) {
+		if (!temp.empty()) count++;
+	}
 	listFile.close();
 
 	if (count == 0) {
@@ -642,22 +640,35 @@ void User::loadAllPosts() {
 		return;
 	}
 
-	posts = new Posts[count];
+	posts = new Posts * [count];
 	postCount = 0;
 
 	ifstream listFile2(listPath);
 	string postId;
 	while (getline(listFile2, postId)) {
-		(*(posts + postCount)).loadPostFromFile(this->username, postId);
+		if (postId.empty()) continue;
+		posts[postCount] = new Posts();
+		posts[postCount]->loadPostFromFile(this->username, postId);
 		postCount++;
 	}
 	listFile2.close();
 }
 Posts* User::getPostById(string postId) {
 	for (int i = 0; i < postCount; i++) {
-		if (posts[i].getPostId() == postId) {
-			return &posts[i];
+		if (posts[i]->getPostId() == postId) {
+			return posts[i];
 		}
 	}
 	return nullptr;
+}
+bool User::getIsReported()const {
+	return this->isReported;
+}
+User::~User() {
+	for (int i = 0; i < postCount; i++) {
+		delete posts[i];
+	}
+	delete[] posts;
+	delete[] following;
+	delete[] followers;
 }
