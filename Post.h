@@ -25,7 +25,7 @@ private:
 
 public:
     Posts();
-    Posts(string authorUsername);
+    Posts(string authorUsername, string content);
     ~Posts();
     void inputContent(string& content);
     string generatePostId();
@@ -41,4 +41,6 @@ public:
     void loadCommentsFromFile();
     void likePost();
     void unlikePost();
+    string getContent() const;
+    int getLikeCount() const;
 };

@@ -20,7 +20,7 @@ User::User() {
 	this->followers = nullptr;
 	this->following = nullptr;
 }
-User::User(string username, string password) {
+User::User(string username, string password, string bio) {
 	this->following = nullptr;
 	this->followers = nullptr;
 	this->posts = nullptr;
@@ -35,10 +35,7 @@ User::User(string username, string password) {
 
 	this->username = username;
 	this->password = password;
-	validateUsername(this->username);
-	validatePassWord(this->password);
-	InputBio(this->bio);
-	validateBio(this->bio);
+	this->bio = bio;
 
 	this->saveToFile();
 	this->addToUserList();
@@ -299,20 +296,13 @@ void User::removeFromUser_List(string username) {
 	updatefile.close();
 
 }
-User* signUp(User**& allUsers, int& userCount) {
-	string username, password;
-	cout << "Enter Username: ";
-	cin >> username;
-	cout << "Enter Password: ";
-	cin >> password;
+User* signUp(User**& allUsers, int& userCount, string username, string password, string bio) {
 	for (int i = 0; i < userCount; i++) {
 		if (allUsers[i]->getUsername() == username) {
-			cout << "Error: Username '" << username << "' is already taken. Please choose another." << endl;
 			return nullptr;
 		}
 	}
-
-	User* newUser = new User(username, password);
+	User* newUser = new User(username, password, bio);
 	User** newArray = new User * [userCount + 1];
 	for (int i = 0; i < userCount; i++) {
 		newArray[i] = allUsers[i];
@@ -579,8 +569,7 @@ void User::addToReviewList() {
 		file.close();
 	}
 }
-void User::createPost() {
-	cin.ignore();
+void User::createPost(string content) {
 	Posts** newPosts = new Posts * [postCount + 1];
 	if (posts != nullptr) {
 		for (int i = 0; i < postCount; i++) {
@@ -588,10 +577,11 @@ void User::createPost() {
 		}
 		delete[] posts;
 	}
-	newPosts[postCount] = new Posts(this->username);
+	newPosts[postCount] = new Posts(this->username, content);
 	posts = newPosts;
 	postCount++;
 	posts[postCount - 1]->savePostToFile();
+
 	string listPath = "data/Posts/" + this->username + "/posts_list.txt";
 	ofstream listFile(listPath, ios::app);
 	if (listFile.is_open()) {
@@ -661,4 +651,37 @@ User::~User() {
 	delete[] posts;
 	delete[] following;
 	delete[] followers;
+}
+string User::getBio() {
+	return this->bio;
+}
+
+string User::getPassword() {
+	return this->password;
+}
+
+void User::setBio(string bio) {
+	this->bio = bio;
+}
+
+void User::setPassword(string password) {
+	this->password = password;
+}
+
+int User::getFollowingCount() {
+	return this->followingCount;
+}
+
+int User::getFollowersCount() {
+	return this->followersCount;
+}
+
+int User::getPostCount() {
+	return this->postCount;
+}
+
+Posts* User::getPostByIndex(int index) {
+	if (index < 0 || index >= postCount || posts == nullptr)
+		return nullptr;
+	return posts[index];
 }

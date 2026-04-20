@@ -5,4 +5,4 @@ timeOfCreation|
 isReported|0
 reportCount|0
 commentCount|0
-likeCount|0
+likeCount|1

@@ -24,7 +24,7 @@ private:
 	int postCount;
 public:
 	User();
-	User(string username, string password);
+	User(string username, string password, string bio);
 	void InputUserName(string& username);
 	void InputPassWord(string& password);
 	void validateUsername(string& username);
@@ -51,13 +51,21 @@ public:
 	void loadFollowers(User** allusers, int userCount);
 	void deleteAccount(User**& allUsers, int& userCount);
 	void addToReviewList();
-	void createPost();
+	void createPost(string content);
 	void loadAllPosts();
 	void displayAllPosts();
 	Posts* getPostById(string postId);
 	bool getIsReported()const;
+	string getBio();
+	string getPassword(); 
+	void setBio(string bio);
+	void setPassword(string password);
+	int getFollowingCount();
+	int getFollowersCount();
+	int getPostCount();
+	Posts* getPostByIndex(int index);
 	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);
-User* signUp(User**& allUsers, int& userCount);
+User* signUp(User**& allUsers, int& userCount, string username, string password, string bio);
 User* findAndLogin(User**& allUsers, int userCount, string username, string password);

@@ -5,16 +5,15 @@
 #include<QTextStream>
 using namespace std;
 
-Posts::Posts(string authorUsername) {
-    inputContent(this->content);
+Posts::Posts(string authorUsername, string content) {
+    this->content = content;
     this->postId = generatePostId();
     this->creatorUsername = authorUsername;
     this->timeOfCreation = "";
-    //this->comments = nullptr;
     this->commentsCount = 0;
     this->isReported = false;
     this->reportCount = 0;
-
+    this->likeCount = 0;
 }
 void Posts::inputContent(string& content) {
     bool isValid = false;
@@ -264,4 +263,11 @@ Posts::~Posts() {
 }
 string Posts::getPostId() const {
     return this->postId;
+}
+string Posts::getContent() const {
+    return this->content;
+}
+
+int Posts::getLikeCount() const {
+    return this->likeCount;
 }

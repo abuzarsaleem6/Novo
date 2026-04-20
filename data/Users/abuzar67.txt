@@ -1,6 +1,6 @@
 username|abuzar67
 password|90909090
-bio|hey i have some candies
+bio|hey i have some sugar
 isReportedCount|0
 notificationCount|0
 followingCount|1

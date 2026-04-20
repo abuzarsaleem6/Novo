@@ -19,22 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LoginWindow.h" />
+    <QtMoc Include="LoginWindow.h" />
     <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
     <ClInclude Include="SearchEngine.h" />
     <ClInclude Include="User.h" />
-  </ItemGroup>
-  <ItemGroup>
-  <ClCompile Include="Novo.cpp" />
-  <ClCompile Include="Comment.cpp" />
-  <ClCompile Include="Post.cpp" />
-  <ClCompile Include="SearchEngine.cpp" />
-  <ClCompile Include="User.cpp" />
+    <QtMoc Include="SignupWindow.h" />
+    <QtMoc Include="MainWindow.h" />
+    <QtMoc Include="ProfileWindow.h" />
+    <QtMoc Include="UpdateBioWindow.h" />
+    <QtMoc Include="UpdatePasswordWindow.h" />
+    <QtMoc Include="FollowWindow.h" />
+    <QtMoc Include="CreatePostWindow.h" />
+    <QtMoc Include="DisplayPostsWindow.h" />
+    <QtMoc Include="LikePostWindow.h" />
 </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Comment.cpp" />
+    <ClCompile Include="CreatePostWindow.cpp" />
+    <ClCompile Include="DisplayPostsWindow.cpp" />
+    <ClCompile Include="FollowWindow.cpp" />
+    <ClCompile Include="LikePostWindow.cpp" />
     <ClCompile Include="LoginWindow.cpp" />
+    <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Novo.cpp" />
     <ClCompile Include="Post.cpp" />
+    <ClCompile Include="ProfileWindow.cpp" />
+    <ClCompile Include="SearchEngine.cpp" />
+    <ClCompile Include="SignupWindow.cpp" />
+    <ClCompile Include="UpdateBioWindow.cpp" />
+    <ClCompile Include="UpdatePasswordWindow.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
