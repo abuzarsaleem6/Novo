@@ -21,6 +21,8 @@ private:
 	User** followers;
 	int followersCount;
 	Posts** posts;
+	Posts** savedPosts;
+	int savedPostCount;
 	int postCount;
 public:
 	User();
@@ -64,6 +66,15 @@ public:
 	int getFollowersCount();
 	int getPostCount();
 	Posts* getPostByIndex(int index);
+	void editPost(string postId);
+	void deletePost(string postId);
+	void reportPost(string postId, User* postOwner);
+	void savePost(string postId, User* postOwner);
+	void unsavePost(string postId);
+	void displaySavedPosts();
+	void loadSavedPosts(User** allUsers, int userCount);
+	void saveSavedPostsToFile();
+	string getCreatorUsername() const;
 	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);

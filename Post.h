@@ -42,5 +42,10 @@ public:
     void likePost();
     void unlikePost();
     string getContent() const;
+    void setContent(const string& newContent);
     int getLikeCount() const;
+    int getReportCount() const;
+     void reportPost();
+     bool getIsReported() const;
+      string getCreatorUsername() const;
 };

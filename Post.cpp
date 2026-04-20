@@ -271,3 +271,24 @@ string Posts::getContent() const {
 int Posts::getLikeCount() const {
     return this->likeCount;
 }
+
+void Posts::setContent(const string& newContent) {
+    this->content = newContent;
+}
+int Posts::getReportCount() const {
+    return this->reportCount;
+}
+string Posts::getCreatorUsername() const {
+    return creatorUsername;
+}
+bool Posts::getIsReported() const {
+    return this->isReported;
+}
+
+void Posts::reportPost() {
+    this->reportCount++;
+    if (this->reportCount >= 3) {
+        this->isReported = true;
+    }
+    savePostToFile();
+}

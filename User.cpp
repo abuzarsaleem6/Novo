@@ -19,6 +19,8 @@ User::User() {
 	this->notifications = nullptr;
 	this->followers = nullptr;
 	this->following = nullptr;
+	this->savedPosts = nullptr;
+	this->savedPostCount = 0;
 }
 User::User(string username, string password, string bio) {
 	this->following = nullptr;
@@ -32,7 +34,8 @@ User::User(string username, string password, string bio) {
 	this->followingCount = 0;
 	this->followersCount = 0;
 	this->postCount = 0;
-
+	this->savedPosts = nullptr;
+	this->savedPostCount = 0;
 	this->username = username;
 	this->password = password;
 	this->bio = bio;
@@ -278,6 +281,7 @@ void loadAllUsers(User** allUsers, int& userCount) {
 		allUsers[index]->loadFromFile(username);
 		index++;
 	}
+	userCount = index;
 	userList.close();
 }
 void User::removeFromUser_List(string username) {
@@ -353,7 +357,9 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 		}
 	}
 	*(newFollowing + followingCount) = target;
-	delete[] following;
+	if (following != nullptr) {
+		delete[] following;
+	}
 	following = newFollowing;
 	followingCount++;
 	target->addFollower(this);
@@ -383,7 +389,9 @@ void User::addFollower(User* ptr) {
 		}
 	}
 	*(Newfollowers + followersCount) = ptr;
-	delete[] followers;
+	if (followers != nullptr) {
+		delete[] followers;
+	}
 	followers = Newfollowers;
 	followersCount++;
 	string path = "data/Following/" + this->username + "_followers.txt";
@@ -684,4 +692,252 @@ Posts* User::getPostByIndex(int index) {
 	if (index < 0 || index >= postCount || posts == nullptr)
 		return nullptr;
 	return posts[index];
+}
+void User::editPost(string postId) {
+	Posts* p = getPostById(postId);
+	if (p == nullptr) {
+		qDebug() << "Post not found.";
+		return;
+	}
+
+	qDebug() << "Current content:" << QString::fromStdString(p->getContent());
+
+	QString newContent;
+	bool isValid = false;
+	do {
+		isValid = true;
+		cout << "Enter new content (cannot contain '|'): ";
+		cin.ignore();
+		string temp;
+		getline(cin, temp);
+		newContent = QString::fromStdString(temp);
+
+		if (newContent.isEmpty()) {
+			qDebug() << "Content cannot be empty.";
+			isValid = false;
+		}
+		else {
+			for (QChar c : newContent) {
+				if (c == '|') {
+					qDebug() << "Content cannot contain '|'. Enter again.";
+					isValid = false;
+					break;
+				}
+			}
+		}
+	} while (!isValid);
+
+	p->setContent(newContent.toStdString());
+	p->savePostToFile();
+	qDebug() << "Post edited successfully.";
+}
+
+void User::deletePost(string postId) {
+	Posts* p = getPostById(postId);
+	if (p == nullptr) {
+		qDebug() << "Post not found.";
+		return;
+	}
+
+	// file delete karo
+	QString path = QString::fromStdString("data/Posts/" + this->username + "/" + postId + ".txt");
+	QString commentsPath = QString::fromStdString("data/Posts/" + this->username + "/" + postId + "_comments.txt");
+	QFile::remove(path);
+	QFile::remove(commentsPath);
+
+	// posts_list.txt update karo
+	QString listPath = QString::fromStdString("data/Posts/" + this->username + "/posts_list.txt");
+	QFile listFile(listPath);
+	QString updatedList = "";
+
+	if (listFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		QTextStream in(&listFile);
+		while (!in.atEnd()) {
+			QString line = in.readLine();
+			if (line != QString::fromStdString(postId)) {
+				updatedList += line + "\n";
+			}
+		}
+		listFile.close();
+	}
+
+	if (listFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QTextStream out(&listFile);
+		out << updatedList;
+		listFile.close();
+	}
+	Posts** newPosts = new Posts * [postCount - 1];
+	int index = 0;
+	for (int i = 0; i < postCount; i++) {
+		if (posts[i]->getPostId() != postId) {
+			newPosts[index++] = posts[i];
+		}
+		else {
+			delete posts[i];
+		}
+	}
+	delete[] posts;
+	posts = newPosts;
+	postCount--;
+	saveToFile();
+	qDebug() << "Post deleted successfully.";
+}
+
+void User::reportPost(string postId, User* postOwner) {
+	if (postOwner->getUsername() == this->username) {
+		qDebug() << "You cannot report your own post";
+		return;
+	}
+
+	Posts* p = postOwner->getPostById(postId);
+	if (p == nullptr) {
+		qDebug() << "Post not found.";
+		return;
+	}
+
+	p->reportPost();
+	qDebug() << "Post reported successfully";
+	if (p->getReportCount() >= 3) {
+		QString adminPath = "data/reported_posts.txt";
+		QFile file(adminPath);
+		if (file.open(QIODevice::Append | QIODevice::Text)) {
+			QTextStream out(&file);
+			out << QString::fromStdString(postOwner->getUsername())
+				<< "|" << QString::fromStdString(postId) << "\n";
+			file.close();
+		}
+		qDebug() << "Post has been sent to admin for review.";
+	}
+}
+
+void User::savePost(string postId, User* postOwner) {
+	for (int i = 0; i < savedPostCount; i++) {
+		if (savedPosts[i]->getPostId() == postId) {
+			qDebug() << "Post already saved";
+			return;
+		}
+	}
+
+	Posts* p = postOwner->getPostById(postId);
+	if (p == nullptr) {
+		qDebug() << "Post not found.";
+		return;
+	}
+
+	Posts** newSaved = new Posts * [savedPostCount + 1];
+	for (int i = 0; i < savedPostCount; i++) {
+		newSaved[i] = savedPosts[i];
+	}
+	newSaved[savedPostCount] = p;
+	delete[] savedPosts;
+	savedPosts = newSaved;
+	savedPostCount++;
+
+	saveSavedPostsToFile();
+	qDebug() << "Post saved to favourites";
+}
+
+void User::unsavePost(string postId) {
+	bool found = false;
+	for (int i = 0; i < savedPostCount; i++) {
+		if (savedPosts[i]->getPostId() == postId) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		qDebug() << "Post not in saved list";
+		return;
+	}
+
+	Posts** newSaved = new Posts * [savedPostCount - 1];
+	int index = 0;
+	for (int i = 0; i < savedPostCount; i++) {
+		if (savedPosts[i]->getPostId() != postId) {
+			newSaved[index++] = savedPosts[i];
+		}
+	}
+	delete[] savedPosts;
+	savedPosts = newSaved;
+	savedPostCount--;
+
+	saveSavedPostsToFile();
+	qDebug() << "Post removed from favourites.";
+}
+
+void User::displaySavedPosts() {
+	if (savedPostCount == 0 || savedPosts == nullptr) {
+		qDebug() << "No saved posts";
+		return;
+	}
+	for (int i = 0; i < savedPostCount; i++) {
+		savedPosts[i]->display();
+	}
+}
+
+void User::saveSavedPostsToFile() {
+	QString path = QString::fromStdString("data/SavedPosts/" + this->username + "_saved.txt");
+	QFile file(path);
+	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QTextStream out(&file);
+		for (int i = 0; i < savedPostCount; i++) {
+			out << QString::fromStdString(savedPosts[i]->getPostId())
+				<< "|" << QString::fromStdString(savedPosts[i]->getCreatorUsername())
+				<< "\n";
+		}
+		file.close();
+	}
+}
+
+void User::loadSavedPosts(User** allUsers, int userCount) {
+	QString path = QString::fromStdString("data/SavedPosts/" + this->username + "_saved.txt");
+	QFile file(path);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		savedPosts = nullptr;
+		savedPostCount = 0;
+		return;
+	}
+	QTextStream in(&file);
+	int count = 0;
+	while (!in.atEnd()) {
+		QString line = in.readLine();
+		if (!line.isEmpty()) count++;
+	}
+	file.close();
+
+	if (count == 0) {
+		savedPosts = nullptr;
+		savedPostCount = 0;
+		return;
+	}
+
+	savedPosts = new Posts * [count];
+	savedPostCount = 0;
+
+	if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		QTextStream in2(&file);
+		while (!in2.atEnd()) {
+			QString line = in2.readLine();
+			if (line.isEmpty()) continue;
+
+			QStringList parts = line.split("|");
+			if (parts.size() != 2) continue;
+
+			string postId = parts[0].toStdString();
+			string ownerUsername = parts[1].toStdString();
+			for (int i = 0; i < userCount; i++) {
+				if (allUsers[i]->getUsername() == ownerUsername) {
+					Posts* p = allUsers[i]->getPostById(postId);
+					if (p != nullptr) {
+						savedPosts[savedPostCount++] = p;
+					}
+					break;
+				}
+			}
+		}
+		file.close();
+	}
+}
+string User::getCreatorUsername() const {
+	return this->username;
 }
