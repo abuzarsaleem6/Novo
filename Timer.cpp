@@ -37,3 +37,25 @@ void Timer::displaySessionTime() const {
 
     cout << "Active Session Time: " << minutes << "m " << seconds << "s\n";
 }
+
+void Timer::saveSessionLog(const char* username) const {
+   
+    std::ofstream outFile("session_logs.txt", std::ios::app);
+
+    
+    if (outFile.is_open()) {
+        double totalSeconds = getSessionDuration();
+
+        
+        int minutes = static_cast<int>(totalSeconds) / 60;
+        int seconds = static_cast<int>(totalSeconds) % 60;
+
+       
+        outFile << "User: " << username << " | Session Time: " << minutes << "m " << seconds << "s\n";
+
+        outFile.close();
+    }
+    else {
+        std::cout << "Error: Could not open session_logs.txt to save the timer.\n";
+    }
+}

@@ -147,3 +147,54 @@ void Group::addMessage(const Message& msg) {
 const char* Group::getGroupName() const { return groupName; }
 int Group::getMemberCount() const { return memberCount; }
 int Group::getMessageCount() const { return messageCount; }
+
+void Group::saveToFile(const char* filename) const {
+    std::ofstream out(filename); 
+
+    if (!out.is_open()) return; 
+
+    out << groupName << "\n";
+    out << memberCount << "\n";
+
+    
+    for (int i = 0; i < memberCount; i++) {
+        out << memberIDs[i] << " ";
+    }
+    out << "\n";
+
+    
+    out << messageCount << "\n";
+    for (int i = 0; i < messageCount; i++) {
+        messageHistory[i].saveToFile(out); 
+    }
+
+    out.close();
+}
+
+void Group::loadFromFile(const char* filename) {
+    std::ifstream in(filename);
+    if (!in.is_open()) return;
+
+    char tempName[256];
+    in.getline(tempName, 256);
+
+   
+    delete[] groupName;
+    groupName = new char[strlen(tempName) + 1];
+    strcpy(groupName, tempName);
+
+    
+    in >> memberCount;
+    for (int i = 0; i < memberCount; i++) {
+       
+        in >> memberIDs[i];
+    }
+
+    
+    in >> messageCount;
+    for (int i = 0; i < messageCount; i++) {
+        messageHistory[i].loadFromStream(in);
+    }
+
+    in.close();
+}

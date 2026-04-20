@@ -86,3 +86,29 @@ void Message::setContent(const char* text) {
 
 void Message::setSenderID(int sender) { senderID = sender; }
 void Message::setReceiverID(int receiver) { receiverID = receiver; }
+
+void Message::saveToFile(std::ofstream& out) const {
+    
+    out << senderID << " " << receiverID << "\n";
+    if (content != nullptr) {
+        out << content << "\n";
+    }
+    else {
+        out << "NULL\n";
+    }
+}
+
+void Message::loadFromStream(std::ifstream& in) {
+    in >> senderID >> receiverID;
+    in.ignore(); 
+
+    char tempBuffer[1024]; 
+    in.getline(tempBuffer, 1024);
+
+    if (strcmp(tempBuffer, "NULL") != 0) {
+        setContent(tempBuffer); 
+    }
+    else {
+        setContent(nullptr);
+    }
+}

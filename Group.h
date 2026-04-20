@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include "Message.h" 
+#include <fstream>
 
 class Group {
 private:
@@ -33,4 +34,8 @@ public:
     const char* getGroupName() const;
     int getMemberCount() const;
     int getMessageCount() const;
+
+    void saveToFile(const char* filename) const;
+    void loadFromFile(const char* filename);
+
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 class Timer {
 private:
@@ -17,4 +18,5 @@ public:
     void startSession();
     double getSessionDuration() const;
     void displaySessionTime() const;  
+    void saveSessionLog(const char* username) const;
 };
