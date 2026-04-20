@@ -14,6 +14,8 @@ public:
 	void addUser(User* user);
 	User* searchUsers(const QString& username) const;
 	void displayResults(const QString& username) const;
+
+	QList<User*> searchPartial(const QString& query) const;
 };
 
 #endif
