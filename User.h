@@ -55,6 +55,7 @@ public:
 	void loadAllPosts();
 	void displayAllPosts();
 	Posts* getPostById(string postId);
+	bool getIsReported()const;
 	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);

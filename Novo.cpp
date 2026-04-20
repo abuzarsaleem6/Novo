@@ -1,3 +1,11 @@
+﻿#include<iostream>
+#include<fstream>
+#include<string>
+#include<QDebug>
+#include"User.h"
+#include"Post.h"
+#include"Comment.h"
+#include"SearchEngine.h"
 #include <QApplication>
 #include "LoginWindow.h"
 #include "User.h"

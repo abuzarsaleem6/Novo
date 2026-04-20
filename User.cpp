@@ -42,7 +42,6 @@ User::User(string username, string password) {
 
 	this->saveToFile();
 	this->addToUserList();
-
 }
 void User::InputUserName(string& username) {
 	cout << "---UserName Rules---" << endl;
@@ -618,8 +617,6 @@ void User::loadAllPosts() {
 		postCount = 0;
 		return;
 	}
-
-	// file se actual count karo
 	int count = 0;
 	string temp;
 	while (getline(listFile, temp)) {
@@ -653,6 +650,9 @@ Posts* User::getPostById(string postId) {
 		}
 	}
 	return nullptr;
+}
+bool User::getIsReported()const {
+	return this->isReported;
 }
 User::~User() {
 	for (int i = 0; i < postCount; i++) {

@@ -1,8 +1,8 @@
-postId|P1002
-content|Hey there its faah
+postId|P1004
+content|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah
 authorUsername|faah_ui
 timeOfCreation|
 isReported|0
 reportCount|0
 commentCount|0
-likeCount|2
+likeCount|0

@@ -1,27 +1,31 @@
 #include<iostream>
 #include<fstream>
 #include"Post.h"
+#include<QFile>
+#include<QTextStream>
 using namespace std;
+
 Posts::Posts(string authorUsername) {
     inputContent(this->content);
     this->postId = generatePostId();
     this->creatorUsername = authorUsername;
     this->timeOfCreation = "";
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
     this->isReported = false;
     this->reportCount = 0;
-    this->likeCount = 0;
+
 }
 void Posts::inputContent(string& content) {
     bool isValid = false;
     do {
         isValid = true;
-        cout << "Enter Your Post Content (You can't write '|' in it): " << endl;
+        cout << "Enter Your Post Content  (You cant write '|' in it ) " << endl;
+        cin.ignore();
         getline(cin, content);
         for (int i = 0; content[i] != '\0'; i++) {
             if (content[i] == '|') {
-                cout << "You can't add '|' Enter again: " << endl;
+                cout << "You cant add '|' Enter Again " << endl;
                 isValid = false;
                 break;
             }
@@ -57,20 +61,12 @@ Posts::Posts() {
     this->creatorUsername = "";
     this->isReported = false;
     this->reportCount = 0;
-    this->comments = nullptr;
+    //this->comments = nullptr;
     this->commentsCount = 0;
     this->likeCount = 0;
 }
 void Posts::savePostToFile() {
-
-    string folder = "data/Posts/" + this->creatorUsername;
-#ifdef _WIN32
-    system(("mkdir \"" + folder + "\" 2>nul").c_str());
-#else
-    system(("mkdir -p \"" + folder + "\"").c_str());
-#endif
-
-    string path = folder + "/" + this->postId + ".txt";
+    string path = "data/Posts/" + this->creatorUsername + "/" + this->postId + ".txt";
     ofstream file(path);
     if (file.is_open()) {
         file << "postId|" << this->postId << "\n";
@@ -81,6 +77,7 @@ void Posts::savePostToFile() {
         file << "reportCount|" << this->reportCount << "\n";
         file << "commentCount|" << this->commentsCount << "\n";
         file << "likeCount|" << this->likeCount << "\n";
+
         file.close();
         cout << "Post saved: " << this->postId << endl;
     }
@@ -144,7 +141,7 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
             this->content = value;
         else if (key == "authorUsername")
             this->creatorUsername = value;
-        else if (key == "timeOfCreation")
+        else if (key == "timestamp")
             this->timeOfCreation = value;
         else if (key == "likeCount")
             this->likeCount = stoi(value);
@@ -153,9 +150,118 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
     }
     file.close();
 }
-string Posts::getPostId() const {
-    return this->postId;
+
+void Posts::addComment(const QString& commentContent, const QString& cUsername) {
+    if (commentContent.isEmpty()) {
+        qDebug() << "Comment content cannot be empty.";
+        return;
+    }
+
+    QString commentId = "C" + QString::number(commentsCount + 1);
+    Comment c(commentContent, commentId, cUsername);
+    commentList.append(c);
+    commentsCount++;
+    savePostToFile();
+}
+
+void Posts::deleteComment(int index, const QString& rUsername) {
+    if (index < 0 || index >= commentList.size()) {
+        qDebug() << "Invalid comment index.";
+        return;
+    }
+    if (commentList[index].getCreatorUsername() != rUsername) {
+        qDebug() << "You can only delete your own comments.";
+        return;
+    }
+    commentList.removeAt(index);
+    commentsCount--;
+    savePostToFile();
+}
+
+void Posts::editComment(int index, const QString& newContent, const QString& rUsername) {
+    if (index < 0 || index >= commentList.size()) {
+        qDebug() << "Invalid comment index.";
+        return;
+    }
+    if (commentList[index].getCreatorUsername() != rUsername) {
+        qDebug() << "You can only edit your own comments.";
+        return;
+    }
+    commentList[index].setContent(newContent);
+    savePostToFile();
+}
+
+QList<Comment> Posts::getComments() const {
+    return commentList;
+}
+
+void Posts::saveCommentsToFile()const {
+    QString path = QString::fromStdString("data/Posts/" + this->creatorUsername + "/" + this->postId + "_comments.txt");
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        for (const Comment& comment : commentList) {
+            out << "commentId|" << comment.getCommentId();
+            out << " |content|" << comment.getContent();
+            out << " |creatorUsername|" << comment.getCreatorUsername();
+            out << " |timeOfCreation|" << comment.getTimeOfCreation();
+            out << " |isReported|" << comment.getIsReported();
+            out << " |likeCount|" << comment.getLikeCount();
+            out << "----------------------------------------\n";
+        }
+        file.close();
+    }
+    else {
+        qDebug() << "Error saving comments to file: " << path;
+    }
+}
+
+void Posts::loadCommentsFromFile() {
+    QString path = QString::fromStdString("data/Posts/" + this->creatorUsername + "/" + this->postId + "_comments.txt");
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        commentList.clear();
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            if (line.trimmed().isEmpty()) continue; // Skip empty lines
+            QStringList parts = line.split(" |");
+            QString commentId, content, creatorUsername, timeOfCreation;
+            bool isReported = false;
+            int likeCount = 0;
+            for (const QString& part : parts) {
+                QStringList keyValue = part.split("|");
+                if (keyValue.size() != 2) continue;
+                QString key = keyValue[0].trimmed();
+                QString value = keyValue[1].trimmed();
+                if (key == "commentId")
+                    commentId = value;
+                else if (key == "content")
+                    content = value;
+                else if (key == "creatorUsername")
+                    creatorUsername = value;
+                else if (key == "timeOfCreation")
+                    timeOfCreation = value;
+                else if (key == "isReported")
+                    isReported = (value.toLower() == "true");
+                else if (key == "likeCount")
+                    likeCount = value.toInt();
+            }
+            Comment c(content, commentId, creatorUsername);
+            c.setTimeOfCreation(timeOfCreation);
+            c.setIsReported(isReported);
+            c.setLikeCount(likeCount);
+            commentList.append(c);
+        }
+        file.close();
+    }
+    else {
+        qDebug() << "Error loading comments from file: " << path;
+    }
 }
 Posts::~Posts() {
-    
+
+}
+string Posts::getPostId() const {
+    return this->postId;
 }

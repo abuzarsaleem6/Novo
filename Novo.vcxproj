@@ -20,10 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LoginWindow.h" />
+    <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
+    <ClInclude Include="SearchEngine.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
+  <ClCompile Include="Novo.cpp" />
+  <ClCompile Include="Comment.cpp" />
+  <ClCompile Include="Post.cpp" />
+  <ClCompile Include="SearchEngine.cpp" />
+  <ClCompile Include="User.cpp" />
+</ItemGroup>
     <ClCompile Include="LoginWindow.cpp" />
     <ClCompile Include="Novo.cpp" />
     <ClCompile Include="Post.cpp" />
