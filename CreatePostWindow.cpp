@@ -44,6 +44,7 @@ void CreatePostWindow::onPostClicked() {
     }
 
     user->createPost(content);
+    emit postCreated();  // MainWindow ko notify karo
     errorLabel->setStyleSheet("color: green;");
     errorLabel->setText("Post created successfully!");
     contentInput->clear();

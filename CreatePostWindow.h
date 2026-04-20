@@ -10,6 +10,9 @@ class CreatePostWindow : public QWidget {
 public:
     CreatePostWindow(User* user, QWidget* parent = nullptr);
 
+signals:
+    void postCreated();
+
 private slots:
     void onPostClicked();
 

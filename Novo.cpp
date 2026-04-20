@@ -1,13 +1,5 @@
-﻿#include<iostream>
-#include<fstream>
-#include<string>
-#include<QDebug>
-#include"User.h"
-#include"Post.h"
-#include"Comment.h"
-#include"SearchEngine.h"
-#include <QApplication>
-#include "LoginWindow.h"
+﻿#include <QApplication>
+#include "SplashScreen.h"
 #include "User.h"
 #include <fstream>
 #include <string>
@@ -16,7 +8,6 @@ using namespace std;
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
-    // Load all users
     int userCount = 0;
     ifstream countFile("data/users_list.txt");
     string tempLine;
@@ -34,8 +25,8 @@ int main(int argc, char* argv[]) {
         allUsers[i]->loadAllPosts();
     }
 
-    LoginWindow* loginWin = new LoginWindow(allUsers, userCount);
-    loginWin->show();
+    SplashScreen* splash = new SplashScreen(allUsers, userCount);
+    splash->show();
 
     return app.exec();
 }

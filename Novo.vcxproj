@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LoginWindow.h" />
+    <QtMoc Include="SplashScreen.h" />
     <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
     <ClInclude Include="SearchEngine.h" />
@@ -47,6 +48,7 @@
     <ClCompile Include="ProfileWindow.cpp" />
     <ClCompile Include="SearchEngine.cpp" />
     <ClCompile Include="SignupWindow.cpp" />
+    <ClCompile Include="SplashScreen.cpp" />
     <ClCompile Include="UpdateBioWindow.cpp" />
     <ClCompile Include="UpdatePasswordWindow.cpp" />
     <ClCompile Include="User.cpp" />
