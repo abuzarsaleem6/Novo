@@ -21,14 +21,14 @@
     <ClInclude Include="Post.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Feed.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Feed.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Notification.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Notification.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PasswordChecker.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="PasswordChecker.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -41,13 +41,13 @@
     <ClCompile Include="Novo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Feed.cpp">
+    <ClCompile Include="Feed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Notification.cpp">
+    <ClCompile Include="Notification.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PasswordChecker.cpp">
+    <ClCompile Include="PasswordChecker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
