@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Feed.h" />
+    <ClInclude Include="Notification.h" />
+    <ClInclude Include="PasswordChecker.h" />
     <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
     <QtMoc Include="QtWidgetsApplication1.h" />
@@ -27,11 +30,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Comment.cpp" />
+    <ClCompile Include="Feed.cpp" />
+    <ClCompile Include="Notification.cpp" />
     <ClCompile Include="Novo.cpp" />
+    <ClCompile Include="PasswordChecker.cpp" />
     <ClCompile Include="Post.cpp" />
-    <ClCompile Include="QtWidgetsApplication1.cpp" />
-    <ClCompile Include="SearchEngine.cpp" />
     <ClCompile Include="User.cpp" />
+    <ClCompile Include="SearchEngine.cpp" />
+    <ClCompile Include="QtWidgetsApplication1.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
