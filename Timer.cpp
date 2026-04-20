@@ -1,5 +1,5 @@
 #include "Timer.h"
-
+using namespace std;
 
 Timer::Timer() {
     isRunning = false;
@@ -23,7 +23,7 @@ double Timer::getSessionDuration() const {
 
     
     auto currentTime = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsedSeconds = currentTime - startTime;
+    chrono::duration<double> elapsedSeconds = currentTime - startTime;
 
     return elapsedSeconds.count();
 }
@@ -35,5 +35,5 @@ void Timer::displaySessionTime() const {
     int minutes = static_cast<int>(totalSeconds) / 60;
     int seconds = static_cast<int>(totalSeconds) % 60;
 
-    std::cout << "Active Session Time: " << minutes << "m " << seconds << "s\n";
+    cout << "Active Session Time: " << minutes << "m " << seconds << "s\n";
 }
