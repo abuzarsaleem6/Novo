@@ -13,6 +13,14 @@ Admin::Admin(QString username, QString password) : User(username.toStdString(), 
 }
 
 void Admin::deleteUser(User**& allUsers, int& userCount, QString username) {
+	int reportCount = 0;
+	for(int i = 0; i < reportedUsers.size(); i++) {
+		if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
+			reportCount++;
+			break;
+		}
+	}
+	if (reportCount >= 3) {}
 	for (int i = 0; i < userCount; i++) {
 		if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
 			allUsers[i]->deleteAccount(allUsers, userCount);
@@ -21,17 +29,31 @@ void Admin::deleteUser(User**& allUsers, int& userCount, QString username) {
 	}
 }
 
+
 void Admin::deletePost(User** allUsers, int userCount, QString postId) {
-	for (int i = 0; i < userCount; i++) {
-		Posts* post = allUsers[i]->getPostById(postId.toStdString());
-		if (post != nullptr) {
-			post->~Posts();
+	int reportCount = 0;
+	for (int i = 0; i < reportedPosts.size(); i++) {
+		if (QString::fromStdString(reportedPosts[i]->getPostId()) == postId) {
+			reportCount++;
 			break;
+		}
+	}
+	if (reportCount >= 3) {
+		for (int i = 0; i < userCount; i++) {
+			Posts* post = allUsers[i]->getPostById(postId.toStdString());
+			if (post != nullptr) {
+				post->~Posts();
+				break;
+			}
 		}
 	}
 }
 
 void Admin::deleteComment(Posts* post, int commentIndex) {
+	if (commentIndex >= 0 && commentIndex < 3)
+	{
+		return;
+	}
 	QList<Comment> comments = post->getComments();
 	if (commentIndex >= 0 && commentIndex < comments.size()) {
 		comments.removeAt(commentIndex);
@@ -52,7 +74,8 @@ void Admin::reviewReports(User**& allUsers, int& userCount) {
 }
 
 Admin::~Admin() {
-	
+	reportedUsers.clear();
+	reportedPosts.clear();
 }
 
 void Admin::displayAdminDashboard() {
