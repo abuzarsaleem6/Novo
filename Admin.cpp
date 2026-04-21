@@ -55,7 +55,7 @@ void Admin::deleteComment(Posts* post, int commentIndex) {
 		return;
 	}
 	QList<Comment> comments = post->getComments();
-	if (commentIndex >= 0 && commentIndex < comments.size()) {
+	if (commentIndex < 0 || commentIndex >= comments.size()) {
 		comments.removeAt(commentIndex);
 		post->saveCommentsToFile();
 	}
@@ -63,14 +63,14 @@ void Admin::deleteComment(Posts* post, int commentIndex) {
 
 void Admin::reviewReports(User**& allUsers, int& userCount) {
 	qDebug() << "Reviewing reported users and posts...";
-	for(int i = 0; i < reportedUserCount; i++) {
+	for(int i = 0; i < reportedUsers.size(); i++) {
 		User* user = reportedUsers[i];
-		qDebug() << "User: " << QString::fromStdString(user->getUsername()) << " has been reported " << user->getIsReported() << " times.";
+		qDebug() << "User: " << QString::fromStdString(user->getUsername()) << " has been reported " << reportedUsers.count(user) << " times.";
 	}
-	/*for(int i = 0; i < reportedPostCount; i++) {
+	for(int i = 0; i < reportedPostCount; i++) {
 		Posts* post = reportedPosts[i];
-		qDebug() << "Post: " << QString::fromStdString(post->getPostId()) << " has been reported " << post->getIsReported() << " times.";
-	}*/
+		qDebug() << "Post: " << QString::fromStdString(post->getPostId()) << " has been reported " << reportedPosts.count(post) << " times.";
+	}
 }
 
 Admin::~Admin() {
@@ -79,15 +79,27 @@ Admin::~Admin() {
 }
 
 void Admin::displayAdminDashboard() {
-	
+	qDebug() << "Admin Dashboard";
+	qDebug() << "Username: " << QString::fromStdString(getUsername());
+	qDebug() << "Admin Level: " << adminLevel;
+	qDebug() << "Reported Users: " << reportedUserCount;
+	qDebug() << "Reported Posts: " << reportedPostCount;
 }
 
 void Admin::displayReportedUsers() {
-
+	qDebug() << "Reported Users:" << Qt::endl;
+	for (int i = 0; i < reportedUsers.size(); i++) {
+		User* user = reportedUsers[i];
+		qDebug() << "Username: " << QString::fromStdString(user->getUsername()) << " | Report Count: " << reportedUsers.count(user) << Qt::endl;
+	}
 }
 
 void Admin::displayReportedPosts() {
-	
+	qDebug() << "Reported Posts:" << Qt::endl;
+	for (int i = 0; i < reportedPostCount; i++) {
+		Posts* post = reportedPosts[i];
+		qDebug() << "Post ID: " << QString::fromStdString(post->getPostId()) << " | Report Count: " << reportedPosts.count(post) << Qt::endl;
+	}
 }
 
 void Admin::receiveReport(User* user) {
