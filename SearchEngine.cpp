@@ -43,3 +43,14 @@ QList<User*> SearchEngine::searchPartial(const QString& query) const {
 	}
 	return results;
 }
+
+int SearchEngine::getUserCount() const {
+	return allUsers.size();
+}
+
+void SearchEngine::setUserPool(User** users, int count) {
+	allUsers.clear();	
+	for (int i = 0; i < count; ++i) {
+		allUsers.append(users[i]);
+	}
+}
