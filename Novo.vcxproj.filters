@@ -27,6 +27,15 @@
     <ClInclude Include="Post.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Feed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Notification.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PasswordChecker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="User.cpp">
@@ -44,5 +53,17 @@
     <ClCompile Include="Novo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Feed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Notification.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PasswordChecker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>
