@@ -28,6 +28,7 @@
     <ClInclude Include="SearchEngine.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
+<ItemGroup>
    <ClCompile Include="Admin.cpp" />
     <ClCompile Include="Comment.cpp" />
     <ClCompile Include="Feed.cpp" />

@@ -12,6 +12,7 @@ private:
 	QList<Posts*> reportedPosts;
 	int reportedUserCount;
 	int reportedPostCount;
+	QList<QString> notifications;
 public:
 	Admin();
 	Admin(QString username, QString password);
@@ -26,6 +27,14 @@ public:
 	void receiveReport(User* user);
 	Admin(const Admin& other);
 	Admin& operator=(const Admin& other);
+
+	//void banUser(User* user);
+	void unbanUser(User* user);
+	//void deleteReportedComment(Posts* post, int commentIndex);
+	void viewReportedComments(Posts* post);
+	void addNotification(const QString& message);
+	void viewAllNotifications() const;
+	//void check_ban_status(User* user);
 
 };
 

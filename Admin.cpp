@@ -1,4 +1,5 @@
 #include"Admin.h"
+#include "Notification.h"
 
 Admin::Admin() : User() {
 	adminLevel = "Super";
@@ -126,4 +127,66 @@ Admin& Admin::operator=(const Admin& other) {
 	}
 	return *this;
 }
+
+//void Admin::banUser(User* user) {
+//	if (user) {
+//		user->setIsBanned(true);
+//		addNotification("User banned: " +
+//			QString::fromStdString(user->getUsername()));
+//	}
+//}
+
+//void Admin::banUser(User* user) {
+//	if (user) {
+//		user->setIsLoggedIn(false);
+//		addNotification("User banned: " +
+//			QString::fromStdString(user->getUsername()));
+//	}
+//}
+
+void Admin::unbanUser(User* user) {
+	if (user) {
+		addNotification("User unbanned: " +
+			QString::fromStdString(user->getUsername()));
+	}
+}
+
+//void Admin::deleteReportedComment(Posts* post, int index) {
+//	if (post) {
+//		post->deleteComment(index);
+//	}
+//}
+
+void Admin::viewReportedComments(Posts* post) {
+	if (post) {
+		QList<Comment> comments = post->getComments();
+		for (int i = 0; i < comments.size(); i++) {
+			if (comments[i].getIsReported()) {
+				qDebug() << i << ":" << comments[i].getContent()
+					<< "by" << comments[i].getCreatorUsername();
+			}
+		}
+	}
+}
+
+void Admin::addNotification(const QString& message) {
+	notifications.append(message);
+}
+
+void Admin::viewAllNotifications() const {
+	for (const QString& n : notifications) {
+		qDebug() << n;
+	}
+}	
+
+//void Admin::check_ban_status(User* user) {
+//	if (user) {
+//		if (user->getIsReported() >= 3) {
+//			banUser(user);
+//		}
+//		else {
+//			unbanUser(user);
+//		}
+//	}
+//}
 
