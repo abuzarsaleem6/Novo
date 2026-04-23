@@ -4,11 +4,11 @@
 #include<QDateTime>
 
 Comment::Comment(QString content, QString commentId, QString creatorUsername)
-	: content(content), commentId(commentId), creatorUsername(creatorUsername), isReported(false), likeCount(0) {
+	: content(content), commentId(commentId), creatorUsername(creatorUsername), isReported(false), likeCount(0), reportCount(0) {
 	timeOfCreation = QDateTime::currentDateTime().toString();
 }
 
-Comment::Comment() : content(""), commentId(""), creatorUsername(""), isReported(false), likeCount(0) {
+Comment::Comment() : content(""), commentId(""), creatorUsername(""), isReported(false), likeCount(0), reportCount(0) {
 	timeOfCreation = QDateTime::currentDateTime().toString();
 }
 
@@ -18,7 +18,8 @@ Comment::Comment(const Comment& other)
 	timeOfCreation(other.timeOfCreation),
 	creatorUsername(other.creatorUsername),
 	isReported(other.isReported),
-	likeCount(other.likeCount) {
+	likeCount(other.likeCount),
+	reportCount(other.reportCount) {
 }
 
 Comment& Comment::operator=(const Comment& other) {
@@ -29,6 +30,7 @@ Comment& Comment::operator=(const Comment& other) {
 		creatorUsername = other.creatorUsername;
 		isReported = other.isReported;
 		likeCount = other.likeCount;
+		reportCount = other.reportCount;
 	}
 	return *this;
 }
@@ -92,4 +94,13 @@ QString Comment::getDisplayName() const {
 		return "Unknown User";
 	}
 	return creatorUsername;
+}
+
+void Comment::reportComment() {
+	isReported = true;
+	reportCount++;
+}
+
+int Comment::getReportCount() const {
+	return reportCount;
 }

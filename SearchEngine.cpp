@@ -33,3 +33,24 @@ void SearchEngine::displayResults(const QString& username) const {
 		qDebug()<<"No user found!";
 	}
 }
+
+QList<User*> SearchEngine::searchPartial(const QString& query) const {
+	QList<User*> results;
+	for (User* user : allUsers) {
+		if (QString::fromStdString(user->getUsername()).contains(query, Qt::CaseInsensitive)) {
+			results.append(user);
+		}
+	}
+	return results;
+}
+
+int SearchEngine::getUserCount() const {
+	return allUsers.size();
+}
+
+void SearchEngine::setUserPool(User** users, int count) {
+	allUsers.clear();	
+	for (int i = 0; i < count; ++i) {
+		allUsers.append(users[i]);
+	}
+}

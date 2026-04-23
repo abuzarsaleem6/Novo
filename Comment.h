@@ -14,6 +14,7 @@ private:
 	QString creatorUsername;
 	bool isReported;
 	int likeCount;
+	int reportCount;
 
 public:
 	Comment(QString content, QString commentId, QString creatorUsername);
@@ -41,6 +42,9 @@ public:
 	void setTimeOfCreation(const QString& time);
 	void setLikeCount(int count);
 	QString getDisplayName() const;
+
+	void reportComment();
+	int getReportCount() const;
 };
 
 #endif

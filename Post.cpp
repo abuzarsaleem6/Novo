@@ -66,7 +66,13 @@ Posts::Posts() {
     this->likeCount = 0;
 }
 void Posts::savePostToFile() {
-    string path = "data/Posts/" + this->creatorUsername + "/" + this->postId + ".txt";
+    string folder = "data/Posts/" + this->creatorUsername;
+#ifdef _WIN32
+    system(("mkdir \"" + folder + "\" 2>nul").c_str());
+#else
+    system(("mkdir -p \"" + folder + "\"").c_str());
+#endif
+    string path =folder + "/" + this->postId + ".txt";
     ofstream file(path);
     if (file.is_open()) {
         file << "postId|" << this->postId << "\n";
@@ -196,7 +202,13 @@ QList<Comment> Posts::getComments() const {
 }
 
 void Posts::saveCommentsToFile()const {
-    QString path = QString::fromStdString("data/Posts/" + this->creatorUsername + "/" + this->postId + "_comments.txt");
+    QString folder = QString::fromStdString("data/Posts/" + this->creatorUsername);
+#ifdef _WIN32
+    system(("mkdir \"" + folder.toStdString() + "\" 2>nul").c_str());
+#else
+    system(("mkdir -p \"" + folder.toStdString() + "\"").c_str());
+#endif
+    QString path = folder + "/" + QString::fromStdString(this->postId) + "_comments.txt";
     QFile file(path);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);

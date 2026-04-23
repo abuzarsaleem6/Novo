@@ -1,0 +1,8 @@
+postId|P1002
+content|ello world
+authorUsername|ali
+timeOfCreation|
+isReported|0
+reportCount|0
+commentCount|1
+likeCount|2
