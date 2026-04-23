@@ -27,6 +27,15 @@
     <ClInclude Include="Post.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Group.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Message.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Admin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,6 +53,10 @@
     <ClCompile Include="User.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Group.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Message.cpp">
     <ClCompile Include="Comment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,7 +66,7 @@
     <ClCompile Include="Post.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Novo.cpp">
+    <ClCompile Include="Timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Admin.cpp">

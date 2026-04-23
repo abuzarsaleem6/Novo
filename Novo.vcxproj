@@ -19,16 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Group.h" />
+    <ClInclude Include="Message.h" />
     <ClInclude Include="Admin.h" />
     <ClInclude Include="Feed.h" />
     <ClInclude Include="Notification.h" />
     <ClInclude Include="PasswordChecker.h" />
     <ClInclude Include="Comment.h" />
     <ClInclude Include="Post.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="SearchEngine.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
-<ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Group.cpp" />
+    <ClCompile Include="Message.cpp" />
+    <ClCompile Include="Timer.cpp" />
    <ClCompile Include="Admin.cpp" />
     <ClCompile Include="Comment.cpp" />
     <ClCompile Include="Feed.cpp" />

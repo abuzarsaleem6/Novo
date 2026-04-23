@@ -1,0 +1,8 @@
+Novo_Devs
+4
+2064 2059 2022 2024 
+2
+2064 2059
+Bro, mera backend ready ho gaya hai!
+2059 2064
+Sahi hai, ab GUI pe focus karte hain.
