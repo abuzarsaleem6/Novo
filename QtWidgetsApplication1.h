@@ -1,54 +1,44 @@
 #pragma once
 
-#include <QMainWindow>
-#include <QWidget>
-#include <QStackedWidget>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QLabel>
-#include <QLineEdit>
-#include <QTextEdit>
-#include <QScrollArea>
-#include <QFrame>
-#include <QPropertyAnimation>
-#include <QGraphicsOpacityEffect>
-#include <QTimer>
-#include <QDateTime>
-#include <QMessageBox>
-#include <QInputDialog>
-#include <QFile>
-#include <QTextStream>
-#include <QStyle>
-
+#include <QtWidgets/QMainWindow>
 #include "User.h"
 #include "Post.h"
-#include "Notification.h"
+#include "Comment.h"
 #include "Feed.h"
-#include "SearchEngine.h"
 #include "PasswordChecker.h"
+#include "Notification.h"
+#include "SearchEngine.h"
+#include <QtWidgets/QStackedWidget>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QScrollArea>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QTextEdit>  // FIX: needed for inline post composer
+#include <QTimer>
+#include <QtWidgets/QLineEdit>
+#include <QDateTime>
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SidebarButton
-// ─────────────────────────────────────────────────────────────────────────────
-class SidebarButton : public QPushButton
-{
+// Forward declarations
+class User;
+class Posts;
+class Notification;
+
+// --- Custom Widgets ---
+
+class SidebarButton : public QPushButton {
     Q_OBJECT
 public:
-    explicit SidebarButton(const QString& icon, const QString& label,
-        QWidget* parent = nullptr);
+    SidebarButton(const QString& icon, const QString& label, QWidget* parent = nullptr);
     void setActive(bool active);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PostCard
-// ─────────────────────────────────────────────────────────────────────────────
-class PostCard : public QFrame
-{
+class PostCard : public QFrame {
     Q_OBJECT
 public:
-    explicit PostCard(Posts* post, const QString& authorUsername,
-        bool isOwner, QWidget* parent = nullptr);
+    PostCard(Posts* post, const QString& authorUsername, bool isOwner, QWidget* parent = nullptr);
 signals:
     void likeClicked(Posts* post);
     void commentClicked(Posts* post);
@@ -56,226 +46,182 @@ signals:
 private:
     Posts* m_post;
     QString m_authorUsername;
-    bool    m_isOwner;
+    bool m_isOwner;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  NotificationItem
-// ─────────────────────────────────────────────────────────────────────────────
-class NotificationItem : public QFrame
-{
+class NotificationItem : public QFrame {
     Q_OBJECT
 public:
-    explicit NotificationItem(const Notification& notif, QWidget* parent = nullptr);
+    NotificationItem(const Notification& notif, QWidget* parent = nullptr);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  AuthPage
-// ─────────────────────────────────────────────────────────────────────────────
-class AuthPage : public QWidget
-{
+// --- Page Classes ---
+
+class AuthPage : public QWidget {
     Q_OBJECT
 public:
-    explicit AuthPage(QWidget* parent = nullptr);
-    // Called after switch-user so fields are cleared
+    AuthPage(QWidget* parent = nullptr);
     void resetToLogin();
-
 signals:
     void loginSuccess(User* user, User** allUsers, int userCount);
-
+    void loginAdminSuccess();
 private slots:
     void onLogin();
     void onSignUp();
-    void toggleMode();
-
 private:
-    QStackedWidget* m_stack;
-    QLineEdit* m_loginUser;
-    QLineEdit* m_loginPass;
-    QLineEdit* m_signupUser;
-    QLineEdit* m_signupPass;
-    QLineEdit* m_signupBio;
-    User** m_allUsers;
-    int    m_userCount;
-    bool   m_isLoginMode;
-
+    QWidget* createLandingWidget();
     QWidget* createLoginWidget();
     QWidget* createSignupWidget();
+    QWidget* createAdminLoginWidget();
+    QStackedWidget* m_stack;
+    QLineEdit* m_loginUser, * m_loginPass, * m_signupUser, * m_signupPass, * m_signupBio;
+    User** m_allUsers;
+    int m_userCount;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  FeedPage
-// ─────────────────────────────────────────────────────────────────────────────
-class FeedPage : public QWidget
-{
+class FeedPage : public QWidget {
     Q_OBJECT
 public:
-    explicit FeedPage(User* currentUser, User** allUsers, int userCount,
-        QWidget* parent = nullptr);
+    FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* parent = nullptr);
     void refresh();
 
+    // FIX 3 & FIX 4: Inline post composer - exposed so MainWindow can show/hide
+    QFrame* m_composerCard;
+    QTextEdit* m_postInput;   // public so MainWindow can call setFocus()
+
 private slots:
-    void onCreatePost();
     void onLikePost(Posts* post);
     void onCommentPost(Posts* post);
     void onDeletePost(Posts* post);
-
+    void onSubmitPost();    // FIX 4: inline submit
 private:
-    User* m_user;
-    User** m_allUsers;
-    int          m_userCount;
-    QVBoxLayout* m_feedLayout;
-    QScrollArea* m_scrollArea;
-    QWidget* m_feedContent;
-    QTextEdit* m_postInput;
-
     void loadPosts();
     void clearFeed();
+    User* m_user;
+    User** m_allUsers;
+    int m_userCount;
+    QScrollArea* m_scrollArea;
+    QWidget* m_feedContent;
+    QVBoxLayout* m_feedLayout;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  NotificationsPage
-// ─────────────────────────────────────────────────────────────────────────────
-class NotificationsPage : public QWidget
-{
+class NotificationsPage : public QWidget {
     Q_OBJECT
 public:
-    explicit NotificationsPage(User* currentUser, QWidget* parent = nullptr);
+    NotificationsPage(User* currentUser, QWidget* parent = nullptr);
     void refresh();
-
 private:
+    void loadNotifications();
     User* m_user;
-    QVBoxLayout* m_listLayout;
     QScrollArea* m_scrollArea;
     QWidget* m_listContent;
-
-    void loadNotifications();
+    QVBoxLayout* m_listLayout;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SearchPage
-// ─────────────────────────────────────────────────────────────────────────────
-class SearchPage : public QWidget
-{
+class SearchPage : public QWidget {
     Q_OBJECT
 public:
-    explicit SearchPage(User** allUsers, int userCount, User* currentUser,
-        QWidget* parent = nullptr);
-
+    SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
 private slots:
     void onSearch();
     void onFollowUser();
-
 private:
+    void showUserCard(User* user);
     User* m_currentUser;
     User** m_allUsers;
-    int          m_userCount;
+    int m_userCount;
     QLineEdit* m_searchInput;
-    QVBoxLayout* m_resultsLayout;
-    QWidget* m_resultsContent;
     QScrollArea* m_scrollArea;
-    SearchEngine m_engine;
+    QWidget* m_resultsContent;
+    QVBoxLayout* m_resultsLayout;
     User* m_foundUser;
     QPushButton* m_followBtn;
-
-    void showUserCard(User* user);
+    SearchEngine m_engine;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ProfilePage
-// ─────────────────────────────────────────────────────────────────────────────
-class ProfilePage : public QWidget
-{
+class ProfilePage : public QWidget {
     Q_OBJECT
 public:
-    explicit ProfilePage(User* currentUser, User** allUsers, int* userCount,
-        QWidget* parent = nullptr);
+    ProfilePage(User* currentUser, User** allUsers, int* userCount, QWidget* parent = nullptr);
     void refresh();
-
 private slots:
     void onUpdateBio();
     void onUpdatePassword();
     void onDeleteAccount();
-
 private:
     User* m_user;
     User** m_allUsers;
     int* m_userCountPtr;
-    QLabel* m_usernameLabel;
-    QLabel* m_bioLabel;
-    QLineEdit* m_newBioInput;
-    QLineEdit* m_newPassInput;
+    QLabel* m_usernameLabel, * m_bioLabel;
+    QLineEdit* m_newBioInput, * m_newPassInput;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TimeSpentPage
-// ─────────────────────────────────────────────────────────────────────────────
-class TimeSpentPage : public QWidget
-{
+class TimeSpentPage : public QWidget {
     Q_OBJECT
 public:
-    explicit TimeSpentPage(QWidget* parent = nullptr);
+    TimeSpentPage(QWidget* parent = nullptr);
     void startSession();
     void stopSession();
-
 private slots:
     void onTick();
-
 private:
-    QLabel* m_timerLabel;
-    QLabel* m_sessionLabel;
-    QTimer* m_timer;
-    int       m_elapsed;
-    QDateTime m_sessionStart;
-
     void updateDisplay();
+    QTimer* m_timer;
+    int m_elapsed;
+    QDateTime m_sessionStart;
+    QLabel* m_timerLabel, * m_sessionLabel;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  MainWindow
-// ─────────────────────────────────────────────────────────────────────────────
-class MainWindow : public QMainWindow
-{
+class MessagesPage : public QWidget { Q_OBJECT public: MessagesPage(QWidget* parent = nullptr); };
+class AdminPage : public QWidget { Q_OBJECT public: AdminPage(QWidget* parent = nullptr); };
+
+// --- Main Window ---
+
+class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 private slots:
     void onLoginSuccess(User* user, User** allUsers, int userCount);
+    void onLoginAdminSuccess();
     void onNavFeed();
     void onNavNotifications();
     void onNavSearch();
+    void onNavMessages();
     void onNavProfile();
     void onNavTimeSpent();
     void onLogout();
-    void onSwitchUser();   // ← NEW
+    void onSwitchUser();
+    void onSidebarCreatePost(); // FIX 4: now shows inline composer on feed
 
 private:
+    void buildSidebar();
+    void buildPages();
+    void tearDownShell();
+    void setActiveSidebarButton(SidebarButton* active);
+    void animateFade(QWidget* widget);
+
     AuthPage* m_authPage;
     QWidget* m_appShell;
     QHBoxLayout* m_shellLayout;
     QWidget* m_sidebar;
-    SidebarButton* m_btnFeed;
-    SidebarButton* m_btnNotifications;
-    SidebarButton* m_btnSearch;
-    SidebarButton* m_btnProfile;
-    SidebarButton* m_btnTimeSpent;
-    SidebarButton* m_btnSwitchUser;  // ← NEW
-    SidebarButton* m_btnLogout;
     QStackedWidget* m_pages;
+
+    SidebarButton* m_btnFeed, * m_btnNotifications, * m_btnSearch,
+        * m_btnMessages, * m_btnProfile, * m_btnTimeSpent,
+        * m_btnSwitchUser, * m_btnLogout;
+
     FeedPage* m_feedPage;
     NotificationsPage* m_notifPage;
     SearchPage* m_searchPage;
+    MessagesPage* m_messagesPage;
     ProfilePage* m_profilePage;
     TimeSpentPage* m_timeSpentPage;
+    AdminPage* m_adminPage;
+
     User* m_currentUser;
     User** m_allUsers;
-    int                m_userCount;
-
-    void buildSidebar();
-    void buildPages();
-    void setActiveSidebarButton(SidebarButton* active);
-    void animateFade(QWidget* widget);
-    void tearDownShell();
+    int    m_userCount;
 };

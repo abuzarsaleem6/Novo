@@ -4,5 +4,5 @@ authorUsername|abuzar67
 timeOfCreation|
 isReported|0
 reportCount|0
-commentCount|0
+commentCount|1
 likeCount|-842150450

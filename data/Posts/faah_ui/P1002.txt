@@ -4,5 +4,5 @@ authorUsername|faah_ui
 timeOfCreation|
 isReported|0
 reportCount|0
-commentCount|0
-likeCount|2
+commentCount|2
+likeCount|3
