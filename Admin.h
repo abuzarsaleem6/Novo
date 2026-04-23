@@ -28,13 +28,17 @@ public:
 	Admin(const Admin& other);
 	Admin& operator=(const Admin& other);
 
-	//void banUser(User* user);
+	void banUser(User* user);
 	void unbanUser(User* user);
-	//void deleteReportedComment(Posts* post, int commentIndex);
+	void deleteReportedComment(Posts* post, int commentIndex);
 	void viewReportedComments(Posts* post);
 	void addNotification(const QString& message);
 	void viewAllNotifications() const;
-	//void check_ban_status(User* user);
+	void check_ban_status(User* user);
+	void saveReportsToFile();
+	void loadReportsFromFile(User**& allUsers, int& userCount);
+	void saveAdminToFile();
+	void loadAdminFromFile();
 
 };
 

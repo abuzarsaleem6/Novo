@@ -19,6 +19,7 @@ User::User() {
 	this->notifications = nullptr;
 	this->followers = nullptr;
 	this->following = nullptr;
+	this->isBanned = false;
 }
 User::User(string username, string password) {
 	this->following = nullptr;
@@ -32,6 +33,7 @@ User::User(string username, string password) {
 	this->followingCount = 0;
 	this->followersCount = 0;
 	this->postCount = 0;
+	this->isBanned = false;
 
 	this->username = username;
 	this->password = password;
@@ -671,4 +673,12 @@ User::~User() {
 	delete[] posts;
 	delete[] following;
 	delete[] followers;
+}
+
+void User::setBan(bool status) {
+	this->isBanned = status;
+}
+
+bool User::getisBan() const {
+	return this->isBanned;
 }

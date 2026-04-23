@@ -22,6 +22,7 @@ private:
 	int followersCount;
 	Posts** posts;
 	int postCount;
+	bool isBanned;
 public:
 	User();
 	User(string username, string password);
@@ -57,6 +58,9 @@ public:
 	Posts* getPostById(string postId);
 	bool getIsReported()const;
 	~User();
+
+	void setBan(bool status);
+	bool getisBan() const;
 };
 void loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount);
