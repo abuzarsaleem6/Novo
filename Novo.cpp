@@ -1,28 +1,31 @@
-﻿#include "QtWidgetsApplication1.h"
+﻿#include <QDir>
 #include <QApplication>
+#include "QtWidgetsApplication1.h"
 
 int main(int argc, char* argv[])
 {
+    // Create necessary directories
+    QDir().mkpath("data/Users");
+    QDir().mkpath("data/Posts");
+    QDir().mkpath("data/Following");
+    QDir().mkpath("data/Notifications");
+    QDir().mkpath("data/Admin");
+    QDir().mkpath("data/Messages");
+
+    // NEW: Initialize admin on first run
+    QFile adminFile("data/Admin/admin_credentials.txt");
+    if (!adminFile.exists()) {
+        if (adminFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream out(&adminFile);
+            out << "admin123|Admin#123|Platform Administrator\n";
+            out << "moderator|mod#A123|Content Moderator\n";
+            adminFile.close();
+            qDebug() << "Admin credentials file created";
+        }
+    }
+
     QApplication app(argc, argv);
-    app.setApplicationName("Husld");
-
-    // Global dark palette (fallback for non-styled elements)
-    QPalette pal;
-    pal.setColor(QPalette::Window, QColor("#0C0C10"));
-    pal.setColor(QPalette::WindowText, QColor("#E2E2EC"));
-    pal.setColor(QPalette::Base, QColor("#141420"));
-    pal.setColor(QPalette::AlternateBase, QColor("#18182A"));
-    pal.setColor(QPalette::Text, QColor("#E2E2EC"));
-    pal.setColor(QPalette::Button, QColor("#1C1C2C"));
-    pal.setColor(QPalette::ButtonText, QColor("#E2E2EC"));
-    pal.setColor(QPalette::Highlight, QColor("#4040E0"));
-    pal.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-    pal.setColor(QPalette::PlaceholderText, QColor("#404060"));
-    app.setPalette(pal);
-
     MainWindow w;
-    w.resize(1280, 820);
     w.show();
-
     return app.exec();
 }

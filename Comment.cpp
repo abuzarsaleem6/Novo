@@ -1,15 +1,14 @@
-#include"Comment.h"
-
-#include<QString>
-#include<QDateTime>
+#include "Comment.h"
+#include <QString>
+#include <QDateTime>
 
 Comment::Comment(QString content, QString commentId, QString creatorUsername)
 	: content(content), commentId(commentId), creatorUsername(creatorUsername), isReported(false), likeCount(0) {
-	timeOfCreation = QDateTime::currentDateTime().toString();
+	timeOfCreation = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
 }
 
 Comment::Comment() : content(""), commentId(""), creatorUsername(""), isReported(false), likeCount(0) {
-	timeOfCreation = QDateTime::currentDateTime().toString();
+	timeOfCreation = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
 }
 
 Comment::Comment(const Comment& other)

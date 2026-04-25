@@ -1,8 +1,0 @@
-postId|P1004
-content|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah
-authorUsername|faah_ui
-timeOfCreation|
-isReported|0
-reportCount|0
-commentCount|3
-likeCount|2

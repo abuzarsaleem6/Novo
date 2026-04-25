@@ -1,26 +1,30 @@
 #include<iostream>
 #include<fstream>
+#include <QDateTime>
+#include <QDir>
 #include<string>
 #include"User.h"
 #include"Post.h"
+#include "Notification.h"
 using namespace std;
 User::User() {
-	this->username = "";
-	this->password = "";
-	this->bio = "";
-	this->isLoggedIn = false;
-	this->isReported = false;
-	this->isReportedCount = 0;
-	this->notificationCount = 0;
-	this->followingCount = 0;
-	this->followersCount = 0;
-	this->postCount = 0;
-	this->posts = nullptr;
-	this->notifications = nullptr;
-	this->followers = nullptr;
-	this->following = nullptr;
-	this->savedPosts = nullptr;
-	this->savedPostCount = 0;
+	username = "";
+	password = "";
+	bio = "";
+	isLoggedIn = false;
+	isReported = false;
+	isBanned = false;
+	isReportedCount = 0;
+	notificationCount = 0;
+	followingCount = 0;
+	followersCount = 0;
+	postCount = 0;
+	savedPostCount = 0;
+	posts = nullptr;
+	notifications = nullptr;
+	followers = nullptr;
+	following = nullptr;
+	savedPosts = nullptr;
 }
 User::User(string username, string password, string bio) {
 	this->following = nullptr;
@@ -29,6 +33,7 @@ User::User(string username, string password, string bio) {
 	this->notifications = nullptr;
 	this->isLoggedIn = true;
 	this->isReported = false;
+	this->isBanned = false;
 	this->isReportedCount = 0;
 	this->notificationCount = 0;
 	this->followingCount = 0;
@@ -43,151 +48,171 @@ User::User(string username, string password, string bio) {
 	this->saveToFile();
 	this->addToUserList();
 }
-void User::InputUserName(string& username) {
-	cout << "---UserName Rules---" << endl;
-	cout << "[1] Cant have '|' in it " << endl;
-	cout << "[2] must be 6 or greater than 6 characters long  " << endl;
-	cout << "[3] must not exceed  16 characters  " << endl;
-	cout << "--------------------" << endl;
-	cout << "Enter Username Again" << endl;
-	cin >> username;
-}
-void User::InputPassWord(string& password) {
-	cout << "---Password  Rules---" << endl;
-	cout << "[1] Cant have '|' in it " << endl;
-	cout << "[2] must be 8 or greater than 8 characters long  " << endl;
-	cout << "[3] must not exceed  16 characters  " << endl;
-	cout << "--------------------" << endl;
-	cout << "Enter password Again" << endl;
-	cin >> password;
-}
-void User::validateUsername(string& username) {
-	bool isValid = false;
-	while (!isValid) {
-		isValid = true;
-		if (username.length() < 6) {
-			cout << "Username can not be shorter then 6 characters" << endl;
-			isValid = false;
-		}
-		else if (username.length() > 16) {
-			cout << "Username can not be longer then 16 characters" << endl;
-			isValid = false;
-		}
-		else {
-			for (int i = 0; username[i] != '\0'; i++) {
-				if (username[i] == '|' || username[i] == ' ') {
-					cout << "Username cannot contain '|' or spaces" << endl;
-					isValid = false;
-					break;
-				}
-			}
+User::User(const User& o) {
+	username = o.username;
+	password = o.password;
+	bio = o.bio;
+	isLoggedIn = o.isLoggedIn;
+	isReported = o.isReported;
+	isBanned = o.isBanned;
+	isReportedCount = o.isReportedCount;
+	notificationCount = o.notificationCount;
+	followingCount = o.followingCount;
+	followersCount = o.followersCount;
+	postCount = o.postCount;
+	savedPostCount = o.savedPostCount;
+	notifications = nullptr;  
 
-		}
-		if (!isValid) {
-			InputUserName(username);
-		}
+	following = nullptr;
+	if (o.followingCount > 0 && o.following) {
+		following = new User * [o.followingCount];
+		for (int i = 0; i < o.followingCount; i++)
+			following[i] = o.following[i];
 	}
 
-}
-void User::validatePassWord(string& password) {
-	bool isValid = false;
-	while (!isValid) {
-		isValid = true;
-		if (password.length() < 8) {
-			cout << "password can not be shorter then 8 characters" << endl;
-			isValid = false;
-		}
-		else if (password.length() > 16) {
-			cout << "password can not be longer then 16 characters" << endl;
-			isValid = false;
-		}
-		else {
-			for (int i = 0; password[i] != '\0'; i++) {
-				if (password[i] == '|' || password[i] == ' ') {
-					cout << "password cannot contain '|' or spaces" << endl;
-					isValid = false;
-					break;
-				}
-			}
+	followers = nullptr;
+	if (o.followersCount > 0 && o.followers) {
+		followers = new User * [o.followersCount];
+		for (int i = 0; i < o.followersCount; i++)
+			followers[i] = o.followers[i];
+	}
+	posts = nullptr;
+	if (o.postCount > 0 && o.posts) {
+		posts = new Posts * [o.postCount];
+		for (int i = 0; i < o.postCount; i++)
+			posts[i] = new Posts(*o.posts[i]);
+	}
 
-		}
-		if (!isValid) {
-			InputPassWord(password);
-		}
+	savedPosts = nullptr;
+	if (o.savedPostCount > 0 && o.savedPosts) {
+		savedPosts = new Posts * [o.savedPostCount];
+		for (int i = 0; i < o.savedPostCount; i++)
+			savedPosts[i] = o.savedPosts[i];
 	}
 }
+User& User::operator=(const User& o) {
+	if (this == &o) return *this;
 
-void User::InputBio(string& bio) {
-	cout << "---Bio Rules---" << endl;
-	cout << "[1] Must contain less than or equal to 100 characters" << endl;
-	cout << "---------------" << endl;
-	cout << "Enter Bio for Your Profile: ";
+	for (int i = 0; i < postCount; i++) delete posts[i];
+	delete[] posts;
+	delete[] following;
+	delete[] followers;
+	delete[] savedPosts;
 
-	cin.ignore();
-	getline(cin, bio);
-}
-void User::validateBio(string& bio) {
-	bool isBioValid = false;
-	while (!isBioValid) {
-		isBioValid = true;
-		if (bio.length() > 100) {
-			cout << "Bio length must be less than 100" << endl;
-			isBioValid = false;
-		}
-		else {
-			for (int i = 0; bio[i] != '\0'; i++) {
-				if (bio[i] == '|') {
-					cout << "Bio Can not contain '|'  in it" << endl;
-					isBioValid = false;
-					break;
-				}
-			}
-		}
-		if (!isBioValid) {
-			cout << "Enter Bio Again: ";
-			getline(cin, bio);
-		}
+	username = o.username;
+	password = o.password;
+	bio = o.bio;
+	isLoggedIn = o.isLoggedIn;
+	isReported = o.isReported;
+	isBanned = o.isBanned;
+	isReportedCount = o.isReportedCount;
+	notificationCount = o.notificationCount;
+	followingCount = o.followingCount;
+	followersCount = o.followersCount;
+	postCount = o.postCount;
+	savedPostCount = o.savedPostCount;
+	notifications = nullptr;
+
+	following = nullptr;
+	if (o.followingCount > 0 && o.following) {
+		following = new User * [o.followingCount];
+		for (int i = 0; i < o.followingCount; i++)
+			following[i] = o.following[i];
 	}
+
+	followers = nullptr;
+	if (o.followersCount > 0 && o.followers) {
+		followers = new User * [o.followersCount];
+		for (int i = 0; i < o.followersCount; i++)
+			followers[i] = o.followers[i];
+	}
+
+	posts = nullptr;
+	if (o.postCount > 0 && o.posts) {
+		posts = new Posts * [o.postCount];
+		for (int i = 0; i < o.postCount; i++)
+			posts[i] = new Posts(*o.posts[i]);
+	}
+
+	savedPosts = nullptr;
+	if (o.savedPostCount > 0 && o.savedPosts) {
+		savedPosts = new Posts * [o.savedPostCount];
+		for (int i = 0; i < o.savedPostCount; i++)
+			savedPosts[i] = o.savedPosts[i];
+	}
+
+	return *this;
+}
+QString User::validateUsername(const string& username) {
+	if (username.length() < 6)
+		return "Username must be at least 6 characters ";
+	if (username.length() > 16)
+		return "Username cannot exceed 16 characters ";
+	for (char c : username) {
+		if (c == '|' || c == ' ')
+			return "Username cannot contain '|' or spaces ";
+	}
+	return "";   
+}
+QString User::validatePassword(const string& password) {
+	if (password.length() < 8)
+		return "Password must be at least 8 characters.";
+	if (password.length() > 16)
+		return "Password cannot exceed 16 characters.";
+	for (char c : password) {
+		if (c == '|' || c == ' ')
+			return "Password cannot contain '|' or spaces.";
+	}
+	return "";
+}
+QString User::validateBio(const string& bio) {
+	if (bio.length() > 100)
+		return "Bio cannot exceed 100 characters ";
+	for (char c : bio) {
+		if (c == '|')
+			return "Bio cannot contain '|' ";
+	}
+	return "";
 }
 void User::logOut() {
 	this->isLoggedIn = false;
 
 }
-void User::reportUser() {
+void User::reportPost(string postId, User* postOwner) {
+	if (!postOwner) return;
+	postOwner->loadAllPosts();
 
-	isReportedCount++;
-	saveToFile();
-	if (isReportedCount >= 3) {
-		isReported = true;
-		addToReviewList();
-		// Iqra -- Admin class idr se age  handle kre gi 
-		cout << this->username << " reported 3 times Sent to Admin for review" << endl;
+	for (int i = 0; i < postOwner->getPostCount(); ++i) {
+		Posts* p = postOwner->getPostByIndex(i);
+		if (!p || !p->isValid()) continue;
+		if (p->getPostId() == postId) {
+			p->reportPost();   // calls Posts::reportPost() above
+			return;
+		}
 	}
-	else {
-		cout << "Reported has been Submitted" << endl;
-
+}
+QString User::validatePostContent(const string& content) {
+	if (content.empty())
+		return "Post content cannot be empty.";
+	for (char c : content) {
+		if (c == '|')
+			return "Post content cannot contain '|'.";
 	}
-
+	return "";
 }
-
-void User::updatePassword() {
-	string updatepassword;
-	cout << "Enter New Password" << endl;
-	cin >> updatepassword;
-	validatePassWord(updatepassword);
-	cout << "Password Changed Successfully" << endl;
-	this->password = updatepassword;
+bool User::updatePassword(const string& newPassword, QString& errorOut) {
+	errorOut = validatePassword(newPassword);
+	if (!errorOut.isEmpty()) return false;
+	password = newPassword;
 	saveToFile();
+	return true;
 }
-void User::updateBio() {
-	string updateBio;
-	cout << "Enter New Bio for Your Profile: ";
-	cin.ignore();
-	getline(cin, updateBio);
-	validateBio(updateBio);
-	this->bio = updateBio;
+bool User::updateBio(const string& newBio, QString& errorOut) {
+	errorOut = validateBio(newBio);
+	if (!errorOut.isEmpty()) return false;
+	bio = newBio;
 	saveToFile();
-	cout << "Bio Updated Successfully" << endl;
+	return true;
 }
 void User::displayProfile() {
 	cout << "---------------------------" << endl;
@@ -202,14 +227,16 @@ void User::saveToFile() {
 		file << "username|" << this->username << "\n";
 		file << "password|" << this->password << "\n";
 		file << "bio|" << this->bio << "\n";
+		file << "isBanned|" << (this->isBanned ? 1 : 0) << "\n";
+		file << "isReported|" << (this->isReported ? 1 : 0) << "\n";
 		file << "isReportedCount|" << this->isReportedCount << "\n";
 		file << "notificationCount|" << this->notificationCount << "\n";
 		file << "followingCount|" << this->followingCount << "\n";
 		file << "followersCount|" << this->followersCount << "\n";
 		file << "postCount|" << this->postCount << "\n";
+		file << "savedPostCount|" << this->savedPostCount << "\n";
 		file.close();
 		cout << "Profile saved successfully" << endl;
-
 	}
 	else {
 		cout << "File is not opening cant save profile at the moment" << path << endl;
@@ -226,57 +253,49 @@ void User::loadFromFile(string username) {
 	string path = "data/Users/" + username + ".txt";
 	ifstream file(path, ios::in);
 	if (!file.is_open()) {
-		cout << "User not found" << endl;
+		cout << "User not found: " << username << endl;
 		return;
 	}
 
 	string line;
 	while (getline(file, line)) {
-		int separatorIndex = 0;
-		while (line[separatorIndex] != '|') {  // get separater index 
-			separatorIndex++;
-		}
-		string key = "";
-		for (int i = 0; i < separatorIndex; i++) {  // extracting key 
-			key += line[i];
-		}
-		string value = "";
-		int k = 0;
-		for (int j = separatorIndex + 1; line[j] != '\0'; j++) {  // extracting Value
-			value += line[j];
-			k++;
-		}
+		// Skip blank lines and lines with no separator (CRLF artifacts etc.)
+		size_t sep = line.find('|');
+		if (sep == string::npos || sep == 0) continue;
 
+		string key = line.substr(0, sep);
+		string value = line.substr(sep + 1);
 
-		if (key == "username")
-			this->username = value;
-		else if (key == "password")
-			this->password = value;
-		else if (key == "bio")
-			this->bio = value;
-		else if (key == "isReportedCount")
-			this->isReportedCount = stoi(value);
-		else if (key == "notificationCount")
-			this->notificationCount = stoi(value);
-		else if (key == "followingCount")
-			this->followingCount = stoi(value);
-		else if (key == "followersCount")
-			this->followersCount = stoi(value);
-		else if (key == "postCount")
-			this->postCount = stoi(value);
+		if (key == "username")          this->username = value;
+		else if (key == "password")          this->password = value;
+		else if (key == "bio")               this->bio = value;
+		else if (key == "isBanned")          this->isBanned = (value == "1");
+		else if (key == "isReported")        this->isReported = (value == "1");
+		else if (key == "isReportedCount")   this->isReportedCount = stoi(value);
+		else if (key == "notificationCount") this->notificationCount = stoi(value);
+		else if (key == "followingCount")    this->followingCount = stoi(value);
+		else if (key == "followersCount")    this->followersCount = stoi(value);
+		else if (key == "postCount")         this->postCount = stoi(value);
+		else if (key == "savedPostCount")    this->savedPostCount = stoi(value);
 	}
 	file.close();
 }
 void loadAllUsers(User** allUsers, int& userCount) {
-
 	ifstream userList("data/users_list.txt");
 	if (!userList.is_open()) {
-		cout << "No Record Found" << endl;
+		cout << "No users found." << endl;
 		return;
 	}
+
 	int index = 0;
 	string username;
 	while (getline(userList, username)) {
+		// Strip Windows-style \r if present
+		if (!username.empty() && username.back() == '\r')
+			username.pop_back();
+
+		if (username.empty()) continue;  // skip blank lines
+
 		allUsers[index] = new User();
 		allUsers[index]->loadFromFile(username);
 		index++;
@@ -328,21 +347,22 @@ bool User::login(string  password) {
 	}
 
 }
-string User::getUsername() {
+string User::getUsername() const {
 	return this->username;
 }
 User* findAndLogin(User**& allUsers, int userCount, string username, string password) {
 	for (int i = 0; i < userCount; i++) {
 		if (allUsers[i]->getUsername() == username) {
+			if (allUsers[i]->getIsBanned()) return nullptr;  
 			if (allUsers[i]->login(password)) {
 				return allUsers[i];
 			}
 			else {
-				return nullptr; 
+				return nullptr;
 			}
 		}
 	}
-	return nullptr; 
+	return nullptr;
 }
 void User::followUser(User* target, User** allUsers, int userCount) {
 
@@ -369,7 +389,20 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 		file << target->getUsername() << "\n";
 		file.close();
 	}
+	QDir().mkpath("data/Notifications");
+	string notifPath = "data/Notifications/" + target->getUsername() + "_notif.txt";
+	ofstream notifFile(notifPath, ios::app);
+	if (notifFile.is_open()) {
+		QDateTime now = QDateTime::currentDateTime();
+		notifFile << "follow|"
+			<< this->username << " followed you|"
+			<< now.toString("yyyy-MM-dd HH:mm:ss").toStdString() << "|0\n";
+		notifFile.close();
+		qDebug() << "Follow notification created for" << target->getUsername().c_str();
+	}
 	saveToFile();
+	
+
 }
 bool User::isFollowing(string usernamee) {
 	if (following == nullptr || followingCount == 0) return false;
@@ -457,7 +490,7 @@ void User::removeFollower(User* ptr) {
 		string path = "data/Following/" + this->username + "_followers.txt";
 		ofstream file(path, ios::out);
 		file.close();
-		saveToFile();
+		saveToFile();   // ← already here, correct
 	}
 	else {
 		User** newFollowers = new User * [followersCount - 1];
@@ -470,7 +503,7 @@ void User::removeFollower(User* ptr) {
 		}
 		delete[] followers;
 		followers = newFollowers;
-		newFollowers = NULL;
+		newFollowers = nullptr;
 		followersCount--;
 		string path = "data/Following/" + this->username + "_followers.txt";
 		ofstream file(path, ios::out);
@@ -480,11 +513,14 @@ void User::removeFollower(User* ptr) {
 			}
 			file.close();
 		}
+		saveToFile();   // ← ADD THIS — was missing, count never persisted
 	}
 }
 void User::loadFollowing(User** allUsers, int userCount) {
+
+	delete[] following;
+	following = nullptr;
 	if (followingCount == 0) {
-		following = nullptr;
 		return;
 	}
 
@@ -501,6 +537,8 @@ void User::loadFollowing(User** allUsers, int userCount) {
 
 	string line;
 	while (getline(file, line)) {
+		if (!line.empty() && line.back() == '\r') line.pop_back();
+		if (line.empty()) continue;
 		for (int i = 0; i < userCount; i++) {
 			if ((*(allUsers + i))->getUsername() == line) {
 				*(following + loaded) = *(allUsers + i);
@@ -513,8 +551,9 @@ void User::loadFollowing(User** allUsers, int userCount) {
 	followingCount = loaded;
 }
 void User::loadFollowers(User** allusers, int userCount) {
+	delete[] followers;
+	followers = nullptr;
 	if (followersCount == 0) {
-		followers = nullptr;
 		return;
 	}
 
@@ -531,6 +570,8 @@ void User::loadFollowers(User** allusers, int userCount) {
 
 	string line;
 	while (getline(file, line)) {
+		if (!line.empty() && line.back() == '\r') line.pop_back();
+		if (line.empty()) continue;
 		for (int i = 0; i < userCount; i++) {
 			if ((*(allusers + i))->getUsername() == line) {
 				*(followers + loaded) = *(allusers + i);
@@ -541,34 +582,6 @@ void User::loadFollowers(User** allusers, int userCount) {
 	}
 	file.close();
 	followersCount = loaded;
-}
-void User::deleteAccount(User**& allUsers, int& userCount) {
-
-	for (int i = 0; i < followersCount; i++) {
-		(*(followers + i))->unfollowUser(this->username);   // remove myself from following of my followers
-	}
-	for (int i = 0; i < followingCount; i++) {    //removing myself from followers of them
-		(*(following + i))->removeFollower(this);
-	}
-	string followingPath = "data/Following/" + this->username + "_following.txt";
-	string followersPath = "data/Following/" + this->username + "_followers.txt";
-	remove(followingPath.c_str());
-	remove(followersPath.c_str());
-	string userPath = "data/Users/" + this->username + ".txt";
-	remove(userPath.c_str());
-	removeFromUser_List(this->username);
-	User** newArray = new User * [userCount - 1];
-	int index = 0;
-	for (int i = 0; i < userCount; i++) {
-		if ((*(allUsers + i))->getUsername() != this->username) {
-			*(newArray + index) = *(allUsers + i);
-			index++;
-		}
-	}
-	delete[] allUsers;
-	allUsers = newArray;
-	userCount--;
-	cout << username << " account deleted successfully." << endl;
 }
 void User::addToReviewList() {
 	ofstream file("data/users_to_review.txt", ios::app);
@@ -608,11 +621,18 @@ void User::displayAllPosts() {
 	}
 }
 void User::loadAllPosts() {
+	
+	if (posts != nullptr) {
+		for (int i = 0; i < postCount; i++) {
+			delete posts[i];
+		}
+		delete[] posts;
+	}
+	posts = nullptr;
+	postCount = 0;
 	string listPath = "data/Posts/" + this->username + "/posts_list.txt";
 	ifstream listFile(listPath);
 	if (!listFile.is_open()) {
-		posts = nullptr;
-		postCount = 0;
 		return;
 	}
 	int count = 0;
@@ -642,10 +662,10 @@ void User::loadAllPosts() {
 	listFile2.close();
 }
 Posts* User::getPostById(string postId) {
+	if (posts == nullptr) return nullptr;
 	for (int i = 0; i < postCount; i++) {
-		if (posts[i]->getPostId() == postId) {
-			return posts[i];
-		}
+		if (!posts[i]) continue;
+		if (posts[i]->getPostId() == postId) return posts[i];
 	}
 	return nullptr;
 }
@@ -653,18 +673,216 @@ bool User::getIsReported()const {
 	return this->isReported;
 }
 User::~User() {
-	for (int i = 0; i < postCount; i++) {
-		delete posts[i];
-	}
+	for (int i = 0; i < postCount; i++) delete posts[i];
 	delete[] posts;
 	delete[] following;
 	delete[] followers;
+	delete[] savedPosts;
+	delete[] notifications;   
 }
-string User::getBio() {
+void User::deleteAccount(User**& allUsers, int& userCount) {
+
+	string uname = this->username;
+
+	// Load our own arrays first
+	loadFollowers(allUsers, userCount);
+	loadFollowing(allUsers, userCount);
+
+	
+	for (int i = 0; i < followersCount; i++) {
+		if (!followers[i]) continue;
+		followers[i]->loadFollowing(allUsers, userCount);
+
+		User* follower = followers[i];
+		if (!follower->isFollowing(uname)) continue;
+
+		if (follower->followingCount == 1) {
+			delete[] follower->following;
+			follower->following = nullptr;
+			follower->followingCount = 0;
+		}
+		else {
+			User** newF = new User * [follower->followingCount - 1];
+			int idx = 0;
+			for (int j = 0; j < follower->followingCount; j++) {
+				if (follower->following[j]->getUsername() != uname)
+					newF[idx++] = follower->following[j];
+			}
+			delete[] follower->following;
+			follower->following = newF;
+			follower->followingCount--;
+		}
+
+		// Rewrite their _following.txt
+		string fPath = "data/Following/" + follower->getUsername() + "_following.txt";
+		ofstream fFile(fPath, ios::out);
+		if (fFile.is_open()) {
+			for (int j = 0; j < follower->followingCount; j++)
+				fFile << follower->following[j]->getUsername() << "\n";
+			fFile.close();
+		}
+		follower->saveToFile();  // persists updated followingCount
+	}
+
+	// For each person I follow — remove me from their followers
+	for (int i = 0; i < followingCount; i++) {
+		if (!following[i]) continue;
+		following[i]->loadFollowers(allUsers, userCount);
+
+		User* followedUser = following[i];
+
+		if (followedUser->followersCount == 1) {
+			delete[] followedUser->followers;
+			followedUser->followers = nullptr;
+			followedUser->followersCount = 0;
+		}
+		else {
+			User** newF = new User * [followedUser->followersCount - 1];
+			int idx = 0;
+			for (int j = 0; j < followedUser->followersCount; j++) {
+				if (followedUser->followers[j]->getUsername() != uname)
+					newF[idx++] = followedUser->followers[j];
+			}
+			delete[] followedUser->followers;
+			followedUser->followers = newF;
+			followedUser->followersCount--;
+		}
+
+		// Rewrite their _followers.txt
+		string fPath = "data/Following/" + followedUser->getUsername() + "_followers.txt";
+		ofstream fFile(fPath, ios::out);
+		if (fFile.is_open()) {
+			for (int j = 0; j < followedUser->followersCount; j++)
+				fFile << followedUser->followers[j]->getUsername() << "\n";
+			fFile.close();
+		}
+		followedUser->saveToFile();  // persists updated followersCount
+	}
+
+	// ── 2. Delete this user's posts + comment files from disk ─────────────
+	loadAllPosts();
+	for (int i = 0; i < postCount; i++) {
+		if (!posts[i]) continue;
+		string postId = posts[i]->getPostId();
+		QFile::remove(QString::fromStdString(
+			"data/Posts/" + uname + "/" + postId + ".txt"));
+		QFile::remove(QString::fromStdString(
+			"data/Posts/" + uname + "/" + postId + "_comments.txt"));
+	}
+
+	// ── 3. Delete liked file ───────────────────────────────────────────────
+	QFile::remove(QString::fromStdString(
+		"data/Posts/" + uname + "/" + uname + "_liked.txt"));
+
+	// ── 4. Delete posts_list.txt and saved_posts.txt ──────────────────────
+	QFile::remove(QString::fromStdString(
+		"data/Posts/" + uname + "/posts_list.txt"));
+	QFile::remove(QString::fromStdString(
+		"data/Posts/" + uname + "/saved_posts.txt"));
+
+	// ── 5. Remove entire Posts/username/ folder ───────────────────────────
+	QDir(QString::fromStdString("data/Posts/" + uname)).removeRecursively();
+
+	// ── 6. Remove comments this user left on other people's posts ─────────
+	for (int u = 0; u < userCount; u++) {
+		if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
+		allUsers[u]->loadAllPosts();
+		for (int p = 0; p < allUsers[u]->getPostCount(); p++) {
+			Posts* post = allUsers[u]->getPostByIndex(p);
+			if (!post || !post->isValid()) continue;
+			QList<Comment> comments = post->getComments();
+			for (int c = comments.size() - 1; c >= 0; c--) {
+				if (comments[c].getCreatorUsername().toStdString() == uname)
+					post->deleteCommentAsAdmin(c);
+			}
+		}
+	}
+
+	// ── 7. Remove this user's posts from other users' saved_posts.txt ─────
+	for (int u = 0; u < userCount; u++) {
+		if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
+		QString savedPath = QString::fromStdString(
+			"data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt");
+		QFile f(savedPath);
+		QStringList remaining;
+		if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			QTextStream in(&f);
+			while (!in.atEnd()) {
+				QString line = in.readLine().trimmed();
+				if (!line.isEmpty() &&
+					!line.endsWith("|" + QString::fromStdString(uname)))
+					remaining << line;
+			}
+			f.close();
+		}
+		if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			QTextStream out(&f);
+			for (const QString& l : remaining) out << l << "\n";
+			f.close();
+		}
+	}
+
+	// ── 8. Delete following/followers files ───────────────────────────────
+	QFile::remove(QString::fromStdString(
+		"data/Following/" + uname + "_following.txt"));
+	QFile::remove(QString::fromStdString(
+		"data/Following/" + uname + "_followers.txt"));
+
+	// ── 9. Delete notifications file ──────────────────────────────────────
+	QFile::remove(QString::fromStdString(
+		"data/Notifications/" + uname + "_notif.txt"));
+
+	// ── 10. Delete messages ────────────────────────────────────────────────
+	QDir msgDir("data/Messages");
+	QString quname = QString::fromStdString(uname);
+	QStringList msgFiles = msgDir.entryList(QStringList() << "*.txt", QDir::Files);
+	for (const QString& fname : msgFiles) {
+		if (fname.contains(quname))
+			QFile::remove("data/Messages/" + fname);
+	}
+	for (int u = 0; u < userCount; u++) {
+		if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
+		QString peer = QString::fromStdString(allUsers[u]->getUsername());
+		QString indexPath = "data/Messages/" + peer + "_index.txt";
+		QFile f(indexPath);
+		QStringList remaining;
+		if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			QTextStream in(&f);
+			while (!in.atEnd()) {
+				QString l = in.readLine().trimmed();
+				if (!l.isEmpty() && l != quname) remaining << l;
+			}
+			f.close();
+		}
+		if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			QTextStream out(&f);
+			for (const QString& l : remaining) out << l << "\n";
+			f.close();
+		}
+	}
+
+	// ── 11. Delete user file and users_list.txt entry ─────────────────────
+	QFile::remove(QString::fromStdString("data/Users/" + uname + ".txt"));
+	removeFromUser_List(uname);
+
+	// ── 12. Remove from allUsers array ────────────────────────────────────
+	User** newArray = (userCount - 1 > 0) ? new User * [userCount - 1] : nullptr;
+	int idx = 0;
+	for (int i = 0; i < userCount; i++) {
+		if (allUsers[i] && allUsers[i]->getUsername() != uname)
+			newArray[idx++] = allUsers[i];
+	}
+	delete[] allUsers;
+	allUsers = newArray;
+	userCount--;
+
+	qDebug() << "Account fully deleted:" << QString::fromStdString(uname);
+}
+string User::getBio() const {
 	return this->bio;
 }
 
-string User::getPassword() {
+string User::getPassword() const {
 	return this->password;
 }
 
@@ -676,15 +894,15 @@ void User::setPassword(string password) {
 	this->password = password;
 }
 
-int User::getFollowingCount() {
+int User::getFollowingCount() const {
 	return this->followingCount;
 }
 
-int User::getFollowersCount() {
+int User::getFollowersCount()const {
 	return this->followersCount;
 }
 
-int User::getPostCount() {
+int User::getPostCount() const {
 	return this->postCount;
 }
 
@@ -693,43 +911,16 @@ Posts* User::getPostByIndex(int index) {
 		return nullptr;
 	return posts[index];
 }
-void User::editPost(string postId) {
+bool User::editPost(const string& postId, const string& newContent, QString& errorOut) {
+	errorOut = validatePostContent(newContent);
+	if (!errorOut.isEmpty()) return false;
+
 	Posts* p = getPostById(postId);
-	if (p == nullptr) {
-		qDebug() << "Post not found.";
-		return;
-	}
+	if (!p) { errorOut = "Post not found."; return false; }
 
-	qDebug() << "Current content:" << QString::fromStdString(p->getContent());
-
-	QString newContent;
-	bool isValid = false;
-	do {
-		isValid = true;
-		cout << "Enter new content (cannot contain '|'): ";
-		cin.ignore();
-		string temp;
-		getline(cin, temp);
-		newContent = QString::fromStdString(temp);
-
-		if (newContent.isEmpty()) {
-			qDebug() << "Content cannot be empty.";
-			isValid = false;
-		}
-		else {
-			for (QChar c : newContent) {
-				if (c == '|') {
-					qDebug() << "Content cannot contain '|'. Enter again.";
-					isValid = false;
-					break;
-				}
-			}
-		}
-	} while (!isValid);
-
-	p->setContent(newContent.toStdString());
+	p->setContent(newContent);
 	p->savePostToFile();
-	qDebug() << "Post edited successfully.";
+	return true;
 }
 
 void User::deletePost(string postId) {
@@ -766,6 +957,7 @@ void User::deletePost(string postId) {
 		out << updatedList;
 		listFile.close();
 	}
+	if (postCount == 0) return;
 	Posts** newPosts = new Posts * [postCount - 1];
 	int index = 0;
 	for (int i = 0; i < postCount; i++) {
@@ -783,38 +975,164 @@ void User::deletePost(string postId) {
 	qDebug() << "Post deleted successfully.";
 }
 
-void User::reportPost(string postId, User* postOwner) {
-	if (postOwner->getUsername() == this->username) {
-		qDebug() << "You cannot report your own post";
-		return;
-	}
+void User::reportUser() {
+	isReportedCount++;
 
-	Posts* p = postOwner->getPostById(postId);
-	if (p == nullptr) {
-		qDebug() << "Post not found.";
-		return;
-	}
+	if (isReportedCount >= 3 && !isReported) {
+		isReported = true;
 
-	p->reportPost();
-	qDebug() << "Post reported successfully";
-	if (p->getReportCount() >= 3) {
-		QString adminPath = "data/reported_posts.txt";
-		QFile file(adminPath);
-		if (file.open(QIODevice::Append | QIODevice::Text)) {
-			QTextStream out(&file);
-			out << QString::fromStdString(postOwner->getUsername())
-				<< "|" << QString::fromStdString(postId) << "\n";
-			file.close();
+		// Write admin notification
+		QDir().mkpath("data/Admin");
+		QString adminNotifPath = "data/Admin/admin_notifications.txt";
+		QFile notifFile(adminNotifPath);
+		if (notifFile.open(QIODevice::Append | QIODevice::Text)) {
+			QTextStream out(&notifFile);
+			QString ts = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+			out << ts << "|user_reported|User '@"
+				<< QString::fromStdString(username)
+				<< "' has reached 3 reports and is marked for review.|0\n";
+			notifFile.close();
+			qDebug() << "Admin notified about reported user:"
+				<< QString::fromStdString(username);
 		}
-		qDebug() << "Post has been sent to admin for review.";
 	}
+
+	saveToFile(); 
 }
 
-void User::savePost(string postId, User* postOwner) {
+
+void User::unsavePost(string postId) {
+	bool found = false;
+	if (savedPosts == nullptr || savedPostCount == 0) return;
 	for (int i = 0; i < savedPostCount; i++) {
+
 		if (savedPosts[i]->getPostId() == postId) {
-			qDebug() << "Post already saved";
-			return;
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		qDebug() << "Post not found in saved list.";
+		return;
+	}
+
+	Posts** newSaved = nullptr;
+	if (savedPostCount - 1 > 0) {
+		newSaved = new Posts * [savedPostCount - 1];
+		int index = 0;
+		for (int i = 0; i < savedPostCount; i++) {
+			if (savedPosts[i]->getPostId() != postId)
+				newSaved[index++] = savedPosts[i];
+		}
+	}
+	delete[] savedPosts;
+	savedPosts = newSaved;
+	savedPostCount--;
+
+	saveSavedPostsToFile();
+	saveToFile();
+	qDebug() << "Post removed from favourites.";
+}
+
+void User::displaySavedPosts() {
+	if (savedPostCount == 0 || savedPosts == nullptr) {
+		qDebug() << "No saved posts";
+		return;
+	}
+	for (int i = 0; i < savedPostCount; i++) savedPosts[i]->display();
+}
+void User::saveSavedPostsToFile() {
+	string path = "data/Posts/" + this->username + "/saved_posts.txt";
+	ofstream file(path);
+	if (!file.is_open()) {
+		cout << "Error: Cannot open saved posts file: " << path << endl;
+		return;
+	}
+	for (int i = 0; i < savedPostCount; i++) {
+		file << savedPosts[i]->getPostId() << "|" << savedPosts[i]->getCreatorUsername() << "\n";
+	}
+	file.close();
+}
+
+void User::loadSavedPosts(User** allUsers, int userCount) {
+	string path = "data/Posts/" + this->username + "/saved_posts.txt";
+	ifstream file(path);
+	if (!file.is_open()) {
+		savedPosts = nullptr;
+		savedPostCount = 0;
+		return;
+	}
+	int count = 0;
+	string line;
+	while (getline(file, line)) {
+		if (!line.empty()) {
+			count++;
+		}
+	}
+	file.close();
+
+	if (count == 0) {
+		savedPosts = nullptr;
+		savedPostCount = 0;
+		return;
+	}
+	savedPosts = new Posts * [count];
+	savedPostCount = 0;
+
+	ifstream file2(path);
+	while (getline(file2, line)) {
+		if (line.empty()) continue;
+
+
+		int sep = 0;
+		while (sep < (int)line.size() && line[sep] != '|') {
+			sep++;
+		}
+
+		string postId = line.substr(0, sep);
+		string ownerUsername = (sep + 1 < (int)line.size()) ? line.substr(sep + 1) : "";
+
+		if (postId.empty() || ownerUsername.empty()) {
+			continue;
+		}
+		for (int i = 0; i < userCount; i++) {
+			if (!allUsers[i]) continue;
+			if (allUsers[i]->getUsername() == ownerUsername) {
+				if(allUsers[i]->posts == nullptr && allUsers[i]->postCount > 0)
+					allUsers[i]->loadAllPosts();
+				Posts* p = allUsers[i]->getPostById(postId);
+				if (p != nullptr) {
+					savedPosts[savedPostCount++] = p;
+				}
+				break;
+			}
+		}
+	}
+	file2.close();
+}
+string User::getCreatorUsername() const {
+	return this->username;
+}
+void User::setBan(bool banned) {
+	this->isBanned = banned;
+	saveToFile();
+}
+bool   User::getIsBanned()   const {
+	return isBanned;
+}
+void User::savePost(string postId, User* postOwner) {
+	if (postOwner->getUsername() == this->username) {
+		qDebug() << "You cannot save your own post.";
+		return;
+	}
+
+	// Check if already saved
+	if (savedPosts != nullptr) {
+		for (int i = 0; i < savedPostCount; i++) {
+			if (savedPosts[i] && savedPosts[i]->getPostId() == postId) {
+				qDebug() << "Post already saved.";
+				return;
+			}
 		}
 	}
 
@@ -825,119 +1143,24 @@ void User::savePost(string postId, User* postOwner) {
 	}
 
 	Posts** newSaved = new Posts * [savedPostCount + 1];
-	for (int i = 0; i < savedPostCount; i++) {
+	for (int i = 0; i < savedPostCount; i++)
 		newSaved[i] = savedPosts[i];
-	}
+
 	newSaved[savedPostCount] = p;
 	delete[] savedPosts;
 	savedPosts = newSaved;
 	savedPostCount++;
 
 	saveSavedPostsToFile();
-	qDebug() << "Post saved to favourites";
+	saveToFile();
+	qDebug() << "Post saved to favourites.";
+}
+int User::getSavedPostCount() const {
+	return this->savedPostCount;
 }
 
-void User::unsavePost(string postId) {
-	bool found = false;
-	for (int i = 0; i < savedPostCount; i++) {
-		if (savedPosts[i]->getPostId() == postId) {
-			found = true;
-			break;
-		}
-	}
-	if (!found) {
-		qDebug() << "Post not in saved list";
-		return;
-	}
-
-	Posts** newSaved = new Posts * [savedPostCount - 1];
-	int index = 0;
-	for (int i = 0; i < savedPostCount; i++) {
-		if (savedPosts[i]->getPostId() != postId) {
-			newSaved[index++] = savedPosts[i];
-		}
-	}
-	delete[] savedPosts;
-	savedPosts = newSaved;
-	savedPostCount--;
-
-	saveSavedPostsToFile();
-	qDebug() << "Post removed from favourites.";
-}
-
-void User::displaySavedPosts() {
-	if (savedPostCount == 0 || savedPosts == nullptr) {
-		qDebug() << "No saved posts";
-		return;
-	}
-	for (int i = 0; i < savedPostCount; i++) {
-		savedPosts[i]->display();
-	}
-}
-
-void User::saveSavedPostsToFile() {
-	QString path = QString::fromStdString("data/SavedPosts/" + this->username + "_saved.txt");
-	QFile file(path);
-	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		QTextStream out(&file);
-		for (int i = 0; i < savedPostCount; i++) {
-			out << QString::fromStdString(savedPosts[i]->getPostId())
-				<< "|" << QString::fromStdString(savedPosts[i]->getCreatorUsername())
-				<< "\n";
-		}
-		file.close();
-	}
-}
-
-void User::loadSavedPosts(User** allUsers, int userCount) {
-	QString path = QString::fromStdString("data/SavedPosts/" + this->username + "_saved.txt");
-	QFile file(path);
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		savedPosts = nullptr;
-		savedPostCount = 0;
-		return;
-	}
-	QTextStream in(&file);
-	int count = 0;
-	while (!in.atEnd()) {
-		QString line = in.readLine();
-		if (!line.isEmpty()) count++;
-	}
-	file.close();
-
-	if (count == 0) {
-		savedPosts = nullptr;
-		savedPostCount = 0;
-		return;
-	}
-
-	savedPosts = new Posts * [count];
-	savedPostCount = 0;
-
-	if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		QTextStream in2(&file);
-		while (!in2.atEnd()) {
-			QString line = in2.readLine();
-			if (line.isEmpty()) continue;
-
-			QStringList parts = line.split("|");
-			if (parts.size() != 2) continue;
-
-			string postId = parts[0].toStdString();
-			string ownerUsername = parts[1].toStdString();
-			for (int i = 0; i < userCount; i++) {
-				if (allUsers[i]->getUsername() == ownerUsername) {
-					Posts* p = allUsers[i]->getPostById(postId);
-					if (p != nullptr) {
-						savedPosts[savedPostCount++] = p;
-					}
-					break;
-				}
-			}
-		}
-		file.close();
-	}
-}
-string User::getCreatorUsername() const {
-	return this->username;
+Posts* User::getSavedPostByIndex(int index) {
+	if (index < 0 || index >= savedPostCount || savedPosts == nullptr)
+		return nullptr;
+	return savedPosts[index];
 }

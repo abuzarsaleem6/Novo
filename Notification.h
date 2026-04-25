@@ -2,8 +2,10 @@
 #define NOTIFICATION_H
 
 #include <iostream>
-#include <string>
 #include <fstream>
+#include <string>
+#include <QDir>
+#include <QDebug>
 using namespace std;
 class Notification {
 private:

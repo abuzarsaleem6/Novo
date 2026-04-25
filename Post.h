@@ -1,12 +1,13 @@
 #pragma once
 #include <QString>
 #include <QList>
+#include <ctime>
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
 #include <string>
 #include <iostream>
-#include "Comment.h" 
+#include "Comment.h"
 
 using namespace std;
 
@@ -19,7 +20,7 @@ private:
     bool isReported;
     int reportCount;
     int likeCount;
-    //Comment* comments;
+    QList<QString> likedByUsers;
     QList<Comment> commentList;
     int commentsCount;
 
@@ -27,6 +28,7 @@ public:
     Posts();
     Posts(string authorUsername, string content);
     ~Posts();
+    string getTimeOfCreation() const;
     void inputContent(string& content);
     string generatePostId();
     void savePostToFile();
@@ -39,13 +41,17 @@ public:
     QList<Comment> getComments() const;
     void saveCommentsToFile() const;
     void loadCommentsFromFile();
-    void likePost();
-    void unlikePost();
+    void likePost(const string& likerUsername);
+    void unlikePost(const string& likerUsername);
     string getContent() const;
     void setContent(const string& newContent);
     int getLikeCount() const;
     int getReportCount() const;
      void reportPost();
+     void deleteCommentAsAdmin(int index);
+     int getCommentsCount() const;
+     bool isValid() const;
+     void setTimeOfCreation(const string& time);
      bool getIsReported() const;
       string getCreatorUsername() const;
 };

@@ -1,7 +1,11 @@
 #pragma once
-#include<iostream>
-#include<fstream>
-#include<string>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <QString>      
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
 using namespace std;
 class Posts;
 class Notification;
@@ -13,8 +17,9 @@ private:
 	string bio;
 	bool isLoggedIn;
 	bool isReported;
+	bool isBanned;
 	int isReportedCount;
-	Notification* notifications;
+	Notification** notifications;
 	int notificationCount;
 	User** following;
 	int  followingCount;
@@ -24,26 +29,28 @@ private:
 	Posts** savedPosts;
 	int savedPostCount;
 	int postCount;
+
 public:
 	User();
 	User(string username, string password, string bio);
-	void InputUserName(string& username);
-	void InputPassWord(string& password);
-	void validateUsername(string& username);
-	void validatePassWord(string& password);
-	void InputBio(string& bio);
-	void validateBio(string& bio);
+	User(const User& o);
+	User& operator=(const User& o);
+	static QString validateUsername(const string& username);
+	static QString validatePassword(const string& password);
+	
+	static QString validateBio(const string& bio);
 	void logOut();
 	void reportUser();
-	void updatePassword();
-	void updateBio();
+	bool updatePassword(const string& newPassword, QString& errorOut);
+	bool updateBio(const string& newBio, QString& errorOut);
+	static QString validatePostContent(const string& content);
 	void displayProfile();
 	void saveToFile();
 	void addToUserList();
 	void loadFromFile(string username);
 	bool login(string  password);
 	void removeFromUser_List(string username);
-	string getUsername();
+	string getUsername() const;
 	void followUser(User* target, User** allUsers, int userCount);
 	bool isFollowing(string username);
 	void addFollower(User* ptr);
@@ -58,15 +65,15 @@ public:
 	void displayAllPosts();
 	Posts* getPostById(string postId);
 	bool getIsReported()const;
-	string getBio();
-	string getPassword(); 
+	string getBio() const;
+	string getPassword() const;
 	void setBio(string bio);
 	void setPassword(string password);
-	int getFollowingCount();
-	int getFollowersCount();
-	int getPostCount();
+	int getFollowingCount() const;
+	int getFollowersCount() const;
+	int getPostCount() const;
 	Posts* getPostByIndex(int index);
-	void editPost(string postId);
+	bool editPost(const string& postId, const string& newContent, QString& errorOut);
 	void deletePost(string postId);
 	void reportPost(string postId, User* postOwner);
 	void savePost(string postId, User* postOwner);
@@ -75,6 +82,10 @@ public:
 	void loadSavedPosts(User** allUsers, int userCount);
 	void saveSavedPostsToFile();
 	string getCreatorUsername() const;
+	bool   getIsBanned()const;
+	void setBan(bool banned);
+	int getSavedPostCount() const;
+	Posts* getSavedPostByIndex(int index);
 	~User();
 };
 void loadAllUsers(User** allUsers, int& userCount);
