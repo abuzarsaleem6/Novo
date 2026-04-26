@@ -1,446 +1,527 @@
+// Admin.cpp
+#define _CRT_SECURE_NO_WARNINGS
+#include "Admin.h"
+#include <QDateTime>
+#include <fstream>
 
-#include <QDir>
-#include"Admin.h"
-#include "Notification.h"
-Admin* authenticateAdmin(const QString& username, const QString& password) {
-	QFile file("data/Admin/admin_credentials.txt");
+using namespace std;
 
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		qDebug() << "Admin credentials file not found";
-		return nullptr;
-	}
+// ══════════════════════════════════════════════════════════════════════════════
+//  CONSTRUCTORS & DESTRUCTORS
+// ══════════════════════════════════════════════════════════════════════════════
 
-	QTextStream in(&file);
-	while (!in.atEnd()) {
-		QString line = in.readLine().trimmed();
-		if (line.isEmpty()) continue;
-
-		QStringList parts = line.split("|");
-		if (parts.size() < 2) continue;
-
-		QString fileUsername = parts[0];
-		QString filePassword = parts[1];
-
-		if (username == fileUsername && password == filePassword) {
-			file.close();
-
-			// Create and load admin
-			Admin* admin = new Admin(username, password,parts.size() > 2 ? parts[2] : "Admin");
-			admin->loadAdminFromFile();
-			return admin;
-		}
-	}
-
-	file.close();
-	return nullptr;
-}
 Admin::Admin() : User() {
-	
-	reportedUserCount = 0;
-	reportedPostCount = 0;
+    adminLevel = "Super Admin";
+    reportedUserCount = 0;
+    reportedPostCount = 0;
+    qDebug() << "Admin created (default)";
 }
 
-Admin::Admin(QString username, QString password, QString bio) : User(username.toStdString(), password.toStdString(), bio.toStdString()) {
-	
-	reportedUserCount = 0;
-	reportedPostCount = 0;
+Admin::Admin(QString username, QString password, QString bio)
+    : User(username.toStdString(), password.toStdString(), bio.toStdString()) {
+    adminLevel = "Super Admin";
+    reportedUserCount = 0;
+    reportedPostCount = 0;
+    qDebug() << "Admin created:" << username;
 }
 
-void Admin::deleteUser(User**& allUsers, int& userCount, QString username) {
-	for (int i = 0; i < userCount; i++) {
-		if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
-			allUsers[i]->deleteAccount(allUsers, userCount);
-			qDebug() << "User" << username << "deleted by admin ";
-			return;
-		}
-	}
-	qDebug() << "User not found ";
-}
-
-
-void Admin::deletePost(User** allUsers, int userCount, QString postId) {
-	for (int i = 0; i < userCount; i++) {
-		Posts* post = allUsers[i]->getPostById(postId.toStdString());
-		if (post != nullptr) {
-			allUsers[i]->deletePost(postId.toStdString());
-			qDebug() << "Post" << postId << "deleted by admin.";
-			return;
-		}
-	}
-	qDebug() << "Post not found for deletion.";
-}
-void Admin::deleteComment(Posts* post, int commentIndex) {
-	if (!post) return;
-	QList<Comment> comments = post->getComments();
-	if (commentIndex < 0 || commentIndex >= comments.size()) {
-		qDebug() << "Invalid comment index.";
-		return;
-	}
-	// Admin bypasses ownership check
-	post->deleteCommentAsAdmin(commentIndex);
-}
-
-void Admin::reviewReports(User**& allUsers, int& userCount) {
-	qDebug() << "Reviewing reported users and posts...";
-	for (int i = 0; i < reportedUsers.size(); i++) {
-		User* user = reportedUsers[i];
-		qDebug() << "User: " << QString::fromStdString(user->getUsername()) << " has been reported " << reportedUsers.count(user) << " times.";
-	}
-	for (int i = 0; i < reportedPosts.size(); i++) {
-		Posts* post = reportedPosts[i];
-		qDebug() << "Post: " << QString::fromStdString(post->getPostId()) << " has been reported " << reportedPosts.count(post) << " times.";
-	}
-}
-
-
-Admin::~Admin() {
-	reportedUsers.clear();
-	reportedPosts.clear();
-	
-	adminNotifications.clear();
-}
-
-void Admin::displayAdminDashboard() {
-	qDebug() << "Admin Dashboard";
-	qDebug() << "Username: " << QString::fromStdString(getUsername());
-	qDebug() << "Reported Users: " << reportedUserCount;
-	qDebug() << "Reported Posts: " << reportedPostCount;
-}
-
-void Admin::displayReportedUsers() {
-	qDebug() << "Reported Users:" << Qt::endl;
-	for (int i = 0; i < reportedUsers.size(); i++) {
-		User* user = reportedUsers[i];
-		qDebug() << "Username: " << QString::fromStdString(user->getUsername()) << " | Report Count: " << reportedUsers.count(user) << Qt::endl;
-	}
-}
-
-void Admin::displayReportedPosts() {
-	qDebug() << "Reported Posts:" << Qt::endl;
-	for (int i = 0; i < reportedPosts.size(); i++) {
-		Posts* post = reportedPosts[i];
-		qDebug() << "Post ID: " << QString::fromStdString(post->getPostId()) << " | Report Count: " << reportedPosts.count(post) << Qt::endl;
-	}
-}
-
-void Admin::receiveReport(User* user) {
-	reportedUsers.append(user);
-	reportedUserCount++;
-	addNotification("New report received for user: " + QString::fromStdString(user->getUsername()));
-	saveReportsToFile();
-	saveAdminToFile();
-}
-void Admin::receivePostReport(Posts* post) {
-	reportedPosts.append(post);
-	reportedPostCount++;
-	addNotification("New report received for post: " +
-		QString::fromStdString(post->getPostId()));
-	saveReportsToFile();
-	saveAdminToFile();
-}
 Admin::Admin(const Admin& other) : User(other) {
-	
-	reportedUsers = other.reportedUsers;
-	reportedPosts = other.reportedPosts;
-	reportedUserCount = other.reportedUserCount;
-	reportedPostCount = other.reportedPostCount;
+    adminLevel = other.adminLevel;
+    reportedUsers = other.reportedUsers;
+    reportedPosts = other.reportedPosts;
+    reportedUserCount = other.reportedUserCount;
+    reportedPostCount = other.reportedPostCount;
+    adminNotifications = other.adminNotifications;
+    processedUserReports = other.processedUserReports;
+    processedPostReports = other.processedPostReports;
 }
 
 Admin& Admin::operator=(const Admin& other) {
-	if (this != &other) {
-		User::operator=(other);
-		
-		reportedUsers = other.reportedUsers;
-		reportedPosts = other.reportedPosts;
-		reportedUserCount = other.reportedUserCount;
-		reportedPostCount = other.reportedPostCount;
-	}
-	return *this;
+    if (this != &other) {
+        User::operator=(other);
+        adminLevel = other.adminLevel;
+        reportedUsers = other.reportedUsers;
+        reportedPosts = other.reportedPosts;
+        reportedUserCount = other.reportedUserCount;
+        reportedPostCount = other.reportedPostCount;
+        adminNotifications = other.adminNotifications;
+        processedUserReports = other.processedUserReports;
+        processedPostReports = other.processedPostReports;
+    }
+    return *this;
+}
+
+Admin::~Admin() {
+    reportedUsers.clear();
+    reportedPosts.clear();
+    adminNotifications.clear();
+    qDebug() << "Admin destroyed";
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  REPORT MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+void Admin::receiveUserReport(User* user) {
+    if (!user) return;
+
+    reportedUsers.append(user);
+    reportedUserCount++;
+
+    QString username = QString::fromStdString(user->getUsername());
+    addNotification("🚨 New report received for user: @" + username);
+
+    qDebug() << "User report received:" << username << "Total reports:" << reportedUserCount;
+
+    saveReportsToFile();
+    checkReportThresholds(user, username);
+}
+
+void Admin::receivePostReport(Posts* post) {
+    if (!post) return;
+
+    reportedPosts.append(post);
+    reportedPostCount++;
+
+    QString postId = QString::fromStdString(post->getPostId());
+    QString creatorUsername = QString::fromStdString(post->getCreatorUsername());
+    addNotification("🚨 New report received for post: " + postId + " by @" + creatorUsername);
+
+    qDebug() << "Post report received:" << postId << "Total reports:" << reportedPostCount;
+
+    saveReportsToFile();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ACTION METHODS - DELETE/BAN USERS AND POSTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+void Admin::deleteUser(User**& allUsers, int& userCount, const QString& username) {
+    qDebug() << "Admin: Deleting user" << username;
+
+    for (int i = 0; i < userCount; i++) {
+        if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
+            allUsers[i]->deleteAccount(allUsers, userCount);
+            addNotification("✓ User deleted: @" + username);
+            qDebug() << "User deleted successfully:" << username;
+            return;
+        }
+    }
+
+    qDebug() << "ERROR: User not found for deletion:" << username;
+}
+
+void Admin::deletePost(User** allUsers, int userCount, const QString& postId) {
+    qDebug() << "Admin: Deleting post" << postId;
+
+    for (int i = 0; i < userCount; i++) {
+        if (!allUsers[i]) continue;
+
+        Posts* post = allUsers[i]->getPostById(postId.toStdString());
+        if (post != nullptr) {
+            allUsers[i]->deletePost(postId.toStdString());
+            addNotification("✓ Post deleted: " + postId);
+            qDebug() << "Post deleted successfully:" << postId;
+            return;
+        }
+    }
+
+    qDebug() << "ERROR: Post not found for deletion:" << postId;
+}
+
+void Admin::deleteComment(Posts* post, int commentIndex) {
+    if (!post) return;
+
+    QList<Comment> comments = post->getComments();
+    if (commentIndex < 0 || commentIndex >= comments.size()) {
+        qDebug() << "ERROR: Invalid comment index:" << commentIndex;
+        return;
+    }
+
+    post->deleteCommentAsAdmin(commentIndex);
+    addNotification("✓ Comment deleted at index " + QString::number(commentIndex));
+    qDebug() << "Comment deleted by admin at index:" << commentIndex;
 }
 
 void Admin::banUser(User* user) {
-	if (user) {
-		user->setBan(true);
-		addNotification("User banned: " +
-			QString::fromStdString(user->getUsername()));
-	}
+    if (!user) return;
+
+    user->setBan(true);
+    QString username = QString::fromStdString(user->getUsername());
+    addNotification("🚫 User banned: @" + username);
+    qDebug() << "User banned:" << username;
 }
 
 void Admin::unbanUser(User* user) {
-	if (user) {
-		user->setBan(false);
-		addNotification("User unbanned: " +
-			QString::fromStdString(user->getUsername()));
-	}
+    if (!user) return;
+
+    user->setBan(false);
+    QString username = QString::fromStdString(user->getUsername());
+    addNotification("✓ User unbanned: @" + username);
+    qDebug() << "User unbanned:" << username;
 }
 
-void Admin::deleteReportedComment(Posts* post, int index) {
-	if (post) {
-		post->deleteCommentAsAdmin(index);
-	}
+// ══════════════════════════════════════════════════════════════════════════════
+//  REPORT REVIEW & THRESHOLD CHECKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+void Admin::reviewReports(User**& allUsers, int& userCount) {
+    qDebug() << "=== REVIEWING ALL REPORTS ===";
+    qDebug() << "Total reported users:" << reportedUserCount;
+    qDebug() << "Total reported posts:" << reportedPostCount;
+
+    for (int i = 0; i < reportedUsers.size(); i++) {
+        User* user = reportedUsers[i];
+        if (!user) continue;
+
+        int reportCount = reportedUsers.count(user);
+        qDebug() << "User:" << QString::fromStdString(user->getUsername())
+            << "Reports:" << reportCount;
+    }
+
+    for (int i = 0; i < reportedPosts.size(); i++) {
+        Posts* post = reportedPosts[i];
+        if (!post) continue;
+
+        int reportCount = reportedPosts.count(post);
+        qDebug() << "Post:" << QString::fromStdString(post->getPostId())
+            << "Reports:" << reportCount;
+    }
 }
 
-void Admin::viewReportedComments(Posts* post) {
-	if (post) {
-		QList<Comment> comments = post->getComments();
-		for (int i = 0; i < comments.size(); i++) {
-			if (comments[i].getIsReported()) {
-				qDebug() << i << ":" << comments[i].getContent()
-					<< "by" << comments[i].getCreatorUsername();
-			}
-		}
-	}
+void Admin::checkReportThresholds(User* user, const QString& username) {
+    // Check if this user has been reported 3+ times
+    if (reportedUsers.count(user) >= 3) {
+        if (!processedUserReports.contains(username)) {
+            addNotification("⚠️  ALERT: User @" + username + " reached 3+ reports!");
+            processedUserReports.insert(username);
+            saveProcessedReports();
+        }
+    }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  GETTERS FOR Qt GUI
+// ══════════════════════════════════════════════════════════════════════════════
+
+QList<User*> Admin::getReportedUsers() const {
+    return reportedUsers;
+}
+
+QList<Posts*> Admin::getReportedPosts() const {
+    return reportedPosts;
+}
+
+int Admin::getReportedUserCount() const {
+    return reportedUserCount;
+}
+
+int Admin::getReportedPostCount() const {
+    return reportedPostCount;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  NOTIFICATION MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
 
 void Admin::addNotification(const QString& message) {
-	adminNotifications.append(message);
+    QString timestampedMsg = QDateTime::currentDateTime().toString("hh:mm:ss")
+        + " | " + message;
+    adminNotifications.append(timestampedMsg);
+    qDebug() << "Admin notification:" << message;
 }
 
-void Admin::viewAllNotifications() const {
-	for (const QString& n : adminNotifications) {
-		qDebug() << n;
-	}
+QList<QString> Admin::getAllNotifications() const {
+    return adminNotifications;
 }
-void Admin::check_ban_status(User* user) {
-	if (user) {
-		if (reportedUsers.count(user) >= 3) {
-			banUser(user);
-		}
-		else {
-			unbanUser(user);
-		}
-	}
+
+void Admin::clearNotifications() {
+    adminNotifications.clear();
+    qDebug() << "Admin notifications cleared";
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  FILE I/O OPERATIONS
+// ══════════════════════════════════════════════════════════════════════════════
 
 void Admin::saveReportsToFile() {
-	// FIX 7: QDir().mkpath() replaces system("mkdir ...") — cross-platform, no shell
-	QDir().mkpath("data/Admin");
+    QDir().mkpath("data/Admin");
 
-	// FIX 2: use QPair<Posts*, int> to deduplicate before writing,
-	// so save→load cycles don't inflate counts.
-	QList<QPair<Posts*, int>> deduplicated;
-	for (Posts* post : reportedPosts) {
-		bool found = false;
-		for (auto& pair : deduplicated) {
-			if (pair.first == post) { found = true; break; }
-		}
-		if (!found)
-			deduplicated.append(qMakePair(post, reportedPosts.count(post)));
-	}
+    // Save reported posts
+    QString postsPath = "data/Admin/reported_posts.txt";
+    QFile postsFile(postsPath);
 
-	ofstream file("data/Admin/reported_posts.txt");
-	if (file.is_open()) {
-		for (const auto& pair : deduplicated) {
-			file << "postId|" << pair.first->getPostId() << "\n";
-			file << "creatorUsername|" << pair.first->getCreatorUsername() << "\n";
-			file << "reportCount|" << pair.second << "\n";
-		}
-		file.close();
-		qDebug() << "Reported posts saved!"; // FIX 6
-	}
+    if (postsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&postsFile);
 
-	// FIX 2 (users): save reported users using QPair<User*, int> the same way
-	QList<QPair<User*, int>> deduplicatedUsers;
-	for (User* user : reportedUsers) {
-		bool found = false;
-		for (auto& pair : deduplicatedUsers) {
-			if (pair.first == user) { found = true; break; }
-		}
-		if (!found)
-			deduplicatedUsers.append(qMakePair(user, reportedUsers.count(user)));
-	}
+        // Deduplicate posts before saving
+        QSet<Posts*> uniquePosts;
+        for (Posts* post : reportedPosts) {
+            uniquePosts.insert(post);
+        }
 
-	ofstream usersFile("data/Admin/reported_users.txt");
-	if (usersFile.is_open()) {
-		for (const auto& pair : deduplicatedUsers) {
-			usersFile << "username|" << pair.first->getUsername() << "\n";
-			usersFile << "reportCount|" << pair.second << "\n";
-		}
-		usersFile.close();
-		qDebug() << "Reported users saved!"; // FIX 6
-	}
+        for (Posts* post : uniquePosts) {
+            if (!post) continue;
+            int count = reportedPosts.count(post);
+            out << "postId|" << QString::fromStdString(post->getPostId()) << "\n"
+                << "creator|" << QString::fromStdString(post->getCreatorUsername()) << "\n"
+                << "reportCount|" << count << "\n";
+        }
+        postsFile.close();
+        qDebug() << "Reported posts saved:" << uniquePosts.size();
+    }
+
+    // Save reported users
+    QString usersPath = "data/Admin/reported_users.txt";
+    QFile usersFile(usersPath);
+
+    if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&usersFile);
+
+        // Deduplicate users before saving
+        QSet<User*> uniqueUsers;
+        for (User* user : reportedUsers) {
+            uniqueUsers.insert(user);
+        }
+
+        for (User* user : uniqueUsers) {
+            if (!user) continue;
+            int count = reportedUsers.count(user);
+            out << "username|" << QString::fromStdString(user->getUsername()) << "\n"
+                << "reportCount|" << count << "\n";
+        }
+        usersFile.close();
+        qDebug() << "Reported users saved:" << uniqueUsers.size();
+    }
 }
 
 void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
-	// --- load reported posts ---
-	ifstream file("data/Admin/reported_posts.txt");
-	if (!file.is_open()) {
-		reportedPostCount = 0;
-	}
-	else {
-		string line;
-		QString postId;
-		QString creatorUsername;
-		int count = 0;
+    // Load reported posts
+    QString postsPath = "data/Admin/reported_posts.txt";
+    QFile postsFile(postsPath);
 
-		while (getline(file, line)) {
-			if (line.find("postId|") == 0) {
-				postId = QString::fromStdString(line.substr(7));
-			}
-			else if (line.find("creatorUsername|") == 0) {
-				creatorUsername = QString::fromStdString(line.substr(16));
-			}
-			else if (line.find("reportCount|") == 0) {
-				count = stoi(line.substr(12));
-				for (int i = 0; i < userCount; i++) {
-					if (allUsers[i] && QString::fromStdString(allUsers[i]->getUsername()) == creatorUsername) {
-						Posts* p = allUsers[i]->getPostById(postId.toStdString());
-						if (p) {
-							for (int j = 0; j < count; j++)
-								reportedPosts.append(p);
-						}
-						break;
-					}
-				}
-			}
-		}
-		file.close();
-		reportedPostCount = reportedPosts.size();
-		qDebug() << "Reported posts loaded!"; // FIX 6
-	}
+    if (postsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&postsFile);
+        QString postId, creator;
+        int reportCount = 0;
 
-	// --- load reported users (FIX 2) ---
-	ifstream usersFile("data/Admin/reported_users.txt");
-	if (usersFile.is_open()) {
-		string line;
-		QString username;
-		int count = 0;
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.isEmpty()) continue;
 
-		while (getline(usersFile, line)) {
-			if (line.find("username|") == 0) {
-				username = QString::fromStdString(line.substr(9));
-			}
-			else if (line.find("reportCount|") == 0) {
-				count = stoi(line.substr(12));
-				for (int i = 0; i < userCount; i++) {
-					if (allUsers[i] && QString::fromStdString(allUsers[i]->getUsername()) == username) {
-						for (int j = 0; j < count; j++)
-							reportedUsers.append(allUsers[i]);
-						break;
-					}
-				}
-			}
-		}
-		usersFile.close();
-		reportedUserCount = reportedUsers.size();
-		qDebug() << "Reported users loaded!"; // FIX 6
-	}
+            QStringList parts = line.split("|");
+            if (parts.size() < 2) continue;
+
+            if (parts[0] == "postId") {
+                postId = parts[1];
+            }
+            else if (parts[0] == "creator") {
+                creator = parts[1];
+            }
+            else if (parts[0] == "reportCount") {
+                reportCount = parts[1].toInt();
+
+                // Find and add post
+                for (int i = 0; i < userCount; i++) {
+                    if (!allUsers[i]) continue;
+                    if (QString::fromStdString(allUsers[i]->getUsername()) == creator) {
+                        Posts* post = allUsers[i]->getPostById(postId.toStdString());
+                        if (post) {
+                            for (int j = 0; j < reportCount; j++) {
+                                reportedPosts.append(post);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        postsFile.close();
+        qDebug() << "Reported posts loaded";
+    }
+
+    // Load reported users
+    QString usersPath = "data/Admin/reported_users.txt";
+    QFile usersFile(usersPath);
+
+    if (usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&usersFile);
+        QString username;
+        int reportCount = 0;
+
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.isEmpty()) continue;
+
+            QStringList parts = line.split("|");
+            if (parts.size() < 2) continue;
+
+            if (parts[0] == "username") {
+                username = parts[1];
+            }
+            else if (parts[0] == "reportCount") {
+                reportCount = parts[1].toInt();
+
+                // Find and add user
+                for (int i = 0; i < userCount; i++) {
+                    if (!allUsers[i]) continue;
+                    if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
+                        for (int j = 0; j < reportCount; j++) {
+                            reportedUsers.append(allUsers[i]);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        usersFile.close();
+        qDebug() << "Reported users loaded";
+    }
+
+    reportedUserCount = reportedUsers.size();
+    reportedPostCount = reportedPosts.size();
 }
 
-
 void Admin::saveAdminToFile() {
-	// FIX 7: QDir().mkpath() replaces system("mkdir ...")
-	QDir().mkpath("data/Admin");
+    QDir().mkpath("data/Admin");
 
-	ofstream file("data/Admin/adminInfo.txt");
-	if (file.is_open()) {
-		file << "username|" << getUsername() << "\n";
-		file << "reportedUserCount|" << reportedUserCount << "\n";
-		file << "reportedPostCount|" << reportedPostCount << "\n";
-		file.close();
-		qDebug() << "Admin info saved!"; // FIX 6
-	}
+    QString path = "data/Admin/adminInfo.txt";
+    QFile file(path);
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << "username|" << QString::fromStdString(getUsername()) << "\n"
+            << "adminLevel|" << adminLevel << "\n"
+            << "reportedUserCount|" << reportedUserCount << "\n"
+            << "reportedPostCount|" << reportedPostCount << "\n";
+        file.close();
+        qDebug() << "Admin info saved";
+    }
 }
 
 void Admin::loadAdminFromFile() {
-	ifstream file("data/Admin/adminInfo.txt");
-	if (file.is_open()) {
-		string line;
-		while (getline(file, line)) {
-			 if (line.find("reportedUserCount|") == 0) {
-				reportedUserCount = stoi(line.substr(18));
-			}
-			else if (line.find("reportedPostCount|") == 0) {
-				reportedPostCount = stoi(line.substr(18)); // FIX: was 19, correct is 18
-			}
-		}
-		file.close();
-		qDebug() << "Admin info loaded!"; // FIX 6
-	}
+    QString path = "data/Admin/adminInfo.txt";
+    QFile file(path);
+
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.isEmpty()) continue;
+
+            QStringList parts = line.split("|");
+            if (parts.size() < 2) continue;
+
+            if (parts[0] == "adminLevel") {
+                adminLevel = parts[1];
+            }
+            else if (parts[0] == "reportedUserCount") {
+                reportedUserCount = parts[1].toInt();
+            }
+            else if (parts[0] == "reportedPostCount") {
+                reportedPostCount = parts[1].toInt();
+            }
+        }
+        file.close();
+        qDebug() << "Admin info loaded";
+    }
 }
+
 void Admin::saveProcessedReports() {
-	QDir().mkpath("data/Admin");
+    QDir().mkpath("data/Admin");
 
-	// Save processed posts
-	QFile postsFile("data/Admin/processed_post_reports.txt");
-	if (postsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		QTextStream out(&postsFile);
-		for (const QString& postId : processedPostReports) {
-			out << postId << "\n";
-		}
-		postsFile.close();
-	}
+    QString usersPath = "data/Admin/processed_user_reports.txt";
+    QFile usersFile(usersPath);
+    if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&usersFile);
+        for (const QString& username : processedUserReports) {
+            out << username << "\n";
+        }
+        usersFile.close();
+    }
 
-	// Save processed users
-	QFile usersFile("data/Admin/processed_user_reports.txt");
-	if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		QTextStream out(&usersFile);
-		for (const QString& username : processedUserReports) {
-			out << username << "\n";
-		}
-		usersFile.close();
-	}
+    QString postsPath = "data/Admin/processed_post_reports.txt";
+    QFile postsFile(postsPath);
+    if (postsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&postsFile);
+        for (const QString& postId : processedPostReports) {
+            out << postId << "\n";
+        }
+        postsFile.close();
+    }
 }
+
 void Admin::loadProcessedReports() {
-	QDir().mkpath("data/Admin");
+    QString usersPath = "data/Admin/processed_user_reports.txt";
+    QFile usersFile(usersPath);
+    if (usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&usersFile);
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (!line.isEmpty()) {
+                processedUserReports.insert(line);
+            }
+        }
+        usersFile.close();
+    }
 
-	// Load processed posts
-	QFile postsFile("data/Admin/processed_post_reports.txt");
-	if (postsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		QTextStream in(&postsFile);
-		while (!in.atEnd()) {
-			QString line = in.readLine().trimmed();
-			if (!line.isEmpty()) {
-				processedPostReports.insert(line);
-			}
-		}
-		postsFile.close();
-	}
-
-	// Load processed users
-	QFile usersFile("data/Admin/processed_user_reports.txt");
-	if (usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		QTextStream in(&usersFile);
-		while (!in.atEnd()) {
-			QString line = in.readLine().trimmed();
-			if (!line.isEmpty()) {
-				processedUserReports.insert(line);
-			}
-		}
-		usersFile.close();
-	}
-
-	qDebug() << "Processed reports loaded. Posts:" << processedPostReports.size()
-		<< "Users:" << processedUserReports.size();
-}
-void Admin::notifyOnPostThreshold(const QString& postId, const QString& creatorUsername) {
-	// Prevent duplicate notifications
-	if (processedPostReports.contains(postId)) {
-		return;
-	}
-
-	QString message = "🚨 Alert: Post '" + postId + "' by @" + creatorUsername +
-		" has reached 3 reports and is marked for review.";
-	addNotification(message);
-	processedPostReports.insert(postId);
-	saveProcessedReports();
-	saveAdminToFile();
-
-	qDebug() << "Admin notified about reported post:" << postId;
+    QString postsPath = "data/Admin/processed_post_reports.txt";
+    QFile postsFile(postsPath);
+    if (postsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&postsFile);
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (!line.isEmpty()) {
+                processedPostReports.insert(line);
+            }
+        }
+        postsFile.close();
+    }
 }
 
-void Admin::notifyOnUserThreshold(const QString& username) {
-	// Prevent duplicate notifications
-	if (processedUserReports.contains(username)) {
-		return;
-	}
+// ══════════════════════════════════════════════════════════════════════════════
+//  DISPLAY METHODS (Console)
+// ══════════════════════════════════════════════════════════════════════════════
 
-	QString message = "🚨 Alert: User '@" + username +
-		"' has reached 3 reports and is marked for review.";
-	addNotification(message);
-	processedUserReports.insert(username);
-	saveProcessedReports();
-	saveAdminToFile();
+void Admin::displayAdminDashboard() {
+    qDebug() << "╔════ ADMIN DASHBOARD ════╗";
+    qDebug() << "Username:" << QString::fromStdString(getUsername());
+    qDebug() << "Admin Level:" << adminLevel;
+    qDebug() << "Reported Users:" << reportedUserCount;
+    qDebug() << "Reported Posts:" << reportedPostCount;
+    qDebug() << "Pending Notifications:" << adminNotifications.size();
+    qDebug() << "╚═══════════════════════════╝";
+}
 
-	qDebug() << "Admin notified about reported user:" << username;
+void Admin::displayReportedUsers() {
+    qDebug() << "═══ REPORTED USERS ═══";
+
+    QSet<User*> uniqueUsers;
+    for (User* user : reportedUsers) {
+        uniqueUsers.insert(user);
+    }
+
+    for (User* user : uniqueUsers) {
+        if (!user) continue;
+        int count = reportedUsers.count(user);
+        qDebug() << "User:" << QString::fromStdString(user->getUsername())
+            << "| Reports:" << count;
+    }
+}
+
+void Admin::displayReportedPosts() {
+    qDebug() << "═══ REPORTED POSTS ═══";
+
+    QSet<Posts*> uniquePosts;
+    for (Posts* post : reportedPosts) {
+        uniquePosts.insert(post);
+    }
+
+    for (Posts* post : uniquePosts) {
+        if (!post) continue;
+        int count = reportedPosts.count(post);
+        qDebug() << "Post:" << QString::fromStdString(post->getPostId())
+            << "| Reports:" << count;
+    }
 }

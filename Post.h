@@ -1,3 +1,5 @@
+// Post.h - ADD THESE METHODS (keep existing code)
+
 #pragma once
 #include <QString>
 #include <QList>
@@ -28,31 +30,52 @@ public:
     Posts();
     Posts(string authorUsername, string content);
     ~Posts();
+
+    // ─── BASIC GETTERS ───
     string getTimeOfCreation() const;
+    string getPostId() const;
+    string getContent() const;
+    string getCreatorUsername() const;
+    int getLikeCount() const;
+    int getReportCount() const;
+    int getCommentsCount() const;
+    bool getIsReported() const;
+    bool isValid() const;
+
+    // ─── SETTERS ───
+    void setContent(const string& newContent);
+    void setTimeOfCreation(const string& time);
+
+    // ─── CONTENT ───
     void inputContent(string& content);
     string generatePostId();
+
+    // ─── FILE I/O ───
     void savePostToFile();
-    void display() const;
     void loadPostFromFile(string ownerUsername, string postId);
-    string getPostId() const;
+
+    // ─── COMMENTS ───
     void addComment(const QString& commentContent, const QString& cUsername);
     void deleteComment(int index, const QString& rUsername);
     void editComment(int index, const QString& newContent, const QString& rUsername);
+    void deleteCommentAsAdmin(int index);
     QList<Comment> getComments() const;
     void saveCommentsToFile() const;
     void loadCommentsFromFile();
+
+    // ─── LIKES ───
     void likePost(const string& likerUsername);
     void unlikePost(const string& likerUsername);
-    string getContent() const;
-    void setContent(const string& newContent);
-    int getLikeCount() const;
-    int getReportCount() const;
+    bool isLikedBy(const string& username) const;
+
+    // ─── REPORTING ───
     void reportPost(const string& reporterUsername);
-    void deleteCommentAsAdmin(int index);
-     int getCommentsCount() const;
-     bool isValid() const;
-     void setTimeOfCreation(const string& time);
-     bool getIsReported() const;
-     bool isLikedBy(const string& username) const;
-      string getCreatorUsername() const;
+
+    // ─── Qt HELPER METHODS ─── (NEW)
+    QString getDisplayContent() const;
+    QString getDisplayTime() const;
+    QString getDisplayAuthor() const;
+    QList<Comment> getCommentsAsQList() const;
+    int getUnreadCommentCount() const;
+    void display() const;
 };

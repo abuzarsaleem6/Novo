@@ -232,11 +232,14 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 
     if (!file.is_open()) {
         qDebug() << "Post file not found:" << QString::fromStdString(path);
-        return; 
+        return;
     }
 
     string line;
     while (getline(file, line)) {
+        // Remove trailing \r (CRLF issue)
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+
         // Skip empty lines and lines without separator
         if (line.empty()) continue;
 
@@ -245,6 +248,11 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 
         string key = line.substr(0, sep);
         string value = line.substr(sep + 1);
+
+        // ✅ NEW: Trim trailing spaces and \r from value to prevent desync
+        while (!value.empty() && (value.back() == '\r' || value.back() == ' ')) {
+            value.pop_back();
+        }
 
         // Skip empty values
         if (value.empty()) continue;
@@ -267,7 +275,7 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
     }
     file.close();
 
-    // ✅ Only load comments if post is valid
+    // Only load comments if post is valid
     if (isValid()) {
         loadCommentsFromFile();
     }
@@ -573,4 +581,31 @@ string Posts::getTimeOfCreation()  const {
 }
 bool Posts::isLikedBy(const string& username) const {
     return hasUserLikedPost(username, this->postId);
+}
+// Add these methods to Post.cpp (at the end, before destructor)
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Qt HELPER METHODS (NEW)
+// ══════════════════════════════════════════════════════════════════════════════
+
+QString Posts::getDisplayContent() const {
+    return QString::fromStdString(this->content);
+}
+
+QString Posts::getDisplayTime() const {
+    return QString::fromStdString(this->timeOfCreation);
+}
+
+QString Posts::getDisplayAuthor() const {
+    return QString::fromStdString(this->creatorUsername);
+}
+
+QList<Comment> Posts::getCommentsAsQList() const {
+    return commentList;
+}
+
+int Posts::getUnreadCommentCount() const {
+    // Count new comments since last view
+    // This is a placeholder - implement based on your needs
+    return commentList.size();
 }

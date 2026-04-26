@@ -4,10 +4,14 @@
 #include "User.h"
 #include "Post.h"
 #include "Comment.h"
+#include "Notification.h"
 #include "Feed.h"
 #include "Admin.h"
 #include "PasswordChecker.h"
 #include "Notification.h"
+#include "Message.h"   
+#include "Group.h"     
+#include <QMap>       
 #include "SearchEngine.h"
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QVBoxLayout>
@@ -90,6 +94,8 @@ private:
     QLineEdit* m_signupUser;
     QLineEdit* m_signupPass;
     QLineEdit* m_signupBio;
+    QLineEdit* m_adminUser;
+    QLineEdit* m_adminPass;
     User** m_allUsers;
     int        m_userCount;
 };
@@ -189,33 +195,7 @@ private:
     void onMarkAllRead();
 };
 
-class SearchPage : public QWidget {
-    Q_OBJECT
-public:
-    SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
-signals:
-    void requestOpenComments(Posts* post); // NEW
-private slots:
-    void onSearch();
-    void onFollowUser();
-    void onReportUser();
-private:
-    void showUserCard(User* user);
-    QStackedWidget* m_searchStack;
-    QWidget* m_searchMainWidget;
-    PublicProfileWidget* m_profileWidget;
-    User* m_currentUser;
-    User** m_allUsers;
-    int          m_userCount;
-    QLineEdit* m_searchInput;
-    QScrollArea* m_scrollArea;
-    QWidget* m_resultsContent;
-    QVBoxLayout* m_resultsLayout;
-    User* m_foundUser;
-    QPushButton* m_followBtn;
-    QPushButton* m_reportBtn;
-    SearchEngine m_engine;
-};
+
 
 class ProfilePage : public QWidget {
     Q_OBJECT
@@ -305,7 +285,33 @@ private:
     QVBoxLayout* m_bubbleLayout;
     QLineEdit* m_input;
 };
+class SearchPage : public QWidget {
+    Q_OBJECT
+public:
+    SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
+signals:
+    void requestOpenComments(Posts* post);
+    void requestViewProfile(User* user);
+private slots:
+    void onSearch();
+    void onFollowUser();
+    void onReportUser();
+private:
+    void showUserCard(User* user);
+    void clearResults();
 
+    SearchEngine m_engine;
+    User* m_currentUser;
+    User** m_allUsers;
+    int m_userCount;
+    QLineEdit* m_searchInput;
+    QScrollArea* m_scrollArea;
+    QWidget* m_resultsContent;
+    QVBoxLayout* m_resultsLayout;
+    User* m_foundUser;
+    QPushButton* m_followBtn;
+    QPushButton* m_reportBtn;
+};
 class MessagesPage : public QWidget {
     Q_OBJECT
 public:
@@ -316,43 +322,45 @@ private slots:
     void onSearchUser();
     void onConversationSelected(const QString& peer);
     void onChatDeleted(const QString& peer);
+    void onCreateGroup();
+    void onJoinGroup();
 private:
-    void   loadConversationList();
-    void   clearConversationList();
-    void   addConversationButton(const QString& peer);
-    static QStringList knownPeers(const QString& username);
+    void loadConversationList();
+    void clearConversationList();
+    void addConversationButton(const QString& peer);
+
     User* m_currentUser;
     User** m_allUsers;
-    int           m_userCount;
+    int m_userCount;
     QWidget* m_leftPanel;
     QLineEdit* m_searchInput;
     QWidget* m_convListContent;
     QVBoxLayout* m_convListLayout;
     QStackedWidget* m_rightStack;
     ChatView* m_chatView;
-    QString       m_activePeer;
+    QString m_activePeer;
+    QMap<QString, Group*> m_userGroups;  // ← ADD THIS
 };
 
 class AdminPage : public QWidget {
     Q_OBJECT
 public:
-    AdminPage(User** allUsers, int userCount, QWidget* parent = nullptr);
+    AdminPage(Admin* admin, User** allUsers, int userCount, QWidget* parent = nullptr);
     void refresh();
 private slots:
     void onReviewReportedUsers();
     void onReviewReportedPosts();
     void loadAdminNotifications();
-    void markAdminNotifsRead();
 private:
     void loadReportedUsers();
     void loadReportedPosts();
+    Admin* m_admin;
     User** m_allUsers;
     int m_userCount;
     QScrollArea* m_scrollArea;
     QWidget* m_content;
     QVBoxLayout* m_layout;
 };
-
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -400,9 +408,9 @@ private:
     ProfilePage* m_profilePage;
     TimeSpentPage* m_timeSpentPage;
     AdminPage* m_adminPage;
-    CommentsPage* m_commentsPage = nullptr; // NEW
-
-    int m_previousPageIndex = 0; // NEW
+    CommentsPage* m_commentsPage = nullptr; 
+    PublicProfileWidget* m_publicProfilePage = nullptr;
+    int m_previousPageIndex = 0; 
 
     User* m_currentUser;
     User** m_allUsers;

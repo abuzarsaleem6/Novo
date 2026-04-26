@@ -3,9 +3,9 @@ password|password123
 bio|i
 isBanned|0
 isReported|0
-isReportedCount|0
+isReportedCount|1
 notificationCount|0
 followingCount|0
-followersCount|1
+followersCount|0
 postCount|0
 savedPostCount|0

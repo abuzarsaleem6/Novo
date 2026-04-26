@@ -1,37 +1,54 @@
 #pragma once
-#include <iostream>
-#include <cstring>
 #include <string>
 #include <fstream>
-#include "Message.h" 
+
+using namespace std;
 
 class Group {
 private:
-    char* groupName;
+    string groupName;
+    string groupOwner;
+    string groupDescription;
+    string createdDate;
 
-    std::string* memberUsernames; 
+    // ✅ Dynamic Arrays for manual memory management
+    string* memberUsernames;
     int memberCount;
-    int memberCapacity;
 
-    Message* messageHistory;
+    // ✅ Replaced the Struct with a simple String Array!
+    // Each string will hold "sender|timestamp|content"
+    string* messageHistory;
     int messageCount;
-    int messageCapacity;
 
 public:
+    // ── Constructors & Destructor ──
     Group();
-    Group(const char* name, int initialMemberCapacity = 100, int initialMessageCapacity = 500);
+    Group(string name, string owner);
+    ~Group(); // Destructor prevents memory leaks
 
-    ~Group();
-    Group(const Group& source);
-    Group& operator=(const Group& source);
+    // ── Rule of Three (Critical for dynamic arrays) ──
+    Group(const Group& other);
+    Group& operator=(const Group& other);
 
-    void addMember(std::string username); 
-    void addMessage(const Message& msg);
-
-    const char* getGroupName() const;
+    // ── Getters ──
+    string getGroupName() const;
+    string getOwnerUsername() const;
+    string getGroupDescription() const;
     int getMemberCount() const;
     int getMessageCount() const;
 
-    void saveToFile(const char* filename) const;
-    void loadFromFile(const char* filename);
+    // ── Setters ──
+    void setGroupDescription(const string& desc);
+    void incrementMessageCount();
+
+    // ── Core Functionality ──
+    bool hasMember(const string& username) const;
+    void addMember(const string& username);
+
+    // ✅ Takes a single formatted string instead of a struct
+    void addMessage(const string& formattedMessage);
+
+    // ── File I/O ──
+    void saveToFile(const string& filename) const;
+    void loadFromFile(const string& filename);
 };
