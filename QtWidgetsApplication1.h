@@ -22,6 +22,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QDir>
+#include <QDialog>
 
 // Forward declarations
 class User;
@@ -57,6 +58,7 @@ signals:
     void commentClicked(Posts* post);
     void editClicked(Posts* post);
     void deleteClicked(Posts* post);
+    void reportUserClicked(const QString& username);
     void saveClicked(Posts* post, const QString& ownerUsername);
     void unsaveClicked(Posts* post);
     void reportClicked(Posts* post, const QString& ownerUsername);
@@ -113,7 +115,18 @@ private:
     User** m_allUsers;
     int        m_userCount;
 };
+class PublicProfileWidget : public QWidget {
+    Q_OBJECT
+public:
+    PublicProfileWidget(QWidget* parent = nullptr);
+    void loadProfile(User* targetUser, User* viewer);
 
+signals:
+    void backClicked();
+
+private:
+    QVBoxLayout* m_mainLayout;
+};
 // ─────────────────────────────────────────────────────────────
 //  FeedPage
 //  Main feed showing posts from followed users
@@ -135,7 +148,7 @@ private slots:
     void onUnsavePost(Posts* post);
     void onReportPost(Posts* post, const QString& ownerUsername);
     void onSubmitPost();
-
+    void onReportUserFromPost(const QString& username);
 private:
     void loadPosts();
     void clearFeed();
@@ -219,12 +232,15 @@ class SearchPage : public QWidget {
 public:
     SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
 private slots:
+   
     void onSearch();
     void onFollowUser();
     void onReportUser();
 private:
     void showUserCard(User* user);
-
+    QStackedWidget* m_searchStack;
+    QWidget* m_searchMainWidget;
+    PublicProfileWidget* m_profileWidget;
     User* m_currentUser;
     User** m_allUsers;
     int          m_userCount;
@@ -271,6 +287,25 @@ private:
     QLabel* m_followingCountLabel = nullptr;
 };
 
+class CommentDialog : public QDialog {
+    Q_OBJECT
+public:
+    CommentDialog(Posts* post, const QString& currentUser, QWidget* parent = nullptr);
+
+private slots:
+    void onAddComment();
+    void onEditComment(int index);
+    void onDeleteComment(int index);
+
+private:
+    void loadComments();
+
+    Posts* m_post;
+    QString m_currentUser;
+    QVBoxLayout* m_commentsLayout;
+    QWidget* m_commentsContainer;
+    QLineEdit* m_input;
+};
 // ─────────────────────────────────────────────────────────────
 //  TimeSpentPage
 //  Session timer tracking and engagement stats

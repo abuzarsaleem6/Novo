@@ -1,9 +1,3 @@
-// ============================================================
-//  QtWidgetsApplication1.cpp  —  Novo Social Platform GUI
-//  Qt 5/6  •  Pure programmatic layouts  •  No .ui files
-//  All sizing via layout managers — zero absolute positioning
-// ============================================================
-
 #include "QtWidgetsApplication1.h"
 #include "User.h"
 #include "Post.h"
@@ -444,6 +438,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         connect(delBtn, &QPushButton::clicked, this,
             [this]() { emit deleteClicked(m_post); });
         headerRow->addWidget(delBtn, 0, Qt::AlignVCenter);
+        
     }
 
     root->addLayout(headerRow);
@@ -546,6 +541,24 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         connect(reportBtn, &QPushButton::clicked, this,
             [this]() { emit reportClicked(m_post, m_authorUsername); });
         actRow->addLayout(reportCol);
+
+        auto* reportUserCol = new QVBoxLayout;
+        reportUserCol->setSpacing(2);
+        reportUserCol->setAlignment(Qt::AlignCenter);
+        auto* reportUserBtn = new QPushButton("🚫"); // Block/Report Icon
+        reportUserBtn->setObjectName("reportIconBtn"); // Reuses your red danger styling
+        reportUserBtn->setCursor(Qt::PointingHandCursor);
+        reportUserBtn->setFixedSize(24, 24);
+        auto* reportUserLbl = new QLabel("Report User");
+        reportUserLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
+        reportUserLbl->setAlignment(Qt::AlignCenter);
+        reportUserCol->addWidget(reportUserBtn, 0, Qt::AlignCenter);
+        reportUserCol->addWidget(reportUserLbl, 0, Qt::AlignCenter);
+
+        connect(reportUserBtn, &QPushButton::clicked, this,
+            [this]() { emit reportUserClicked(m_authorUsername); });
+
+        actRow->addLayout(reportUserCol);
     }
 
     // Stretch to push Share to the right
@@ -565,8 +578,291 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
 
     root->addLayout(actRow);
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
+//  CommentDialog Implementation
+// ══════════════════════════════════════════════════════════════════════════════
+CommentDialog::CommentDialog(Posts* post, const QString& currentUser, QWidget* parent)
+    : QDialog(parent), m_post(post), m_currentUser(currentUser)
+{
+    setWindowTitle("Comments");
+    setFixedSize(450, 550);
+    setStyleSheet("QDialog { background: #0C0C10; }"); // Match app background
+
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(20, 20, 20, 20);
+    root->setSpacing(16);
+
+    // Header
+    auto* title = new QLabel("Comments");
+    title->setStyleSheet("font-size: 18px; font-weight: bold; color: #E8E8F8;");
+    root->addWidget(title);
+
+    // Scroll Area for comments
+    auto* scroll = new QScrollArea;
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setStyleSheet("background: transparent; border: none;");
+
+    m_commentsContainer = new QWidget;
+    m_commentsLayout = new QVBoxLayout(m_commentsContainer);
+    m_commentsLayout->setContentsMargins(0, 0, 0, 0);
+    m_commentsLayout->setSpacing(12);
+    m_commentsLayout->addStretch(1); // Push comments to top
+
+    scroll->setWidget(m_commentsContainer);
+    root->addWidget(scroll, 1);
+
+    // Input Area
+    auto* inputRow = new QHBoxLayout;
+    m_input = new QLineEdit;
+    m_input->setPlaceholderText("Write a comment...");
+    m_input->setFixedHeight(40);
+
+    auto* sendBtn = new QPushButton("Post");
+    sendBtn->setObjectName("primaryBtn");
+    sendBtn->setFixedSize(70, 40);
+    sendBtn->setCursor(Qt::PointingHandCursor);
+
+    connect(sendBtn, &QPushButton::clicked, this, &CommentDialog::onAddComment);
+    connect(m_input, &QLineEdit::returnPressed, this, &CommentDialog::onAddComment);
+
+    inputRow->addWidget(m_input, 1);
+    inputRow->addWidget(sendBtn);
+    root->addLayout(inputRow);
+
+    loadComments();
+}
+
+void CommentDialog::loadComments() {
+    // Clear existing comments (except the stretch at the end)
+    while (m_commentsLayout->count() > 1) {
+        QLayoutItem* item = m_commentsLayout->takeAt(0);
+        if (item->widget()) item->widget()->deleteLater();
+        delete item;
+    }
+
+    QList<Comment> comments = m_post->getComments();
+
+    if (comments.isEmpty()) {
+        auto* empty = new QLabel("No comments yet. Be the first!");
+        empty->setStyleSheet("color: #56567A; font-size: 13px;");
+        empty->setAlignment(Qt::AlignCenter);
+        m_commentsLayout->insertWidget(0, empty);
+        return;
+    }
+
+    for (int i = 0; i < comments.size(); ++i) {
+        const Comment& c = comments[i];
+        bool isMine = (c.getCreatorUsername() == m_currentUser);
+
+        auto* card = new QFrame;
+        card->setStyleSheet("QFrame { background: #141420; border-radius: 8px; padding: 10px; }");
+        auto* cl = new QVBoxLayout(card);
+        cl->setContentsMargins(0, 0, 0, 0);
+        cl->setSpacing(4);
+
+        auto* headerRow = new QHBoxLayout;
+        auto* nameLbl = new QLabel(c.getCreatorUsername());
+        nameLbl->setStyleSheet("font-weight: bold; color: #A0A0D0; font-size: 12px;");
+
+        auto* timeLbl = new QLabel(c.getTimeOfCreation());
+        timeLbl->setStyleSheet("color: #56567A; font-size: 10px;");
+
+        headerRow->addWidget(nameLbl);
+        headerRow->addWidget(timeLbl);
+        headerRow->addStretch(1);
+
+        // If it's my comment, add Edit and Delete buttons
+        if (isMine) {
+            auto* editBtn = new QPushButton("✎");
+            editBtn->setFixedSize(24, 24);
+            editBtn->setCursor(Qt::PointingHandCursor);
+            editBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #AAAAFF; }");
+
+            auto* delBtn = new QPushButton("🗑");
+            delBtn->setFixedSize(24, 24);
+            delBtn->setCursor(Qt::PointingHandCursor);
+            delBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #FFAAAA; }");
+
+            connect(editBtn, &QPushButton::clicked, this, [this, i]() { onEditComment(i); });
+            connect(delBtn, &QPushButton::clicked, this, [this, i]() { onDeleteComment(i); });
+
+            headerRow->addWidget(editBtn);
+            headerRow->addWidget(delBtn);
+        }
+
+        cl->addLayout(headerRow);
+
+        auto* contentLbl = new QLabel(c.getContent());
+        contentLbl->setWordWrap(true);
+        contentLbl->setStyleSheet("color: #E2E2EC; font-size: 13px;");
+        cl->addWidget(contentLbl);
+
+        m_commentsLayout->insertWidget(m_commentsLayout->count() - 1, card);
+    }
+}
+
+void CommentDialog::onAddComment() {
+    QString text = m_input->text().trimmed();
+    if (text.isEmpty()) return;
+    if (text.contains('|')) {
+        QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
+        return;
+    }
+
+    m_post->addComment(text, m_currentUser);
+    m_input->clear();
+    loadComments();
+}
+
+void CommentDialog::onEditComment(int index) {
+    QString oldText = m_post->getComments()[index].getContent();
+    bool ok;
+    QString newText = QInputDialog::getText(this, "Edit Comment", "Update your comment:", QLineEdit::Normal, oldText, &ok);
+
+    if (ok && !newText.trimmed().isEmpty()) {
+        if (newText.contains('|')) {
+            QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
+            return;
+        }
+        m_post->editComment(index, newText.trimmed(), m_currentUser);
+        loadComments(); // Refresh the dialog
+    }
+}
+
+void CommentDialog::onDeleteComment(int index) {
+    auto r = QMessageBox::question(this, "Delete Comment", "Delete this comment?", QMessageBox::Yes | QMessageBox::No);
+    if (r == QMessageBox::Yes) {
+        m_post->deleteComment(index, m_currentUser);
+        loadComments(); // Refresh the dialog
+    }
+}
+// ══════════════════════════════════════════════════════════════════════════════
+//  PublicProfileWidget Implementation
+// ══════════════════════════════════════════════════════════════════════════════
+PublicProfileWidget::PublicProfileWidget(QWidget* parent) : QWidget(parent) {
+    m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0);
+}
+
+void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
+    // Clear previous profile data if it exists
+    QLayoutItem* item;
+    while ((item = m_mainLayout->takeAt(0)) != nullptr) {
+        if (item->widget()) item->widget()->deleteLater();
+        delete item;
+    }
+
+    // --- Back Button Header ---
+    auto* topRow = new QHBoxLayout;
+    topRow->setContentsMargins(28, 24, 28, 0);
+    auto* backBtn = new QPushButton("← Back to Search");
+    backBtn->setObjectName("secondaryBtn");
+    backBtn->setFixedWidth(150);
+    backBtn->setFixedHeight(34);
+    backBtn->setCursor(Qt::PointingHandCursor);
+    connect(backBtn, &QPushButton::clicked, this, &PublicProfileWidget::backClicked);
+    topRow->addWidget(backBtn);
+    topRow->addStretch(1);
+
+    auto* headerWrapper = new QWidget;
+    headerWrapper->setLayout(topRow);
+    m_mainLayout->addWidget(headerWrapper);
+
+    // --- Scrollable Profile Content ---
+    auto* scroll = new QScrollArea;
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setStyleSheet("background: transparent; border: none;");
+
+    auto* container = new QWidget;
+    auto* layout = new QVBoxLayout(container);
+    layout->setContentsMargins(28, 16, 28, 24); // Match main page margins
+    layout->setSpacing(20);
+
+    // 1. PROFILE HEADER CARD
+    auto* headerCard = new QFrame;
+    headerCard->setObjectName("postCard");
+    auto* hLayout = new QVBoxLayout(headerCard);
+
+    auto* row = new QHBoxLayout;
+    QString ini = QString::fromStdString(targetUser->getUsername()).left(1).toUpper();
+    auto* av = new QLabel(ini);
+    av->setFixedSize(60, 60);
+    av->setAlignment(Qt::AlignCenter);
+    av->setStyleSheet("background: #202040; border-radius: 30px; font-size: 24px; font-weight: bold; color: #7070FF;");
+    row->addWidget(av);
+
+    auto* nameCol = new QVBoxLayout;
+    auto* nameLbl = new QLabel(QString::fromStdString(targetUser->getUsername()));
+    nameLbl->setStyleSheet("font-size: 20px; font-weight: bold; color: #E0E0FF;");
+    auto* bioLbl = new QLabel(QString::fromStdString(targetUser->getBio()));
+    bioLbl->setStyleSheet("font-size: 13px; color: #56567A;");
+    bioLbl->setWordWrap(true);
+    nameCol->addWidget(nameLbl);
+    nameCol->addWidget(bioLbl);
+    row->addLayout(nameCol, 1);
+    hLayout->addLayout(row);
+
+    auto* statsRow = new QHBoxLayout;
+    auto addStat = [&](const QString& val, const QString& lbl) {
+        auto* c = new QVBoxLayout;
+        auto* v = new QLabel(val); v->setStyleSheet("font-size: 18px; font-weight: bold; color: #6060FF;"); v->setAlignment(Qt::AlignCenter);
+        auto* l = new QLabel(lbl); l->setStyleSheet("font-size: 10px; color: #36365A; letter-spacing: 1px;"); l->setAlignment(Qt::AlignCenter);
+        c->addWidget(v); c->addWidget(l);
+        statsRow->addLayout(c);
+        };
+    addStat(QString::number(targetUser->getPostCount()), "POSTS");
+    addStat(QString::number(targetUser->getFollowersCount()), "FOLLOWERS");
+    addStat(QString::number(targetUser->getFollowingCount()), "FOLLOWING");
+    hLayout->addLayout(statsRow);
+    layout->addWidget(headerCard);
+
+    // 2. USERS POSTS FEED
+    auto* postsTitle = new QLabel("Recent Posts");
+    postsTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #E8E8F8;");
+    layout->addWidget(postsTitle);
+
+    targetUser->loadAllPosts();
+    if (targetUser->getPostCount() == 0) {
+        auto* empty = new QLabel("This user hasn't posted anything yet.");
+        empty->setStyleSheet("color: #56567A; font-size: 13px;");
+        empty->setAlignment(Qt::AlignCenter);
+        layout->addWidget(empty);
+    }
+    else {
+        for (int i = targetUser->getPostCount() - 1; i >= 0; --i) {
+            Posts* p = targetUser->getPostByIndex(i);
+            if (!p || !p->isValid()) continue;
+
+            bool isSaved = false;
+            for (int s = 0; s < viewer->getSavedPostCount(); ++s) {
+                if (viewer->getSavedPostByIndex(s) && viewer->getSavedPostByIndex(s)->getPostId() == p->getPostId()) {
+                    isSaved = true; break;
+                }
+            }
+
+            auto* card = new PostCard(p, QString::fromStdString(targetUser->getUsername()), false, isSaved, QString::fromStdString(viewer->getUsername()));
+
+            connect(card, &PostCard::commentClicked, this, [p, viewer, this]() {
+                CommentDialog dlg(p, QString::fromStdString(viewer->getUsername()), this);
+                dlg.exec();
+                });
+            connect(card, &PostCard::saveClicked, this, [viewer, targetUser](Posts* post) {
+                viewer->savePost(post->getPostId(), targetUser);
+                });
+            connect(card, &PostCard::unsaveClicked, this, [viewer](Posts* post) {
+                viewer->unsavePost(post->getPostId());
+                });
+
+            layout->addWidget(card);
+        }
+    }
+
+    layout->addStretch(1);
+    scroll->setWidget(container);
+    m_mainLayout->addWidget(scroll, 1);
+}
 //  NotificationItem
 // ══════════════════════════════════════════════════════════════════════════════
 NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
@@ -1002,7 +1298,7 @@ void FeedPage::loadPosts() {
             connect(card, &PostCard::saveClicked, this, &FeedPage::onSavePost);
             connect(card, &PostCard::unsaveClicked, this, &FeedPage::onUnsavePost);
             connect(card, &PostCard::reportClicked, this, &FeedPage::onReportPost);
-
+            connect(card, &PostCard::reportUserClicked, this, &FeedPage::onReportUserFromPost);
             // Insert before the trailing stretch
             m_feedLayout->insertWidget(m_feedLayout->count() - 1, card);
             any = true;
@@ -1016,7 +1312,28 @@ void FeedPage::loadPosts() {
         m_feedLayout->insertWidget(0, empty);
     }
 }
+void FeedPage::onReportUserFromPost(const QString& username) {
+    if (!m_user) return;
 
+    // Find the target user in the database
+    User* target = nullptr;
+    for (int i = 0; i < m_userCount; ++i) {
+        if (m_allUsers[i] && m_allUsers[i]->getUsername() == username.toStdString()) {
+            target = m_allUsers[i];
+            break;
+        }
+    }
+    if (!target) return;
+
+    auto r = QMessageBox::question(this, "Report User",
+        "Are you sure you want to report user @" + username + "?",
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (r == QMessageBox::Yes) {
+        target->reportUser();
+        QMessageBox::information(this, "Reported", "User @" + username + " has been reported to admins.");
+    }
+}
 void FeedPage::onSubmitPost() {
     if (!m_user) return;
     QString text = m_postInput->toPlainText().trimmed();
@@ -1030,14 +1347,12 @@ void FeedPage::onSubmitPost() {
 void FeedPage::onLikePost(Posts* /*post*/) {}
 
 void FeedPage::onCommentPost(Posts* post) {
-    if (!post) return;
-    bool ok;
-    QString txt = QInputDialog::getText(this, "Add Comment",
-        "Your comment:", QLineEdit::Normal, "", &ok);
-    if (ok && !txt.trimmed().isEmpty()) {
-        post->addComment(txt.trimmed(), QString::fromStdString(m_user->getUsername()));
-        refresh();
-    }
+    if (!post || !m_user) return;
+
+    CommentDialog dlg(post, QString::fromStdString(m_user->getUsername()), this);
+    dlg.exec();
+
+    refresh();
 }
 
 void FeedPage::onDeletePost(Posts* post) {
@@ -1163,13 +1478,11 @@ void MyPostsPage::onEditPost(Posts* post) {
 
 void MyPostsPage::onCommentPost(Posts* post) {
     if (!post || !m_user) return;
-    bool ok;
-    QString txt = QInputDialog::getText(this, "Add Comment",
-        "Your comment:", QLineEdit::Normal, "", &ok);
-    if (ok && !txt.trimmed().isEmpty()) {
-        post->addComment(txt.trimmed(), QString::fromStdString(m_user->getUsername()));
-        refresh();
-    }
+
+    CommentDialog dlg(post, QString::fromStdString(m_user->getUsername()), this);
+    dlg.exec();
+
+    refresh();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1383,9 +1696,20 @@ SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidge
     for (int i = 0; i < m_userCount; ++i)
         if (m_allUsers[i]) m_engine.addUser(m_allUsers[i]);
 
-    auto* outer = new QVBoxLayout(this);
+    // 1. Root Layout (Holds the stack)
+    auto* rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_searchStack = new QStackedWidget(this);
+    rootLayout->addWidget(m_searchStack);
+
+    // 2. Index 0: The Main Search Screen
+    m_searchMainWidget = new QWidget;
+    auto* outer = new QVBoxLayout(m_searchMainWidget);
     outer->setContentsMargins(28, 24, 28, 16);
     outer->setSpacing(16);
+
+    // --- (Your old search UI building logic goes here) ---
     outer->addWidget(makeLabel("Search Users", "pageTitle"));
 
     auto* searchRow = new QHBoxLayout;
@@ -1405,6 +1729,17 @@ SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidge
 
     m_scrollArea = makeScrollArea(m_resultsContent, m_resultsLayout);
     outer->addWidget(m_scrollArea, 1);
+    // -----------------------------------------------------
+
+    // 3. Index 1: The Profile View Screen
+    m_profileWidget = new PublicProfileWidget(this);
+    connect(m_profileWidget, &PublicProfileWidget::backClicked, this, [this]() {
+        m_searchStack->setCurrentIndex(0); // Go back to search results
+        });
+
+    // 4. Add both to the stack
+    m_searchStack->addWidget(m_searchMainWidget); // Index 0
+    m_searchStack->addWidget(m_profileWidget);    // Index 1
 }
 
 void SearchPage::onSearch() {
@@ -1493,6 +1828,21 @@ void SearchPage::showUserCard(User* user) {
         auto* btnRow = new QHBoxLayout;
         btnRow->setContentsMargins(0, 0, 0, 0);
         btnRow->addStretch(1);
+
+        // --- 1. VIEW PROFILE BUTTON ---
+        auto* profileBtn = new QPushButton("👤 View Profile");
+        profileBtn->setObjectName("secondaryBtn");
+        profileBtn->setFixedWidth(130);
+        profileBtn->setFixedHeight(36);
+        profileBtn->setCursor(Qt::PointingHandCursor);
+        connect(profileBtn, &QPushButton::clicked, this, [this, user]() {
+            m_profileWidget->loadProfile(user, m_currentUser);
+            m_searchStack->setCurrentIndex(1); // Shifts to the profile view
+            });
+        btnRow->addWidget(profileBtn);
+        btnRow->addSpacing(10);
+
+        // --- 2. FOLLOW BUTTON ---
         bool following = m_currentUser->isFollowing(user->getUsername());
         m_followBtn = following ? makeSecondary("✓  Following") : makePrimary("+ Follow");
         m_followBtn->setFixedWidth(130);
@@ -1500,11 +1850,15 @@ void SearchPage::showUserCard(User* user) {
         connect(m_followBtn, &QPushButton::clicked, this, &SearchPage::onFollowUser);
         btnRow->addWidget(m_followBtn);
         btnRow->addSpacing(10);
+
+        // --- 3. REPORT BUTTON ---
         m_reportBtn = makeDanger("⚑ Report");
         m_reportBtn->setFixedWidth(100);
         m_reportBtn->setFixedHeight(36);
         connect(m_reportBtn, &QPushButton::clicked, this, &SearchPage::onReportUser);
         btnRow->addWidget(m_reportBtn);
+
+        // Add the finished row to the card layout
         cl->addLayout(btnRow);
     }
     m_resultsLayout->insertWidget(0, card);
@@ -2675,6 +3029,7 @@ void ProfilePage::onDeleteAccount() {
     }
 }
 
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  TimeSpentPage
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2684,53 +3039,37 @@ TimeSpentPage::TimeSpentPage(QWidget* parent) : QWidget(parent), m_elapsed(0) {
     outer->setSpacing(20);
     outer->addWidget(makeLabel("Time Spent", "pageTitle"));
 
-    auto* timerCard = new QFrame; timerCard->setObjectName("postCard");
+    auto* timerCard = new QFrame;
+    timerCard->setObjectName("postCard");
     timerCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
     auto* tcl = new QVBoxLayout(timerCard);
     tcl->setContentsMargins(40, 36, 40, 36);
     tcl->setSpacing(14);
     tcl->setAlignment(Qt::AlignCenter);
+
     auto* clockIcon = new QLabel("⏱");
     clockIcon->setAlignment(Qt::AlignCenter);
     clockIcon->setStyleSheet("font-size: 44px;");
     tcl->addWidget(clockIcon);
+
     m_timerLabel = makeLabel("00:00:00", "timerDisp");
     m_timerLabel->setAlignment(Qt::AlignCenter);
     tcl->addWidget(m_timerLabel);
+
     m_sessionLabel = makeLabel("Session started: —");
     m_sessionLabel->setAlignment(Qt::AlignCenter);
     m_sessionLabel->setStyleSheet("color: #34345A; font-size: 12px;");
     tcl->addWidget(m_sessionLabel);
+
     outer->addWidget(timerCard);
 
-    // Info cards row
-    auto* infoRow = new QHBoxLayout;
-    infoRow->setSpacing(12);
-    infoRow->setContentsMargins(0, 0, 0, 0);
-    auto makeInfoCard = [&](const QString& ic, const QString& label, const QString& val) {
-        auto* f = new QFrame; f->setObjectName("postCard");
-        f->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-        auto* fl = new QVBoxLayout(f);
-        fl->setContentsMargins(18, 16, 18, 16); fl->setSpacing(6);
-        fl->setAlignment(Qt::AlignCenter);
-        auto* i = new QLabel(ic); i->setAlignment(Qt::AlignCenter); i->setStyleSheet("font-size:22px;");
-        auto* v = new QLabel(val); v->setAlignment(Qt::AlignCenter);
-        v->setStyleSheet("font-size:17px; font-weight:700; color:#6060FF;");
-        auto* l = new QLabel(label); l->setAlignment(Qt::AlignCenter);
-        l->setStyleSheet("font-size:10px; color:#34345A; letter-spacing:1px;");
-        fl->addWidget(i); fl->addWidget(v); fl->addWidget(l);
-        return f;
-        };
-    infoRow->addWidget(makeInfoCard("🎯", "TODAY'S GOAL", "2 hours"));
-    infoRow->addWidget(makeInfoCard("📊", "AVG DAILY", "—"));
-    infoRow->addWidget(makeInfoCard("🔥", "STREAK", "—"));
-    outer->addLayout(infoRow);
+    // Push the timer card to the top so it doesn't float awkwardly in the middle
     outer->addStretch(1);
 
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &TimeSpentPage::onTick);
 }
-
 void TimeSpentPage::startSession() {
     m_elapsed = 0;
     m_sessionStart = QDateTime::currentDateTime();
