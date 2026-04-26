@@ -53,5 +53,6 @@ public:
      bool isValid() const;
      void setTimeOfCreation(const string& time);
      bool getIsReported() const;
+     bool isLikedBy(const string& username) const;
       string getCreatorUsername() const;
 };

@@ -1,8 +1,11 @@
 username|abuzar123
 password|password123
 bio|i
+isBanned|0
+isReported|0
 isReportedCount|0
 notificationCount|0
 followingCount|0
-followersCount|0
+followersCount|2
 postCount|0
+savedPostCount|0

@@ -23,6 +23,9 @@
 #include <QDateTime>
 #include <QDir>
 #include <QDialog>
+#include <QPainter>
+#include <QClipboard>
+#include <QToolTip>
 
 // Forward declarations
 class User;
@@ -31,18 +34,25 @@ class Notification;
 
 // ─────────────────────────────────────────────────────────────
 //  SidebarButton
-//  Custom button for sidebar navigation with active state
+//  Custom painted nav button with active left-bar indicator
+//  and optional notification badge
 // ─────────────────────────────────────────────────────────────
 class SidebarButton : public QPushButton {
     Q_OBJECT
 public:
     SidebarButton(const QString& icon, const QString& label, QWidget* parent = nullptr);
     void setActive(bool active);
+    void setNotifCount(int count);
+protected:
+    void paintEvent(QPaintEvent* event) override;
+private:
+    bool m_active = false;
+    bool m_hasNotif = false;
+    int  m_notifCount = 0;
 };
 
 // ─────────────────────────────────────────────────────────────
 //  PostCard
-//  Displays a single post with header, content, and action bar
 // ─────────────────────────────────────────────────────────────
 class PostCard : public QFrame {
     Q_OBJECT
@@ -72,7 +82,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  NotificationItem
-//  Single notification card with type icon and status indicator
 // ─────────────────────────────────────────────────────────────
 class NotificationItem : public QFrame {
     Q_OBJECT
@@ -82,7 +91,6 @@ public:
 
 // ─────────────────────────────────────────────────────────────
 //  AuthPage
-//  Landing, login, signup, and admin login screens
 // ─────────────────────────────────────────────────────────────
 class AuthPage : public QWidget {
     Q_OBJECT
@@ -115,6 +123,10 @@ private:
     User** m_allUsers;
     int        m_userCount;
 };
+
+// ─────────────────────────────────────────────────────────────
+//  PublicProfileWidget
+// ─────────────────────────────────────────────────────────────
 class PublicProfileWidget : public QWidget {
     Q_OBJECT
 public:
@@ -127,9 +139,9 @@ signals:
 private:
     QVBoxLayout* m_mainLayout;
 };
+
 // ─────────────────────────────────────────────────────────────
 //  FeedPage
-//  Main feed showing posts from followed users
 // ─────────────────────────────────────────────────────────────
 class FeedPage : public QWidget {
     Q_OBJECT
@@ -163,7 +175,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  MyPostsPage
-//  User's own posts with delete functionality
 // ─────────────────────────────────────────────────────────────
 class MyPostsPage : public QWidget {
     Q_OBJECT
@@ -185,7 +196,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  SavedPostsPage
-//  User's bookmarked/saved posts
 // ─────────────────────────────────────────────────────────────
 class SavedPostsPage : public QWidget {
     Q_OBJECT
@@ -207,7 +217,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  NotificationsPage
-//  Activity notifications for likes, comments, follows
 // ─────────────────────────────────────────────────────────────
 class NotificationsPage : public QWidget {
     Q_OBJECT
@@ -216,23 +225,21 @@ public:
     void refresh();
 private:
     void loadNotifications();
+    void onMarkAllRead();
     User* m_user;
     QScrollArea* m_scrollArea;
     QWidget* m_listContent;
     QVBoxLayout* m_listLayout;
-    void onMarkAllRead();
 };
 
 // ─────────────────────────────────────────────────────────────
 //  SearchPage
-//  User search with follow/report actions
 // ─────────────────────────────────────────────────────────────
 class SearchPage : public QWidget {
     Q_OBJECT
 public:
     SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
 private slots:
-   
     void onSearch();
     void onFollowUser();
     void onReportUser();
@@ -256,7 +263,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  ProfilePage
-//  User profile with bio/password updates and post tabs
 // ─────────────────────────────────────────────────────────────
 class ProfilePage : public QWidget {
     Q_OBJECT
@@ -287,6 +293,9 @@ private:
     QLabel* m_followingCountLabel = nullptr;
 };
 
+// ─────────────────────────────────────────────────────────────
+//  CommentDialog
+// ─────────────────────────────────────────────────────────────
 class CommentDialog : public QDialog {
     Q_OBJECT
 public:
@@ -306,9 +315,9 @@ private:
     QWidget* m_commentsContainer;
     QLineEdit* m_input;
 };
+
 // ─────────────────────────────────────────────────────────────
 //  TimeSpentPage
-//  Session timer tracking and engagement stats
 // ─────────────────────────────────────────────────────────────
 class TimeSpentPage : public QWidget {
     Q_OBJECT
@@ -329,8 +338,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  ChatView
-//  Full conversation between currentUser and one peer.
-//  Reads/writes data/Messages/<userA>_<userB>.txt
 // ─────────────────────────────────────────────────────────────
 class ChatView : public QWidget {
     Q_OBJECT
@@ -341,7 +348,7 @@ public:
     void refresh();
 
 signals:
-    void chatDeleted(const QString& peer);   // emitted after delete
+    void chatDeleted(const QString& peer);
 
 private slots:
     void onSend();
@@ -364,8 +371,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  MessagesPage
-//  Left panel: conversation list + "New Message" search
-//  Right panel: ChatView (swapped via QStackedWidget)
 // ─────────────────────────────────────────────────────────────
 class MessagesPage : public QWidget {
     Q_OBJECT
@@ -374,7 +379,6 @@ public:
         QWidget* parent = nullptr);
     void refresh();
 
-    // Called from SearchPage / anywhere that wants to open a chat directly
     void openChatWith(const QString& peer);
 
 private slots:
@@ -386,20 +390,18 @@ private:
     void   loadConversationList();
     void   clearConversationList();
     void   addConversationButton(const QString& peer);
-    static QStringList knownPeers(const QString& username);   // reads data/Messages index
+    static QStringList knownPeers(const QString& username);
 
     User* m_currentUser;
     User** m_allUsers;
     int           m_userCount;
 
-    // Left panel
     QWidget* m_leftPanel;
     QLineEdit* m_searchInput;
     QWidget* m_convListContent;
     QVBoxLayout* m_convListLayout;
 
-    // Right panel
-    QStackedWidget* m_rightStack;   // 0=placeholder, 1=ChatView
+    QStackedWidget* m_rightStack;
     ChatView* m_chatView;
 
     QString       m_activePeer;
@@ -407,7 +409,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  AdminPage
-//  Dashboard for reviewing reported users and posts
 // ─────────────────────────────────────────────────────────────
 class AdminPage : public QWidget {
     Q_OBJECT
@@ -431,7 +432,6 @@ private:
 
 // ─────────────────────────────────────────────────────────────
 //  MainWindow
-//  Application shell with sidebar navigation and page stack
 // ─────────────────────────────────────────────────────────────
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -458,13 +458,11 @@ private:
     void tearDownShell();
     void setActiveSidebarButton(SidebarButton* active);
 
-    // Root layout components
     AuthPage* m_authPage;
     QWidget* m_appShell;
     QHBoxLayout* m_shellLayout;
     QStackedWidget* m_rootStack;
 
-    // Sidebar components
     QWidget* m_sidebar;
     SidebarButton* m_btnFeed;
     SidebarButton* m_btnNotifications;
@@ -475,7 +473,6 @@ private:
     SidebarButton* m_btnSwitchUser;
     SidebarButton* m_btnLogout;
 
-    // Page stack
     QStackedWidget* m_pages;
     FeedPage* m_feedPage;
     NotificationsPage* m_notifPage;
@@ -485,7 +482,6 @@ private:
     TimeSpentPage* m_timeSpentPage;
     AdminPage* m_adminPage;
 
-    // Current user data
     User* m_currentUser;
     User** m_allUsers;
     int    m_userCount;

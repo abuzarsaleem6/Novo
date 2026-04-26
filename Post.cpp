@@ -544,3 +544,6 @@ void Posts::setTimeOfCreation(const string& time) {
 string Posts::getTimeOfCreation()  const {
     return timeOfCreation;
 }
+bool Posts::isLikedBy(const string& username) const {
+    return hasUserLikedPost(username, this->postId);
+}
