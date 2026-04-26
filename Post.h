@@ -47,8 +47,8 @@ public:
     void setContent(const string& newContent);
     int getLikeCount() const;
     int getReportCount() const;
-     void reportPost();
-     void deleteCommentAsAdmin(int index);
+    void reportPost(const string& reporterUsername);
+    void deleteCommentAsAdmin(int index);
      int getCommentsCount() const;
      bool isValid() const;
      void setTimeOfCreation(const string& time);

@@ -20,428 +20,277 @@
 #include <QSpacerItem>
 #include <QScreen>
 
+// ──────────────────────────────────────────────────────────────────────────────
+//  APPLICATION NAME
+// ──────────────────────────────────────────────────────────────────────────────
 static const QString APP_NAME = "Novo";
 
+// ──────────────────────────────────────────────────────────────────────────────
+//  GLOBAL STYLESHEET
+//  All sizing is done in C++ layout code, NOT in QSS, to avoid conflicts.
+//  QSS here handles ONLY colour, font, border-radius, and hover effects.
+// ──────────────────────────────────────────────────────────────────────────────
 static const QString APP_STYLE = R"(
+/* ── Reset ── */
 * {
-    font-family: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
-    color: #C8C8E0;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: #E2E2EC;
     box-sizing: border-box;
-    outline: none;
 }
 
-QMainWindow, QWidget {
-    background: #050508;
+/* ── Shell ── */
+QMainWindow, QWidget#appShell, QWidget#pageArea, QWidget#authBg {
+    background: #0C0C10;
 }
 
-QScrollArea {
-    border: none;
-    background: transparent;
-}
-
-QScrollBar:vertical {
-    background: transparent;
-    width: 4px;
-    margin: 8px 2px;
-    border-radius: 2px;
-}
-
-QScrollBar::handle:vertical {
-    background: #1C1C32;
-    border-radius: 2px;
-    min-height: 40px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #5B5BD6;
-}
-
-QScrollBar::handle:vertical:pressed {
-    background: #4444BB;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-    background: transparent;
-}
-
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical {
-    background: transparent;
-}
-
-QScrollBar:horizontal {
-    height: 0px;
-    background: transparent;
-}
-
+/* ── Sidebar ── */
 QWidget#sidebar {
-    background: #0A0A14;
-    border-right: 1px solid #13132A;
+    background: #0F0F16;
+    border-right: 1px solid #1C1C28;
 }
 
-QLabel#brandLabel {
-    font-size: 22px;
-    font-weight: 800;
-    color: #7C7CEA;
-    letter-spacing: -1px;
-    padding: 4px 6px;
-}
-
-QFrame#userChip {
-    background: #0F0F1E;
-    border: 1px solid #1A1A30;
-    border-radius: 10px;
-}
-
-QPushButton#navBtn {
+/* ── Sidebar buttons ── */
+QPushButton#sidebarBtn {
     background: transparent;
     border: none;
-    border-radius: 10px;
-    color: #44445A;
+    border-radius: 9px;
+    color: #50507A;
     text-align: left;
     font-size: 13px;
-    font-weight: 500;
-    padding: 0px 12px;
 }
-
-QPushButton#navBtn:hover {
-    background: #0F0F1E;
-    color: #9090C0;
+QPushButton#sidebarBtn:hover {
+    background: #17171F;
+    color: #A0A0D0;
 }
-
-QPushButton#navBtn[active="true"] {
-    background: #13132A;
-    color: #7C7CEA;
+QPushButton#sidebarBtn[active="true"] {
+    background: #1B1B2A;
+    color: #7C7CFF;
     font-weight: 600;
+    border-left: 3px solid #5050F0;
 }
-
-QPushButton#navBtnDanger {
+QPushButton#sidebarBtnDanger {
     background: transparent;
     border: none;
-    border-radius: 10px;
-    color: #442828;
+    border-radius: 9px;
+    color: #664040;
     text-align: left;
     font-size: 13px;
-    font-weight: 500;
-    padding: 0px 12px;
+}
+QPushButton#sidebarBtnDanger:hover {
+    background: #1C0D0D;
+    color: #FF7070;
 }
 
-QPushButton#navBtnDanger:hover {
-    background: #150808;
-    color: #CC5555;
-}
-
-QPushButton#fabBtn {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #5B5BD6, stop:1 #7C4FD4);
-    border: none;
-    border-radius: 14px;
-    color: #FFFFFF;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-QPushButton#fabBtn:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #7070E8, stop:1 #9060E8);
-}
-
-QPushButton#fabBtn:pressed {
-    background: #4444BB;
-}
-
-QWidget#pageArea {
-    background: #08080E;
-}
-
+/* ── Inputs ── */
 QLineEdit, QTextEdit {
-    background: #0D0D18;
-    border: 1px solid #1A1A30;
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: #E8E8F8;
+    background: #141420;
+    border: 1px solid #222235;
+    border-radius: 9px;
+    padding: 9px 13px;
+    color: #E2E2EC;
     font-size: 13px;
-    font-weight: 400;
-    selection-background-color: #3B3B9E;
 }
-
 QLineEdit:focus, QTextEdit:focus {
-    border: 1px solid #5B5BD6;
-    background: #0F0F20;
+    border: 1px solid #4545CC;
+    background: #18182A;
 }
 
-QLineEdit::placeholder {
-    color: #2A2A40;
-}
-
+/* ── Primary button ── */
 QPushButton#primaryBtn {
-    background: #5B5BD6;
+    background: #4040E0;
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     color: #FFFFFF;
     font-size: 13px;
     font-weight: 600;
-    letter-spacing: 0.2px;
 }
-QPushButton#primaryBtn:hover   { background: #7070E8; }
-QPushButton#primaryBtn:pressed { background: #4444BB; }
-QPushButton#primaryBtn:disabled { background: #1C1C32; color: #44445A; }
+QPushButton#primaryBtn:hover   { background: #5252F0; }
+QPushButton#primaryBtn:pressed { background: #3030BB; }
 
+/* ── Plus (compose) button ── */
+QPushButton#plusCircleBtn {
+    background: #4040E0;
+    border: none;
+    border-radius: 22px;
+    color: #FFFFFF;
+    font-size: 22px;
+    font-weight: bold;
+}
+QPushButton#plusCircleBtn:hover { background: #5252F0; }
+
+/* ── Secondary button ── */
 QPushButton#secondaryBtn {
     background: transparent;
-    border: 1px solid #1C1C32;
-    border-radius: 10px;
-    color: #5858A0;
+    border: 1px solid #2A2A48;
+    border-radius: 9px;
+    color: #6060AA;
     font-size: 13px;
-    font-weight: 500;
 }
 QPushButton#secondaryBtn:hover {
-    background: #0F0F1E;
-    color: #9090D0;
-    border-color: #3A3A60;
-}
-QPushButton#secondaryBtn:pressed {
-    background: #13132A;
+    background: #18182A;
+    color: #AAAAEE;
+    border-color: #4444AA;
 }
 
+/* ── Danger button ── */
 QPushButton#dangerBtn {
-    background: #150505;
-    border: 1px solid #3A1515;
-    border-radius: 10px;
-    color: #884444;
+    background: #200808;
+    border: 1px solid #4A2020;
+    border-radius: 9px;
+    color: #BB5555;
     font-size: 13px;
-    font-weight: 500;
 }
 QPushButton#dangerBtn:hover {
-    background: #200808;
-    color: #EE6666;
-    border-color: #661E1E;
-}
-QPushButton#dangerBtn:pressed {
-    background: #2A0A0A;
+    background: #300C0C;
+    color: #EE7777;
+    border-color: #774444;
 }
 
+/* ── Icon button ── */
 QPushButton#iconBtn {
     background: transparent;
     border: none;
-    color: #33334A;
+    color: #44446A;
+    font-size: 16px;
+    border-radius: 7px;
+}
+QPushButton#iconBtn:hover { background: #18182A; color: #7777CC; }
+
+/* ── Save / Saved icon buttons ── */
+QPushButton#saveIconBtn {
+    background: transparent;
+    border: none;
+    color: #44664A;
     font-size: 15px;
-    border-radius: 8px;
+    border-radius: 7px;
 }
-QPushButton#iconBtn:hover {
-    background: #0F0F1E;
-    color: #7070CC;
+QPushButton#saveIconBtn:hover { background: #0F1F10; color: #44CC55; }
+QPushButton#savedIconBtn {
+    background: #0F1F10;
+    border: none;
+    color: #44CC55;
+    font-size: 15px;
+    border-radius: 7px;
 }
 
-QPushButton#saveBtn {
+/* ── Report icon button ── */
+QPushButton#reportIconBtn {
     background: transparent;
     border: none;
-    color: #3A5540;
-    font-size: 16px;
-    border-radius: 8px;
-}
-QPushButton#saveBtn:hover { background: #081208; color: #44CC77; }
-QPushButton#savedBtn {
-    background: #081208;
-    border: none;
-    color: #44CC77;
-    font-size: 16px;
-    border-radius: 8px;
-}
-
-QPushButton#reportBtn {
-    background: transparent;
-    border: none;
-    color: #4A2828;
+    color: #664444;
     font-size: 13px;
-    border-radius: 8px;
+    border-radius: 7px;
 }
-QPushButton#reportBtn:hover { background: #150505; color: #CC4444; }
+QPushButton#reportIconBtn:hover { background: #1C0808; color: #CC4444; }
 
+/* ── Cards ── */
 QFrame#postCard {
-    background: #0D0D18;
-    border: 1px solid #161628;
-    border-radius: 16px;
+    background: #111119;
+    border: 1px solid #1C1C2A;
+    border-radius: 13px;
 }
-
-QFrame#postCard:hover {
-    border-color: #222240;
-}
-
 QFrame#composerCard {
-    background: #0A0A16;
-    border: 1px solid #5B5BD6;
-    border-radius: 16px;
+    background: #0F0F1A;
+    border: 1px solid #2A2A50;
+    border-radius: 13px;
 }
-
-QFrame#authCard {
-    background: #0A0A16;
-    border: 1px solid #161630;
-    border-radius: 20px;
+QFrame#notifItem {
+    background: #111119;
+    border: 1px solid #1C1C2A;
+    border-radius: 9px;
 }
-
-QFrame#notifCard {
-    background: #0D0D18;
-    border: 1px solid #161628;
+QFrame#notifItem[unread="true"] {
+    border-left: 3px solid #5050F0;
+    background: #12121E;
+}
+QFrame#resultCard {
+    background: #111119;
+    border: 1px solid #1C1C2A;
     border-radius: 12px;
 }
-
-QFrame#notifCard[unread="true"] {
-    border-left: 3px solid #5B5BD6;
-    background: #0F0F20;
+QFrame#authCard {
+    background: #0F0F18;
+    border: 1px solid #1C1C2E;
+    border-radius: 18px;
 }
 
-QFrame#resultCard {
-    background: #0D0D18;
-    border: 1px solid #161628;
-    border-radius: 14px;
-}
+/* ── Labels ── */
+QLabel#pageTitle   { font-size: 20px; font-weight: 700; color: #E8E8F8; }
+QLabel#sectionLbl  { font-size: 10px; font-weight: 600; color: #383858; letter-spacing: 1.4px; }
+QLabel#postAuthor  { font-size: 13px; font-weight: 600; color: #CCCCEE; }
+QLabel#postTime    { font-size: 11px; color: #3A3A58; }
+QLabel#postContent { font-size: 13px; color: #B8B8D0; }
+QLabel#timerDisp   { font-size: 52px; font-weight: 700; color: #5555EE; letter-spacing: -2px; }
+QLabel#brandTitle  { font-size: 34px; font-weight: 800; color: #6060FF; letter-spacing: -1px; }
+QLabel#brandSub    { font-size: 12px; color: #36365A; }
+QLabel#authTitle   { font-size: 19px; font-weight: 700; color: #DEDEFF; }
 
-QLabel#bubbleOwn {
-    background: #1E1E50;
-    color: #E8E8FF;
-    border-radius: 14px 14px 2px 14px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 400;
+/* ── Scroll Areas & Transparent Backgrounds ── */
+QScrollArea {
+    background: #0C0C10; /* Forces dark background behind everything */
+    border: none;
 }
-
-QLabel#bubbleOther {
-    background: #111120;
-    color: #B8B8D8;
-    border-radius: 14px 14px 14px 2px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 400;
+QScrollArea > QWidget > QWidget {
+    background: transparent; /* Makes feed content blend perfectly */
 }
-
-QLabel#pageTitle {
-    font-size: 22px;
-    font-weight: 700;
-    color: #F1F1F8;
-    letter-spacing: -0.5px;
-}
-
-QLabel#sectionLabel {
-    font-size: 10px;
-    font-weight: 600;
-    color: #2A2A44;
-    letter-spacing: 1.8px;
-}
-
-QLabel#postAuthor {
-    font-size: 14px;
-    font-weight: 600;
-    color: #E0E0F8;
-}
-
-QLabel#postHandle {
-    font-size: 11px;
-    font-weight: 400;
-    color: #44445A;
-}
-
-QLabel#postContent {
-    font-size: 14px;
-    font-weight: 400;
-    color: #C0C0D8;
-    line-height: 1.65;
-}
-
-QLabel#postMeta {
-    font-size: 11px;
-    color: #33334A;
-}
-
-QLabel#timerDisplay {
-    font-size: 56px;
-    font-weight: 800;
-    color: #5B5BD6;
-    letter-spacing: -3px;
-}
-
-QLabel#brandTitle {
-    font-size: 36px;
-    font-weight: 800;
-    color: #7C7CEA;
-    letter-spacing: -2px;
-}
-
-QLabel#statValue {
-    font-size: 24px;
-    font-weight: 700;
-    color: #5B5BD6;
-    letter-spacing: -1px;
-}
-
-QLabel#statLabel {
-    font-size: 10px;
-    font-weight: 600;
-    color: #2A2A44;
-    letter-spacing: 1.5px;
-}
-
-QLabel#badgeUnread {
-    background: #5B5BD6;
-    color: #FFFFFF;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 6px;
-}
-
-QWidget#msgLeftPanel {
-    background: #080812;
-    border-right: 1px solid #111122;
-}
-
-QFrame#msgHeader {
-    background: #080812;
-    border-bottom: 1px solid #111122;
-}
-
-QFrame#chatInputBar {
-    background: #080812;
-    border-top: 1px solid #111122;
-}
-
-QDialog {
-    background: #08080E;
-    border: 1px solid #1A1A30;
-    border-radius: 16px;
-}
-
-QMessageBox {
-    background: #08080E;
-}
-
-QMessageBox QLabel {
-    color: #C8C8E0;
-    font-size: 13px;
-}
-
-QMessageBox QPushButton {
-    background: #0D0D18;
-    border: 1px solid #1C1C32;
-    border-radius: 8px;
-    color: #8888AA;
-    min-width: 80px;
-    padding: 6px 14px;
-    font-size: 12px;
-}
-
-QMessageBox QPushButton:hover {
-    background: #13132A;
-    color: #AAAACC;
-}
-
-QStackedWidget {
+QScrollArea::viewport {
     background: transparent;
+}
+
+/* ── 10/10 Sleek Scrollbar ── */
+QScrollBar:vertical {
+    background: transparent;
+    width: 8px; /* Thin and modern */
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #2A2A3A;
+    min-height: 40px;
+    border-radius: 4px; /* Pill-shaped handle */
+}
+QScrollBar::handle:vertical:hover {
+    background: #505070; /* Illuminates when hovered */
+}
+QScrollBar::handle:vertical:pressed {
+    background: #7070FF; /* Primary color when dragging */
+}
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    height: 0px; /* Completely hides the ugly top/bottom arrow buttons */
+}
+QScrollBar::add-page:vertical, 
+QScrollBar::sub-page:vertical {
+    background: transparent; /* Hides the grey track background */
+}
+
+/* ── Message Boxes & Dialogs ── */
+QMessageBox {
+    background: #0C0C10;
+}
+QMessageBox QLabel {
+    color: #E8E8F8;
+    font-size: 14px;
+}
+QMessageBox QPushButton {
+    background: transparent;
+    border: 1px solid #2A2A48;
+    border-radius: 9px;
+    color: #6060AA;
+    font-size: 13px;
+    padding: 6px 20px;
+    min-width: 60px;
+}
+QMessageBox QPushButton:hover {
+    background: #18182A;
+    color: #AAAAEE;
+    border-color: #4444AA;
 }
 )";
 
+// ──────────────────────────────────────────────────────────────────────────────
+//  STATIC HELPER FUNCTIONS
+//  These are the only factory helpers used throughout the file.
+// ──────────────────────────────────────────────────────────────────────────────
 namespace {
 
     QPushButton* makePrimary(const QString& t, QWidget* p = nullptr) {
@@ -465,6 +314,7 @@ namespace {
         return b;
     }
 
+    // Icon button with explicit fixed size so it never shrinks / overlaps
     QPushButton* makeIcon(const QString& icon, QWidget* p = nullptr,
         int w = 32, int h = 32) {
         auto* b = new QPushButton(icon, p);
@@ -481,55 +331,28 @@ namespace {
         return l;
     }
 
+    // Thin horizontal rule
     QFrame* divider(QWidget* p = nullptr) {
         auto* f = new QFrame(p);
         f->setFrameShape(QFrame::HLine);
         f->setFixedHeight(1);
-        f->setStyleSheet("background: #0F0F1E; border: none;");
+        f->setStyleSheet("background: #1A1A28; border: none;");
         return f;
     }
 
+    // Circular avatar with initial
     QLabel* avatar(const QString& initial, int size, QWidget* p = nullptr) {
-        auto* l = new QLabel(initial.isEmpty() ? "?" : initial.left(1).toUpper(), p);
+        auto* l = new QLabel(initial.isEmpty() ? "?" : initial, p);
         l->setFixedSize(size, size);
         l->setAlignment(Qt::AlignCenter);
         l->setStyleSheet(QString(
-            "background: qlineargradient(x1:0,y1:0,x2:1,y2:1,"
-            "stop:0 #2A2A6A, stop:1 #1A1A44);"
+            "background: #202040;"
             "border-radius: %1px;"
             "font-size: %2px;"
             "font-weight: 700;"
-            "color: #9090EE;"
-            "border: 1px solid #2A2A50;")
-            .arg(size / 2).arg(qMax(11, size / 3)));
+            "color: #7070FF;")
+            .arg(size / 2).arg(qMax(10, size / 3)));
         return l;
-    }
-
-    QLabel* sectionLabel(const QString& text, QWidget* p = nullptr) {
-        auto* l = new QLabel(text.toUpper(), p);
-        l->setStyleSheet("font-size:10px; font-weight:600; color:#2A2A44; letter-spacing:1.8px;");
-        return l;
-    }
-
-    QScrollArea* makeScrollArea(QWidget*& outContent, QVBoxLayout*& outLayout,
-        QWidget* parent = nullptr)
-    {
-        auto* sa = new QScrollArea(parent);
-        sa->setWidgetResizable(true);
-        sa->setFrameShape(QFrame::NoFrame);
-        sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        sa->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-        outContent = new QWidget;
-        outContent->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        outLayout = new QVBoxLayout(outContent);
-        outLayout->setContentsMargins(0, 0, 6, 20);
-        outLayout->setSpacing(12);
-        outLayout->addStretch(1);
-
-        sa->setWidget(outContent);
-        sa->verticalScrollBar()->setSingleStep(25);
-        return sa;
     }
 
 } // anonymous namespace
@@ -540,114 +363,48 @@ namespace {
 SidebarButton::SidebarButton(const QString& icon, const QString& label, QWidget* parent)
     : QPushButton(parent)
 {
-    setAttribute(Qt::WA_Hover, true);
-    setObjectName("navBtn");
-    setFixedHeight(46);
+    setObjectName("sidebarBtn");
+    // Fixed height; width driven by parent layout (Expanding policy)
+    setFixedHeight(44);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setText(icon + "   " + label);
     setCursor(Qt::PointingHandCursor);
     setProperty("active", false);
+    // Padding applied via QSS; left-indent handled by property
+    setStyleSheet("text-align: left; padding-left: 14px;");
 }
 
 void SidebarButton::setActive(bool active) {
-    m_active = active;
     setProperty("active", active);
+    if (style()) { style()->unpolish(this); style()->polish(this); }
     update();
-}
-
-void SidebarButton::setNotifCount(int count) {
-    m_notifCount = count;
-    m_hasNotif = (count > 0);
-    update();
-}
-
-void SidebarButton::paintEvent(QPaintEvent*) {
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-
-    QRect r = rect();
-
-    // Background
-    if (m_active) {
-        p.fillRect(r, QColor("#13132A"));
-    }
-    else if (underMouse()) {
-        p.fillRect(r, QColor("#0F0F1E"));
-    }
-    else {
-        p.fillRect(r, QColor("#0A0A14"));
-    }
-
-    // Left accent bar
-    if (m_active) {
-        QRect bar(0, 6, 3, height() - 12);
-        p.fillRect(bar, QColor("#5B5BD6"));
-    }
-
-    // Parse icon and label
-    QString txt = text();
-    QString iconStr;
-    QString labelStr;
-    int split = txt.indexOf("   ");
-    if (split >= 0) {
-        iconStr = txt.left(split);
-        labelStr = txt.mid(split + 3);
-    }
-    else {
-        labelStr = txt;
-    }
-
-    int x = 14;
-
-    // Icon
-    if (!iconStr.isEmpty()) {
-        p.setPen(m_active ? QColor("#7C7CEA") : (underMouse() ? QColor("#8888BB") : QColor("#44445A")));
-        QFont iconFont("Segoe UI Emoji", 18);
-        p.setFont(iconFont);
-        QRect iconRect(x, 0, 24, height());
-        p.drawText(iconRect, Qt::AlignVCenter | Qt::AlignLeft, iconStr);
-        x += 28;
-    }
-
-    // Label
-    p.setPen(m_active ? QColor("#7C7CEA") : (underMouse() ? QColor("#8888BB") : QColor("#44445A")));
-    QFont textFont("Inter", 13, m_active ? QFont::DemiBold : QFont::Medium);
-    p.setFont(textFont);
-    QRect textRect(x, 0, width() - x - 10, height());
-    p.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, labelStr);
-
-    // Notification badge
-    if (m_hasNotif && m_notifCount > 0) {
-        int badgeSize = 18;
-        QRect badgeRect(r.right() - badgeSize - 10, r.center().y() - badgeSize / 2, badgeSize, badgeSize);
-        p.setBrush(QColor("#5B5BD6"));
-        p.setPen(Qt::NoPen);
-        p.drawEllipse(badgeRect);
-        p.setPen(QColor("#FFFFFF"));
-        QFont badgeFont("Inter", 8, QFont::Bold);
-        p.setFont(badgeFont);
-        p.drawText(badgeRect, Qt::AlignCenter, QString::number(m_notifCount));
-    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  PostCard
+//  Layout:
+//    [avatar | author/time | (delete btn if owner)]
+//    ── divider ──
+//    [content label]
+//    [like btn | like cnt | comment btn | comment cnt | (save btn) | (report btn)]
 // ══════════════════════════════════════════════════════════════════════════════
 PostCard::PostCard(Posts* post, const QString& authorUsername,
     bool isOwner, bool isSaved,
-    const QString& viewerUsername, QWidget* parent)
+    const QString& viewerUsername, bool isAuthorReported, QWidget* parent)
     : QFrame(parent)
     , m_post(post)
     , m_authorUsername(authorUsername)
     , m_isOwner(isOwner)
     , m_isSaved(isSaved)
     , m_viewerUsername(viewerUsername)
+    , m_isAuthorReported(isAuthorReported)          
+    , m_isPostReported(post->getIsReported())
 {
     setObjectName("postCard");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(20, 20, 20, 20);
+    root->setContentsMargins(16, 16, 16, 16);
     root->setSpacing(12);
 
     // ── Header row ──────────────────────────────────────────────────────────
@@ -656,14 +413,15 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     headerRow->setContentsMargins(0, 0, 0, 0);
 
     QString ini = m_authorUsername.isEmpty() ? "?" : m_authorUsername.left(1).toUpper();
-    headerRow->addWidget(avatar(ini, 44), 0, Qt::AlignVCenter);
+    headerRow->addWidget(avatar(ini, 40), 0, Qt::AlignVCenter);
 
     auto* metaCol = new QVBoxLayout;
     metaCol->setSpacing(2);
     metaCol->setContentsMargins(0, 0, 0, 0);
     auto* authorLbl = makeLabel(m_authorUsername, "postAuthor");
     authorLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    auto* handleLbl = makeLabel("@" + m_authorUsername, "postHandle");
+    auto* handleLbl = makeLabel("@" + m_authorUsername, "postTime");
+    handleLbl->setStyleSheet("color: #888888; font-size: 11px;");
     metaCol->addWidget(authorLbl);
     metaCol->addWidget(handleLbl);
     headerRow->addLayout(metaCol, 1);
@@ -671,7 +429,8 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     QString timeStr = QString::fromStdString(post->getTimeOfCreation());
     if (timeStr.isEmpty())
         timeStr = "Post " + QString::fromStdString(post->getPostId());
-    auto* timeRightLbl = makeLabel(timeStr, "postMeta");
+    auto* timeRightLbl = makeLabel(timeStr, "postTime");
+    timeRightLbl->setStyleSheet("color: #888888; font-size: 11px;");
     timeRightLbl->setAlignment(Qt::AlignRight);
     timeRightLbl->setFixedWidth(80);
     headerRow->addWidget(timeRightLbl, 0, Qt::AlignVCenter);
@@ -682,18 +441,27 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         editBtn->setObjectName("iconBtn");
         editBtn->setCursor(Qt::PointingHandCursor);
         editBtn->setStyleSheet(
-            "QPushButton{background:transparent;border:none;color:#33334A;font-size:16px;border-radius:6px;}"
-            "QPushButton:hover{background:#0F0F1E;color:#AAAAFF;}");
+            "QPushButton{background:transparent;border:none;color:#888888;font-size:16px;border-radius:6px;}"
+            "QPushButton:hover{background:#1E1E1E;color:#AAAAFF;}");
         connect(editBtn, &QPushButton::clicked, this,
             [this]() { emit editClicked(m_post); });
         headerRow->addWidget(editBtn, 0, Qt::AlignVCenter);
 
-        auto* delBtn = new QPushButton("🗑");
-        delBtn->setFixedSize(28, 28);
+        auto* delBtn = new QPushButton("🗑️");
+        delBtn->setFixedSize(32, 32);
         delBtn->setCursor(Qt::PointingHandCursor);
         delBtn->setStyleSheet(
-            "QPushButton { background: transparent; border: none; color: #33334A; font-size: 18px; border-radius: 6px; }"
-            "QPushButton:hover { background: rgba(255, 68, 68, 0.08); color: #FF4444; }");
+            "QPushButton {"
+            "  background: transparent;"
+            "  border: none;"
+            "  color: #666688;"
+            "  font-size: 18px;"
+            "  border-radius: 6px;"
+            "}"
+            "QPushButton:hover {"
+            "  background: rgba(255, 68, 68, 0.1);"
+            "  color: #FF4444;"
+            "}");
         connect(delBtn, &QPushButton::clicked, this,
             [this]() { emit deleteClicked(m_post); });
         headerRow->addWidget(delBtn, 0, Qt::AlignVCenter);
@@ -705,36 +473,29 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     auto* contentLbl = makeLabel(QString::fromStdString(post->getContent()), "postContent");
     contentLbl->setWordWrap(true);
     contentLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    contentLbl->setStyleSheet("color: #C8C8E0; font-size: 14px; font-weight: 400; line-height: 1.65; padding: 12px 0px 8px 0px; letter-spacing: 0.1px;");
+    contentLbl->setStyleSheet("color: #FFFFFF; font-size: 15px; line-height: 1.6; padding: 8px 0;");
     root->addWidget(contentLbl);
-
-    // ── Divider ─────────────────────────────────────────────────────────────
-    auto* div = new QFrame;
-    div->setFrameShape(QFrame::HLine);
-    div->setFixedHeight(1);
-    div->setStyleSheet("background: #111125; border: none; margin: 8px 0;");
-    root->addWidget(div);
 
     // ── Action row ──────────────────────────────────────────────────────────
     auto* actRow = new QHBoxLayout;
-    actRow->setContentsMargins(0, 4, 0, 0);
-    actRow->setSpacing(28);
+    actRow->setContentsMargins(0, 10, 0, 0);
+    actRow->setSpacing(20);
 
-    // ── Like button ─────────────────────────────────────────────────────────
+    // ── Like button ──────────────────────────────────────────────────────────
     bool alreadyLiked = m_post->isLikedBy(m_viewerUsername.toStdString());
 
     auto* likeBtn = new QPushButton(alreadyLiked ? "♥" : "♡");
     likeBtn->setFixedSize(36, 36);
     likeBtn->setCursor(Qt::PointingHandCursor);
     likeBtn->setStyleSheet(alreadyLiked
-        ? "QPushButton { background: transparent; border: none; color: #EE4444; font-size: 19px; }"
-        : "QPushButton { background: transparent; border: none; color: #33334A; font-size: 19px; }"
+        ? "QPushButton { background: transparent; border: none; color: #FF4444; font-size: 22px; }"
+        : "QPushButton { background: transparent; border: none; color: #A0A0C0; font-size: 22px; }"
         "QPushButton:hover { color: #FF5555; }");
 
     auto* likeCountLbl = new QLabel(QString::number(m_post->getLikeCount()));
     likeCountLbl->setStyleSheet(alreadyLiked
-        ? "color: #EE4444; font-size: 13px; font-weight: bold;"
-        : "color: #33334A; font-size: 13px; font-weight: bold;");
+        ? "color: #FF4444; font-size: 14px; font-weight: bold;"
+        : "color: #A0A0C0; font-size: 14px; font-weight: bold;");
 
     connect(likeBtn, &QPushButton::clicked, this, [this, likeBtn, likeCountLbl]() {
         m_post->likePost(m_viewerUsername.toStdString());
@@ -745,33 +506,19 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
 
         if (nowLiked) {
             likeBtn->setText("♥");
-            likeBtn->setStyleSheet(
-                "QPushButton { background: transparent; border: none; color: #EE4444; font-size: 19px; }");
-            likeCountLbl->setStyleSheet("color: #EE4444; font-size: 13px; font-weight: bold;");
-
-            // Pop animation
-            QFont f = likeBtn->font();
-            f.setPointSize(24);
-            likeBtn->setFont(f);
-            QTimer::singleShot(180, likeBtn, [likeBtn]() {
-                QFont f2 = likeBtn->font();
-                f2.setPointSize(19);
-                likeBtn->setFont(f2);
-                });
+            likeBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #FF4444; font-size: 22px; }");
+            likeCountLbl->setStyleSheet("color: #FF4444; font-size: 14px; font-weight: bold;");
         }
         else {
             likeBtn->setText("♡");
-            likeBtn->setStyleSheet(
-                "QPushButton { background: transparent; border: none; color: #33334A; font-size: 19px; }"
-                "QPushButton:hover { color: #FF5555; }");
-            likeCountLbl->setStyleSheet("color: #33334A; font-size: 13px; font-weight: bold;");
+            likeBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #A0A0C0; font-size: 22px; } QPushButton:hover { color: #FF5555; }");
+            likeCountLbl->setStyleSheet("color: #A0A0C0; font-size: 14px; font-weight: bold;");
         }
-
         emit likeClicked(m_post);
         });
 
     auto* likeLayout = new QHBoxLayout;
-    likeLayout->setSpacing(5);
+    likeLayout->setSpacing(4);
     likeLayout->addWidget(likeBtn);
     likeLayout->addWidget(likeCountLbl);
     actRow->addLayout(likeLayout);
@@ -780,85 +527,149 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     auto* commentBtn = new QPushButton("💬");
     commentBtn->setFixedSize(36, 36);
     commentBtn->setCursor(Qt::PointingHandCursor);
-    commentBtn->setStyleSheet(
-        "QPushButton { background: transparent; border: none; color: #33334A; font-size: 18px; }"
-        "QPushButton:hover { color: #5B5BD6; }");
-    connect(commentBtn, &QPushButton::clicked, this,
-        [this]() { emit commentClicked(m_post); });
+    commentBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #A0A0C0; font-size: 20px; } QPushButton:hover { color: #7070FF; }");
+    connect(commentBtn, &QPushButton::clicked, this, [this]() { emit commentClicked(m_post); });
 
     auto* commentCountLbl = new QLabel(QString::number(m_post->getComments().size()));
-    commentCountLbl->setStyleSheet("color: #33334A; font-size: 13px; font-weight: bold;");
+    commentCountLbl->setStyleSheet("color: #A0A0C0; font-size: 14px; font-weight: bold;");
 
     auto* commentLayout = new QHBoxLayout;
-    commentLayout->setSpacing(5);
+    commentLayout->setSpacing(4);
     commentLayout->addWidget(commentBtn);
     commentLayout->addWidget(commentCountLbl);
     actRow->addLayout(commentLayout);
 
+    // Declare saveBtn pointer here so it is accessible outside the IF block
+    QPushButton* saveBtn = nullptr;
+
     if (!m_isOwner) {
-        // ── Save button ──────────────────────────────────────────────────────
         auto* saveCol = new QVBoxLayout;
         saveCol->setSpacing(2);
         saveCol->setAlignment(Qt::AlignCenter);
-        auto* saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
-        saveBtn->setObjectName(m_isSaved ? "savedBtn" : "saveBtn");
+
+        // 1. Create the button and label
+         saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
         saveBtn->setCursor(Qt::PointingHandCursor);
         saveBtn->setFixedSize(24, 24);
-        auto* saveLbl = new QLabel(m_isSaved ? "Saved" : "Save");
-        saveLbl->setStyleSheet("color: #F0A429; font-size: 10px;");
+
+        QLabel* saveLbl = new QLabel(m_isSaved ? "Saved" : "Save");
         saveLbl->setAlignment(Qt::AlignCenter);
+
+        // 2. Explicitly apply the correct colors right away
+        if (m_isSaved) {
+            saveBtn->setStyleSheet("background: #0F1F10; border: none; color: #44CC55; font-size: 15px; border-radius: 7px;");
+            saveLbl->setStyleSheet("color: #44CC55; font-size: 11px;"); // Green text
+        }
+        else {
+            saveBtn->setStyleSheet("background: transparent; border: none; color: #44664A; font-size: 15px; border-radius: 7px;");
+            saveLbl->setStyleSheet("color: #F5A623; font-size: 11px;"); // Orange text
+        }
+
         saveCol->addWidget(saveBtn, 0, Qt::AlignCenter);
         saveCol->addWidget(saveLbl, 0, Qt::AlignCenter);
+
+        // 3. Force the style changes immediately on click
         connect(saveBtn, &QPushButton::clicked, this, [this, saveBtn, saveLbl]() {
             if (m_isSaved) {
                 emit unsaveClicked(m_post);
+                m_isSaved = false;
+                saveBtn->setText("☆");
+                saveBtn->setStyleSheet("background: transparent; border: none; color: #44664A; font-size: 15px; border-radius: 7px;");
+                saveLbl->setText("Save");
+                saveLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
             }
             else {
                 emit saveClicked(m_post, m_authorUsername);
-            }
-            m_isSaved = !m_isSaved;
-            saveBtn->setText(m_isSaved ? "★" : "☆");
-            saveBtn->setObjectName(m_isSaved ? "savedBtn" : "saveBtn");
-            saveLbl->setText(m_isSaved ? "Saved" : "Save");
-            if (saveBtn->style()) {
-                saveBtn->style()->unpolish(saveBtn);
-                saveBtn->style()->polish(saveBtn);
+                m_isSaved = true;
+                saveBtn->setText("★");
+                saveBtn->setStyleSheet("background: #0F1F10; border: none; color: #44CC55; font-size: 15px; border-radius: 7px;");
+                saveLbl->setText("Saved");
+                saveLbl->setStyleSheet("color: #44CC55; font-size: 11px;");
             }
             });
+
         actRow->addLayout(saveCol);
 
         // ── Report post button ───────────────────────────────────────────────
         auto* reportCol = new QVBoxLayout;
         reportCol->setSpacing(2);
         reportCol->setAlignment(Qt::AlignCenter);
-        auto* reportBtn = new QPushButton("⚑");
-        reportBtn->setObjectName("reportBtn");
+
+        QPushButton* reportBtn = new QPushButton("⚑");
         reportBtn->setCursor(Qt::PointingHandCursor);
         reportBtn->setFixedSize(24, 24);
-        auto* reportLbl = new QLabel("Report");
-        reportLbl->setStyleSheet("color: #F0A429; font-size: 10px;");
+
+        QLabel* reportLbl = new QLabel(m_isPostReported ? "Reported" : "Report");
         reportLbl->setAlignment(Qt::AlignCenter);
+
+        // Apply Red coloring immediately if already reported
+        if (m_isPostReported) {
+            reportBtn->setStyleSheet("background: #1C0808; border: none; color: #CC4444; font-size: 15px; border-radius: 7px;");
+            reportLbl->setStyleSheet("color: #CC4444; font-size: 11px;");
+        }
+        else {
+            reportBtn->setStyleSheet("background: transparent; border: none; color: #664444; font-size: 15px; border-radius: 7px;");
+            reportLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
+        }
+
         reportCol->addWidget(reportBtn, 0, Qt::AlignCenter);
         reportCol->addWidget(reportLbl, 0, Qt::AlignCenter);
-        connect(reportBtn, &QPushButton::clicked, this,
-            [this]() { emit reportClicked(m_post, m_authorUsername); });
+
+        connect(reportBtn, &QPushButton::clicked, this, [this, reportBtn, reportLbl]() {
+            if (m_isPostReported) {
+                QMessageBox::information(this, "Already Reported", "You have already reported this post.");
+                return;
+            }
+            auto r = QMessageBox::question(this, "Report Post", "Are you sure you want to report this post to the admins?", QMessageBox::Yes | QMessageBox::No);
+            if (r == QMessageBox::Yes) {
+                emit reportClicked(m_post, m_authorUsername);
+                m_isPostReported = true;
+                reportBtn->setStyleSheet("background: #1C0808; border: none; color: #CC4444; font-size: 15px; border-radius: 7px;");
+                reportLbl->setStyleSheet("color: #CC4444; font-size: 11px;");
+                reportLbl->setText("Reported");
+            }
+            });
         actRow->addLayout(reportCol);
 
         // ── Report user button ───────────────────────────────────────────────
         auto* reportUserCol = new QVBoxLayout;
         reportUserCol->setSpacing(2);
         reportUserCol->setAlignment(Qt::AlignCenter);
-        auto* reportUserBtn = new QPushButton("🚫");
-        reportUserBtn->setObjectName("reportBtn");
+
+        QPushButton* reportUserBtn = new QPushButton("🚫");
         reportUserBtn->setCursor(Qt::PointingHandCursor);
         reportUserBtn->setFixedSize(24, 24);
-        auto* reportUserLbl = new QLabel("Report User");
-        reportUserLbl->setStyleSheet("color: #F0A429; font-size: 10px;");
+
+        QLabel* reportUserLbl = new QLabel(m_isAuthorReported ? "Reported User" : "Report User");
         reportUserLbl->setAlignment(Qt::AlignCenter);
+
+        // Apply Red coloring immediately if already reported
+        if (m_isAuthorReported) {
+            reportUserBtn->setStyleSheet("background: #1C0808; border: none; color: #CC4444; font-size: 15px; border-radius: 7px;");
+            reportUserLbl->setStyleSheet("color: #CC4444; font-size: 11px;");
+        }
+        else {
+            reportUserBtn->setStyleSheet("background: transparent; border: none; color: #664444; font-size: 15px; border-radius: 7px;");
+            reportUserLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
+        }
+
         reportUserCol->addWidget(reportUserBtn, 0, Qt::AlignCenter);
         reportUserCol->addWidget(reportUserLbl, 0, Qt::AlignCenter);
-        connect(reportUserBtn, &QPushButton::clicked, this,
-            [this]() { emit reportUserClicked(m_authorUsername); });
+
+        connect(reportUserBtn, &QPushButton::clicked, this, [this, reportUserBtn, reportUserLbl]() {
+            if (m_isAuthorReported) {
+                QMessageBox::information(this, "Already Reported", "You have already reported this user.");
+                return;
+            }
+            auto r = QMessageBox::question(this, "Report User", "Are you sure you want to report user @" + m_authorUsername + "?", QMessageBox::Yes | QMessageBox::No);
+            if (r == QMessageBox::Yes) {
+                emit reportUserClicked(m_authorUsername);
+                m_isAuthorReported = true;
+                reportUserBtn->setStyleSheet("background: #1C0808; border: none; color: #CC4444; font-size: 15px; border-radius: 7px;");
+                reportUserLbl->setStyleSheet("color: #CC4444; font-size: 11px;");
+                reportUserLbl->setText("Reported User");
+            }
+            });
         actRow->addLayout(reportUserCol);
     }
 
@@ -869,52 +680,47 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     shareCol->setAlignment(Qt::AlignCenter);
     auto* shareBtn = makeIcon("↗", nullptr, 24, 24);
     auto* shareLbl = new QLabel("Share");
-    shareLbl->setStyleSheet("color: #F0A429; font-size: 10px;");
+    shareLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
     shareLbl->setAlignment(Qt::AlignCenter);
     shareCol->addWidget(shareBtn, 0, Qt::AlignCenter);
     shareCol->addWidget(shareLbl, 0, Qt::AlignCenter);
-    connect(shareBtn, &QPushButton::clicked, this, [this]() {
-        QApplication::clipboard()->setText(QString::fromStdString(m_post->getPostId()));
-        QToolTip::showText(QCursor::pos(), "Copied!", this);
-        });
     actRow->addLayout(shareCol);
 
     root->addLayout(actRow);
+
+    // Final check: Apply "green" style if saved on creation
+    if (saveBtn && m_isSaved) {
+        saveBtn->style()->unpolish(saveBtn);
+        saveBtn->style()->polish(saveBtn);
+    }
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
-//  CommentDialog
+//  CommentsPage Implementation
 // ══════════════════════════════════════════════════════════════════════════════
-CommentDialog::CommentDialog(Posts* post, const QString& currentUser, QWidget* parent)
-    : QDialog(parent), m_post(post), m_currentUser(currentUser)
+CommentsPage::CommentsPage(const QString& currentUser, QWidget* parent)
+    : QWidget(parent), m_currentUser(currentUser), m_post(nullptr)
 {
-    setWindowTitle("Comments");
-    setFixedSize(480, 580);
-
-    auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
-
-    auto* rootFrame = new QFrame;
-    rootFrame->setObjectName("authCard");
-    auto* root = new QVBoxLayout(rootFrame);
-    root->setContentsMargins(20, 20, 20, 20);
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(28, 24, 28, 24);
     root->setSpacing(16);
 
-    // Header
     auto* headerRow = new QHBoxLayout;
+    auto* backBtn = new QPushButton("← Back");
+    backBtn->setObjectName("secondaryBtn");
+    backBtn->setFixedWidth(100);
+    backBtn->setFixedHeight(36);
+    backBtn->setCursor(Qt::PointingHandCursor);
+    connect(backBtn, &QPushButton::clicked, this, &CommentsPage::backClicked);
+
     auto* title = new QLabel("Comments");
-    title->setStyleSheet("font-size: 17px; font-weight: 700; color: #F1F1F8;");
+    title->setObjectName("pageTitle");
+
+    headerRow->addWidget(backBtn);
+    headerRow->addSpacing(16);
     headerRow->addWidget(title);
     headerRow->addStretch(1);
-    auto* closeBtn = makeIcon("✕", nullptr, 28, 28);
-    connect(closeBtn, &QPushButton::clicked, this, &QDialog::reject);
-    headerRow->addWidget(closeBtn);
     root->addLayout(headerRow);
 
-    root->addWidget(divider());
-
-    // Scroll Area for comments
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
@@ -929,41 +735,43 @@ CommentDialog::CommentDialog(Posts* post, const QString& currentUser, QWidget* p
     scroll->setWidget(m_commentsContainer);
     root->addWidget(scroll, 1);
 
-    // Input Area
     auto* inputRow = new QHBoxLayout;
     m_input = new QLineEdit;
     m_input->setPlaceholderText("Write a comment...");
-    m_input->setFixedHeight(42);
+    m_input->setFixedHeight(44);
 
     auto* sendBtn = new QPushButton("Post");
     sendBtn->setObjectName("primaryBtn");
-    sendBtn->setFixedSize(72, 38);
+    sendBtn->setFixedSize(80, 44);
     sendBtn->setCursor(Qt::PointingHandCursor);
 
-    connect(sendBtn, &QPushButton::clicked, this, &CommentDialog::onAddComment);
-    connect(m_input, &QLineEdit::returnPressed, this, &CommentDialog::onAddComment);
+    connect(sendBtn, &QPushButton::clicked, this, &CommentsPage::onAddComment);
+    connect(m_input, &QLineEdit::returnPressed, this, &CommentsPage::onAddComment);
 
     inputRow->addWidget(m_input, 1);
     inputRow->addWidget(sendBtn);
     root->addLayout(inputRow);
+}
 
-    mainLayout->addWidget(rootFrame);
-
+void CommentsPage::loadPost(Posts* post) {
+    m_post = post;
+    m_input->clear();
     loadComments();
 }
 
-void CommentDialog::loadComments() {
+void CommentsPage::loadComments() {
     while (m_commentsLayout->count() > 1) {
         QLayoutItem* item = m_commentsLayout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
 
+    if (!m_post) return;
     QList<Comment> comments = m_post->getComments();
 
     if (comments.isEmpty()) {
-        auto* empty = new QLabel("✦ No comments yet");
-        empty->setStyleSheet("color: #1C1C30; font-size: 14px;");
+        auto* empty = new QLabel("No comments yet. Be the first!");
+        empty->setStyleSheet("color: #56567A; font-size: 13px;");
         empty->setAlignment(Qt::AlignCenter);
         m_commentsLayout->insertWidget(0, empty);
         return;
@@ -971,20 +779,26 @@ void CommentDialog::loadComments() {
 
     for (int i = 0; i < comments.size(); ++i) {
         const Comment& c = comments[i];
-        bool isMine = (c.getCreatorUsername() == m_currentUser);
+
+        // Removed the fromStdString conversions here!
+        QString creatorName = c.getCreatorUsername();
+        QString creationTime = c.getTimeOfCreation();
+        QString contentText = c.getContent();
+
+        bool isMine = (creatorName == m_currentUser);
 
         auto* card = new QFrame;
-        card->setStyleSheet("QFrame { background: #141420; border-radius: 10px; padding: 10px; }");
+        card->setStyleSheet("QFrame { background: #141420; border-radius: 8px; padding: 10px; }");
         auto* cl = new QVBoxLayout(card);
         cl->setContentsMargins(0, 0, 0, 0);
         cl->setSpacing(4);
 
         auto* headerRow = new QHBoxLayout;
-        auto* nameLbl = new QLabel(c.getCreatorUsername());
-        nameLbl->setStyleSheet("font-weight: 600; color: #9090CC; font-size: 12px;");
+        auto* nameLbl = new QLabel(creatorName);
+        nameLbl->setStyleSheet("font-weight: bold; color: #A0A0D0; font-size: 12px;");
 
-        auto* timeLbl = new QLabel(c.getTimeOfCreation());
-        timeLbl->setStyleSheet("color: #22223A; font-size: 10px;");
+        auto* timeLbl = new QLabel(creationTime);
+        timeLbl->setStyleSheet("color: #56567A; font-size: 10px;");
 
         headerRow->addWidget(nameLbl);
         headerRow->addWidget(timeLbl);
@@ -992,14 +806,14 @@ void CommentDialog::loadComments() {
 
         if (isMine) {
             auto* editBtn = new QPushButton("✎");
-            editBtn->setFixedSize(22, 22);
+            editBtn->setFixedSize(24, 24);
             editBtn->setCursor(Qt::PointingHandCursor);
-            editBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #33334A; font-size: 12px; } QPushButton:hover { color: #AAAAFF; }");
+            editBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #AAAAFF; }");
 
             auto* delBtn = new QPushButton("🗑");
-            delBtn->setFixedSize(22, 22);
+            delBtn->setFixedSize(24, 24);
             delBtn->setCursor(Qt::PointingHandCursor);
-            delBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #33334A; font-size: 12px; } QPushButton:hover { color: #FFAAAA; }");
+            delBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #FFAAAA; }");
 
             connect(editBtn, &QPushButton::clicked, this, [this, i]() { onEditComment(i); });
             connect(delBtn, &QPushButton::clicked, this, [this, i]() { onDeleteComment(i); });
@@ -1010,53 +824,50 @@ void CommentDialog::loadComments() {
 
         cl->addLayout(headerRow);
 
-        auto* contentLbl = new QLabel(c.getContent());
+        auto* contentLbl = new QLabel(contentText);
         contentLbl->setWordWrap(true);
-        contentLbl->setStyleSheet("color: #C0C0D8; font-size: 13px;");
+        contentLbl->setStyleSheet("color: #E2E2EC; font-size: 13px;");
         cl->addWidget(contentLbl);
 
         m_commentsLayout->insertWidget(m_commentsLayout->count() - 1, card);
     }
 }
 
-void CommentDialog::onAddComment() {
+void CommentsPage::onAddComment() {
     QString text = m_input->text().trimmed();
     if (text.isEmpty()) return;
-    if (text.contains('|')) {
-        QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
-        return;
-    }
+    if (text.contains('|')) { QMessageBox::warning(this, "Novo", "Comments cannot contain '|'."); return; }
 
+    // Removed the toStdString conversions here!
     m_post->addComment(text, m_currentUser);
     m_input->clear();
     loadComments();
 }
 
-void CommentDialog::onEditComment(int index) {
+void CommentsPage::onEditComment(int index) {
+    // Removed the fromStdString conversion here!
     QString oldText = m_post->getComments()[index].getContent();
     bool ok;
     QString newText = QInputDialog::getText(this, "Edit Comment", "Update your comment:", QLineEdit::Normal, oldText, &ok);
 
     if (ok && !newText.trimmed().isEmpty()) {
-        if (newText.contains('|')) {
-            QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
-            return;
-        }
+        if (newText.contains('|')) { QMessageBox::warning(this, "Novo", "Comments cannot contain '|'."); return; }
+        // Removed the toStdString conversions here!
         m_post->editComment(index, newText.trimmed(), m_currentUser);
         loadComments();
     }
 }
 
-void CommentDialog::onDeleteComment(int index) {
+void CommentsPage::onDeleteComment(int index) {
     auto r = QMessageBox::question(this, "Delete Comment", "Delete this comment?", QMessageBox::Yes | QMessageBox::No);
     if (r == QMessageBox::Yes) {
+        // Removed the toStdString conversion here!
         m_post->deleteComment(index, m_currentUser);
         loadComments();
     }
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
-//  PublicProfileWidget
+//  PublicProfileWidget Implementation
 // ══════════════════════════════════════════════════════════════════════════════
 PublicProfileWidget::PublicProfileWidget(QWidget* parent) : QWidget(parent) {
     m_mainLayout = new QVBoxLayout(this);
@@ -1064,6 +875,7 @@ PublicProfileWidget::PublicProfileWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
+    // Clear previous profile data if it exists
     QLayoutItem* item;
     while ((item = m_mainLayout->takeAt(0)) != nullptr) {
         if (item->widget()) item->widget()->deleteLater();
@@ -1094,7 +906,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
 
     auto* container = new QWidget;
     auto* layout = new QVBoxLayout(container);
-    layout->setContentsMargins(28, 16, 28, 24);
+    layout->setContentsMargins(28, 16, 28, 24); // Match main page margins
     layout->setSpacing(20);
 
     // 1. PROFILE HEADER CARD
@@ -1107,7 +919,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     auto* av = new QLabel(ini);
     av->setFixedSize(60, 60);
     av->setAlignment(Qt::AlignCenter);
-    av->setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #2A2A6A, stop:1 #1A1A44); border-radius: 30px; font-size: 24px; font-weight: bold; color: #9090EE; border: 1px solid #2A2A50;");
+    av->setStyleSheet("background: #202040; border-radius: 30px; font-size: 24px; font-weight: bold; color: #7070FF;");
     row->addWidget(av);
 
     auto* nameCol = new QVBoxLayout;
@@ -1124,7 +936,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     auto* statsRow = new QHBoxLayout;
     auto addStat = [&](const QString& val, const QString& lbl) {
         auto* c = new QVBoxLayout;
-        auto* v = new QLabel(val); v->setStyleSheet("font-size: 18px; font-weight: bold; color: #5B5BD6;"); v->setAlignment(Qt::AlignCenter);
+        auto* v = new QLabel(val); v->setStyleSheet("font-size: 18px; font-weight: bold; color: #6060FF;"); v->setAlignment(Qt::AlignCenter);
         auto* l = new QLabel(lbl); l->setStyleSheet("font-size: 10px; color: #36365A; letter-spacing: 1px;"); l->setAlignment(Qt::AlignCenter);
         c->addWidget(v); c->addWidget(l);
         statsRow->addLayout(c);
@@ -1153,20 +965,32 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
             if (!p || !p->isValid()) continue;
 
             bool isSaved = false;
+            QString currentPostId = QString::fromStdString(p->getPostId()).trimmed();
+
             for (int s = 0; s < viewer->getSavedPostCount(); ++s) {
-                if (viewer->getSavedPostByIndex(s) && viewer->getSavedPostByIndex(s)->getPostId() == p->getPostId()) {
-                    isSaved = true; break;
+                Posts* sp = viewer->getSavedPostByIndex(s);
+                if (sp) {
+                    QString savedPostId = QString::fromStdString(sp->getPostId()).trimmed();
+                    if (savedPostId == currentPostId) {
+                        isSaved = true;
+                        break;
+                    }
                 }
             }
 
-            auto* card = new PostCard(p, QString::fromStdString(targetUser->getUsername()), false, isSaved, QString::fromStdString(viewer->getUsername()));
+            auto* card = new PostCard(p,
+                QString::fromStdString(targetUser->getUsername()),
+                false, isSaved,
+                QString::fromStdString(viewer->getUsername()),
+                targetUser->getIsReported());
 
-            connect(card, &PostCard::commentClicked, this, [p, viewer, this]() {
-                CommentDialog dlg(p, QString::fromStdString(viewer->getUsername()), this);
-                dlg.exec();
+            connect(card, &PostCard::commentClicked, this, [p, this]() {
+                emit requestOpenComments(p);
                 });
             connect(card, &PostCard::saveClicked, this, [viewer, targetUser](Posts* post) {
-                viewer->savePost(post->getPostId(), targetUser);
+                if (viewer && targetUser && post) {
+                    viewer->savePost(post->getPostId(), targetUser);
+                }
                 });
             connect(card, &PostCard::unsaveClicked, this, [viewer](Posts* post) {
                 viewer->unsavePost(post->getPostId());
@@ -1180,41 +1004,35 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     scroll->setWidget(container);
     m_mainLayout->addWidget(scroll, 1);
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
 //  NotificationItem
 // ══════════════════════════════════════════════════════════════════════════════
 NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
     : QFrame(parent)
 {
-    setObjectName("notifCard");
+    setObjectName("notifItem");
     setProperty("unread", !notif.getStatus());
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     auto* row = new QHBoxLayout(this);
-    row->setContentsMargins(16, 14, 16, 14);
+    row->setContentsMargins(16, 12, 16, 12);
     row->setSpacing(12);
 
     QString typeIcon = "●";
-    QString bgColor = "#0A0A14";
-    QString iconColor = "#44445A";
     QString t = QString::fromStdString(notif.getType()).toLower();
-    if (t.contains("follow")) { typeIcon = "👤"; bgColor = "#0A1A0A"; iconColor = "#44CC77"; }
-    else if (t.contains("like")) { typeIcon = "♥"; bgColor = "#1A0A0A"; iconColor = "#EE4444"; }
-    else if (t.contains("comment")) { typeIcon = "💬"; bgColor = "#0A0A1A"; iconColor = "#5B5BD6"; }
-    else if (t.contains("message")) { typeIcon = "✉"; bgColor = "#0A0A14"; iconColor = "#F0A429"; }
-    else if (t.contains("report")) { typeIcon = "⚑"; bgColor = "#1A0808"; iconColor = "#EE5555"; }
+    if (t.contains("follow"))  typeIcon = "👤";
+    else if (t.contains("like"))    typeIcon = "♥";
+    else if (t.contains("comment")) typeIcon = "✦";
 
     auto* ic = new QLabel(typeIcon);
-    ic->setFixedSize(36, 36);
+    ic->setFixedSize(32, 32);
     ic->setAlignment(Qt::AlignCenter);
-    ic->setStyleSheet(QString("background: %1; color: %2; border-radius: 18px; font-size: 16px;").arg(bgColor, iconColor));
+    ic->setStyleSheet("font-size: 16px;");
 
     auto* col = new QVBoxLayout;
     col->setSpacing(3);
     auto* msg = makeLabel(QString::fromStdString(notif.getMessage()));
-    msg->setStyleSheet("font-size: 13px; font-weight: 500; color: #C0C0D8;");
-    auto* ts = makeLabel(QString::fromStdString(notif.getTimestamp()), "postMeta");
+    msg->setStyleSheet("font-size: 13px; color: #C0C0DC;");
+    auto* ts = makeLabel(QString::fromStdString(notif.getTimestamp()), "postTime");
     col->addWidget(msg);
     col->addWidget(ts);
 
@@ -1223,7 +1041,7 @@ NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
 
     if (!notif.getStatus()) {
         auto* dot = new QLabel("●");
-        dot->setStyleSheet("color: #5B5BD6; font-size: 9px;");
+        dot->setStyleSheet("color: #5050F0; font-size: 9px;");
         dot->setFixedWidth(12);
         row->addWidget(dot, 0, Qt::AlignVCenter);
     }
@@ -1231,6 +1049,7 @@ NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  AuthPage
+//  Centred card, fixed width 400px, height driven by its contents.
 // ══════════════════════════════════════════════════════════════════════════════
 AuthPage::AuthPage(QWidget* parent)
     : QWidget(parent), m_userCount(0)
@@ -1238,36 +1057,28 @@ AuthPage::AuthPage(QWidget* parent)
     setObjectName("authBg");
     m_allUsers = new User * [500]();
 
+    // Outer layout centres the card both horizontally and vertically
     auto* outer = new QVBoxLayout(this);
     outer->setAlignment(Qt::AlignCenter);
     outer->setContentsMargins(20, 20, 20, 20);
 
     auto* card = new QFrame;
     card->setObjectName("authCard");
-    card->setFixedWidth(420);
+    card->setFixedWidth(400);
+    // Do NOT fix the height — let contents size it
     card->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
 
     auto* cl = new QVBoxLayout(card);
     cl->setContentsMargins(40, 36, 40, 36);
     cl->setSpacing(14);
 
-    // Logo area
-    auto* logoRow = new QHBoxLayout;
-    logoRow->setSpacing(12);
-    auto* logoCircle = new QLabel("N");
-    logoCircle->setFixedSize(52, 52);
-    logoCircle->setAlignment(Qt::AlignCenter);
-    logoCircle->setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #5B5BD6, stop:1 #7C4FD4); border-radius: 26px; font-size: 22px; font-weight: 800; color: #FFFFFF;");
     auto* brandTitle = makeLabel(APP_NAME, "brandTitle");
-    auto* brandSub = makeLabel("Connect. Share. Discover.", "sectionLabel");
-    brandSub->setStyleSheet("font-size: 12px; color: #2A2A44;");
-    logoRow->addWidget(logoCircle);
-    auto* brandCol = new QVBoxLayout;
-    brandCol->addWidget(brandTitle);
-    brandCol->addWidget(brandSub);
-    logoRow->addLayout(brandCol, 1);
-    cl->addLayout(logoRow);
-    cl->addSpacing(32);
+    brandTitle->setAlignment(Qt::AlignCenter);
+    auto* brandSub = makeLabel("Connect. Share. Discover.", "brandSub");
+    brandSub->setAlignment(Qt::AlignCenter);
+    cl->addWidget(brandTitle);
+    cl->addWidget(brandSub);
+    cl->addSpacing(26);
 
     m_stack = new QStackedWidget;
     m_stack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -1279,6 +1090,7 @@ AuthPage::AuthPage(QWidget* parent)
 
     outer->addWidget(card, 0, Qt::AlignCenter);
 
+    // CRITICAL FIX #1: actually load users from disk on startup
     loadAllUsers(m_allUsers, m_userCount);
 }
 
@@ -1290,6 +1102,13 @@ void AuthPage::resetToLogin() {
     m_loginUser->clear();  m_loginPass->clear();
     m_signupUser->clear(); m_signupPass->clear(); m_signupBio->clear();
     m_stack->setCurrentIndex(0);
+    // 1. SAFELY DELETE OLD MEMORY FIRST
+    for (int i = 0; i < m_userCount; ++i) {
+        if (m_allUsers[i]) {
+            delete m_allUsers[i];      // Free the RAM
+            m_allUsers[i] = nullptr;   // Remove the dangling pointer
+        }
+    }
     m_userCount = 0;
     loadAllUsers(m_allUsers, m_userCount);
 }
@@ -1300,7 +1119,7 @@ QWidget* AuthPage::createLandingWidget() {
     vl->setSpacing(12);
     vl->setContentsMargins(0, 0, 0, 0);
 
-    auto* btnLogin = makePrimary("Login as User");    btnLogin->setFixedHeight(48);
+    auto* btnLogin = makePrimary("Login as User");    btnLogin->setFixedHeight(44);
     auto* btnSignup = makeSecondary("Create Account"); btnSignup->setFixedHeight(44);
     auto* btnAdmin = makeDanger("Admin Console");     btnAdmin->setFixedHeight(44);
 
@@ -1320,30 +1139,15 @@ QWidget* AuthPage::createLoginWidget() {
     auto* vl = new QVBoxLayout(w);
     vl->setSpacing(12);
     vl->setContentsMargins(0, 0, 0, 0);
-    vl->addWidget(makeLabel("User Login", "sectionLabel"));
+    vl->addWidget(makeLabel("User Login", "authTitle"));
 
-    m_loginUser = new QLineEdit; m_loginUser->setPlaceholderText("Username"); m_loginUser->setFixedHeight(48);
-    m_loginPass = new QLineEdit; m_loginPass->setPlaceholderText("Password"); m_loginPass->setFixedHeight(48);
+    m_loginUser = new QLineEdit; m_loginUser->setPlaceholderText("Username"); m_loginUser->setFixedHeight(42);
+    m_loginPass = new QLineEdit; m_loginPass->setPlaceholderText("Password"); m_loginPass->setFixedHeight(42);
     m_loginPass->setEchoMode(QLineEdit::Password);
+    vl->addWidget(m_loginUser);
+    vl->addWidget(m_loginPass);
 
-    auto* userRow = new QHBoxLayout;
-    userRow->setSpacing(10);
-    auto* userIcon = new QLabel("👤");
-    userIcon->setStyleSheet("font-size: 18px; color: #2A2A44;");
-    userRow->addWidget(userIcon);
-    userRow->addWidget(m_loginUser, 1);
-
-    auto* passRow = new QHBoxLayout;
-    passRow->setSpacing(10);
-    auto* passIcon = new QLabel("🔒");
-    passIcon->setStyleSheet("font-size: 18px; color: #2A2A44;");
-    passRow->addWidget(passIcon);
-    passRow->addWidget(m_loginPass, 1);
-
-    vl->addLayout(userRow);
-    vl->addLayout(passRow);
-
-    auto* loginBtn = makePrimary("Sign In"); loginBtn->setFixedHeight(48);
+    auto* loginBtn = makePrimary("Sign In"); loginBtn->setFixedHeight(44);
     connect(loginBtn, &QPushButton::clicked, this, &AuthPage::onLogin);
     connect(m_loginPass, &QLineEdit::returnPressed, this, &AuthPage::onLogin);
     vl->addWidget(loginBtn);
@@ -1359,28 +1163,17 @@ QWidget* AuthPage::createSignupWidget() {
     auto* vl = new QVBoxLayout(w);
     vl->setSpacing(12);
     vl->setContentsMargins(0, 0, 0, 0);
-    vl->addWidget(makeLabel("Create Account", "sectionLabel"));
+    vl->addWidget(makeLabel("Create Account", "authTitle"));
 
-    m_signupUser = new QLineEdit; m_signupUser->setPlaceholderText("Username (6–16 chars)"); m_signupUser->setFixedHeight(48);
-    m_signupPass = new QLineEdit; m_signupPass->setPlaceholderText("Password (8+ chars, upper, digit, symbol)"); m_signupPass->setFixedHeight(48);
+    m_signupUser = new QLineEdit; m_signupUser->setPlaceholderText("Username (6–16 chars)"); m_signupUser->setFixedHeight(42);
+    m_signupPass = new QLineEdit; m_signupPass->setPlaceholderText("Password (8+ chars, upper, digit, symbol)"); m_signupPass->setFixedHeight(42);
     m_signupPass->setEchoMode(QLineEdit::Password);
-    m_signupBio = new QLineEdit; m_signupBio->setPlaceholderText("Short bio (optional)"); m_signupBio->setFixedHeight(48);
+    m_signupBio = new QLineEdit; m_signupBio->setPlaceholderText("Short bio (optional)"); m_signupBio->setFixedHeight(42);
+    vl->addWidget(m_signupUser);
+    vl->addWidget(m_signupPass);
+    vl->addWidget(m_signupBio);
 
-    auto* addRow = [&](const QString& icon, QLineEdit* edit) {
-        auto* row = new QHBoxLayout;
-        row->setSpacing(10);
-        auto* ic = new QLabel(icon);
-        ic->setStyleSheet("font-size: 18px; color: #2A2A44;");
-        row->addWidget(ic);
-        row->addWidget(edit, 1);
-        return row;
-        };
-
-    vl->addLayout(addRow("👤", m_signupUser));
-    vl->addLayout(addRow("🔒", m_signupPass));
-    vl->addLayout(addRow("✏", m_signupBio));
-
-    auto* signupBtn = makePrimary("Register"); signupBtn->setFixedHeight(48);
+    auto* signupBtn = makePrimary("Register"); signupBtn->setFixedHeight(44);
     connect(signupBtn, &QPushButton::clicked, this, &AuthPage::onSignUp);
     vl->addWidget(signupBtn);
 
@@ -1395,34 +1188,25 @@ QWidget* AuthPage::createAdminLoginWidget() {
     auto* vl = new QVBoxLayout(w);
     vl->setSpacing(12);
     vl->setContentsMargins(0, 0, 0, 0);
-    vl->addWidget(makeLabel("Admin Console", "sectionLabel"));
+    vl->addWidget(makeLabel("Admin Console", "authTitle"));
 
     auto* adminUser = new QLineEdit;
     adminUser->setPlaceholderText("Admin Username");
-    adminUser->setFixedHeight(48);
+    adminUser->setFixedHeight(42);
 
     auto* adminPass = new QLineEdit;
     adminPass->setPlaceholderText("Admin Password");
-    adminPass->setFixedHeight(48);
+    adminPass->setFixedHeight(42);
     adminPass->setEchoMode(QLineEdit::Password);
 
-    auto* addRow = [&](const QString& icon, QLineEdit* edit) {
-        auto* row = new QHBoxLayout;
-        row->setSpacing(10);
-        auto* ic = new QLabel(icon);
-        ic->setStyleSheet("font-size: 18px; color: #2A2A44;");
-        row->addWidget(ic);
-        row->addWidget(edit, 1);
-        return row;
-        };
-
-    vl->addLayout(addRow("👤", adminUser));
-    vl->addLayout(addRow("🔒", adminPass));
+    vl->addWidget(adminUser);
+    vl->addWidget(adminPass);
 
     auto* loginBtn = makeDanger("Enter System");
-    loginBtn->setFixedHeight(48);
+    loginBtn->setFixedHeight(44);
 
     connect(loginBtn, &QPushButton::clicked, this, [this, adminUser, adminPass]() {
+        // Read credentials from file
         QFile file("data/Admin/admin_credentials.txt");
         bool authenticated = false;
 
@@ -1488,10 +1272,12 @@ void AuthPage::onSignUp() {
     QString uname = m_signupUser->text().trimmed();
     QString pass = m_signupPass->text();
     QString bio = m_signupBio->text().trimmed();
+
     if (uname.isEmpty() || pass.isEmpty()) {
         QMessageBox::warning(this, APP_NAME, "Username and password are required.");
         return;
     }
+
     PasswordChecker checker(8);
     if (!checker.checkAll(pass.toStdString())) {
         int strength = checker.calculateStrength(pass.toStdString());
@@ -1500,11 +1286,32 @@ void AuthPage::onSignUp() {
             .arg(strength));
         return;
     }
+
+    // 1. Create the user in RAM
     User* newUser = signUp(m_allUsers, m_userCount, uname.toStdString(), pass.toStdString(), bio.toStdString());
+
     if (newUser) {
+        // 2. CRITICAL FIX: Save the new user to the text file permanently
+        // Ensure the path "data/users_list.txt" matches the exact file path your app uses.
+        QFile file("data/users_list.txt");
+
+        // Open in Append mode so it adds to the bottom of the file without deleting existing users
+        if (file.open(QIODevice::Append | QIODevice::Text)) {
+            QTextStream out(&file);
+            // NOTE: Make sure this format matches exactly how your 'loadAllUsers' reads it!
+            // Example: username,password,bio
+            out << uname << "," << pass << "," << bio << "\n";
+            file.close();
+        }
+        else {
+            qDebug() << "CRITICAL ERROR: Could not open users file to save new user!";
+        }
+
         QMessageBox::information(this, APP_NAME, "Account created! You can now sign in.");
-        m_signupUser->clear(); m_signupPass->clear(); m_signupBio->clear();
-        m_stack->setCurrentIndex(1);
+        m_signupUser->clear();
+        m_signupPass->clear();
+        m_signupBio->clear();
+        m_stack->setCurrentIndex(1); // Switch to login screen
     }
     else {
         QMessageBox::critical(this, APP_NAME, "Username already taken or invalid.");
@@ -1512,12 +1319,48 @@ void AuthPage::onSignUp() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  SCROLLABLE PAGE HELPER
+//  Wraps any content widget in a QScrollArea with the standard settings.
+//  Returns the QScrollArea (add to parent layout) and the inner content widget.
+// ══════════════════════════════════════════════════════════════════════════════
+namespace {
+    QScrollArea* makeScrollArea(QWidget*& outContent, QVBoxLayout*& outLayout,
+        QWidget* parent = nullptr)
+    {
+        auto* sa = new QScrollArea(parent);
+        sa->setWidgetResizable(true);
+        sa->setFrameShape(QFrame::NoFrame);
+        sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        sa->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        outContent = new QWidget;
+        outContent->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        outLayout = new QVBoxLayout(outContent);
+        outLayout->setContentsMargins(0, 0, 6, 20);
+        outLayout->setSpacing(12);
+        outLayout->addStretch(1); // push cards to top
+
+        sa->setWidget(outContent);
+        sa->verticalScrollBar()->setSingleStep(25);
+        return sa;
+    }
+} // anonymous namespace
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  FeedPage
+//  Layout:
+//    outer VBox:
+//      ├─ header row (title | stretch)
+//      ├─ composer card (hidden by default)
+//      └─ scroll area  (Expanding — fills remaining space)
+//
+//  Feed cards are inserted BEFORE the trailing stretch so they stack top→down.
 // ══════════════════════════════════════════════════════════════════════════════
 FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* parent)
     : QWidget(parent), m_user(currentUser), m_allUsers(allUsers), m_userCount(userCount)
 {
     auto* outer = new QVBoxLayout(this);
+    // Page padding: L=28, T=24, R=28, B=16
     outer->setContentsMargins(28, 24, 28, 16);
     outer->setSpacing(16);
 
@@ -1525,32 +1368,8 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
     auto* hRow = new QHBoxLayout;
     hRow->setContentsMargins(0, 0, 0, 0);
     hRow->addWidget(makeLabel("Feed", "pageTitle"));
-
-    // Live indicator
-    auto* liveDot = new QLabel;
-    liveDot->setFixedSize(8, 8);
-    liveDot->setStyleSheet("background: #44CC88; border-radius: 4px;");
-    auto* opacity = new QGraphicsOpacityEffect(liveDot);
-    opacity->setOpacity(1.0);
-    liveDot->setGraphicsEffect(opacity);
-    auto* anim = new QPropertyAnimation(opacity, "opacity");
-    anim->setDuration(1500);
-    anim->setStartValue(1.0);
-    anim->setEndValue(0.3);
-    anim->setEasingCurve(QEasingCurve::InOutSine);
-    anim->setLoopCount(-1);
-    anim->start();
-
-    auto* liveLbl = new QLabel("Live");
-    liveLbl->setStyleSheet("font-size: 11px; font-weight: 600; color: #44CC88; margin-left: 4px;");
-    hRow->addWidget(liveDot, 0, Qt::AlignVCenter);
-    hRow->addWidget(liveLbl, 0, Qt::AlignVCenter);
     hRow->addStretch(1);
     outer->addLayout(hRow);
-
-    auto* descLbl = new QLabel("Posts from people you follow");
-    descLbl->setStyleSheet("font-size: 12px; color: #2A2A40; margin-top: -8px;");
-    outer->addWidget(descLbl);
 
     // ── Composer card ───────────────────────────────────────────────────────
     m_composerCard = new QFrame;
@@ -1580,14 +1399,14 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
 
         m_postInput = new QTextEdit;
         m_postInput->setPlaceholderText("Share something...");
-        m_postInput->setFixedHeight(96);
+        m_postInput->setFixedHeight(88);
         m_postInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         ccl->addWidget(m_postInput);
 
         auto* btnRow = new QHBoxLayout;
         btnRow->addStretch(1);
         auto* postBtn = makePrimary("Post");
-        postBtn->setFixedWidth(80);
+        postBtn->setFixedWidth(88);
         postBtn->setFixedHeight(36);
         connect(postBtn, &QPushButton::clicked, this, &FeedPage::onSubmitPost);
         btnRow->addWidget(postBtn);
@@ -1597,7 +1416,7 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
 
     // ── Scrollable feed ─────────────────────────────────────────────────────
     m_scrollArea = makeScrollArea(m_feedContent, m_feedLayout);
-    outer->addWidget(m_scrollArea, 1);
+    outer->addWidget(m_scrollArea, 1); // stretch=1 so it fills all remaining height
 
     loadPosts();
 }
@@ -1605,6 +1424,7 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
 void FeedPage::refresh() { loadPosts(); }
 
 void FeedPage::clearFeed() {
+    // Remove everything except the trailing stretch (last item)
     while (m_feedLayout->count() > 1) {
         QLayoutItem* item = m_feedLayout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
@@ -1616,29 +1436,51 @@ void FeedPage::loadPosts() {
     clearFeed();
     if (!m_user) return;
 
+    // 1. Load your following list
     m_user->loadFollowing(m_allUsers, m_userCount);
 
+    // 2. CRITICAL FIX: Force load ALL posts for users we follow FIRST.
+    // This ensures their post objects are created in memory and will not be destroyed.
+    for (int u = 0; u < m_userCount; ++u) {
+        if (m_allUsers[u] && m_allUsers[u] != m_user && m_user->isFollowing(m_allUsers[u]->getUsername())) {
+            m_allUsers[u]->loadAllPosts();
+        }
+    }
+
+    // 3. NOW load the saved posts. It will grab the stable memory pointers created in Step 2.
+    m_user->loadSavedPosts(m_allUsers, m_userCount);
+
+    // 4. Render the feed
     bool any = false;
     for (int u = 0; u < m_userCount; ++u) {
         if (!m_allUsers[u] || m_allUsers[u] == m_user) continue;
         if (!m_user->isFollowing(m_allUsers[u]->getUsername())) continue;
-        m_allUsers[u]->loadAllPosts();
+
+        // DO NOT call m_allUsers[u]->loadAllPosts() here anymore!
 
         for (int i = m_allUsers[u]->getPostCount() - 1; i >= 0; --i) {
             Posts* p = m_allUsers[u]->getPostByIndex(i);
             if (!p || !p->isValid()) continue;
 
             bool saved = false;
+            QString currentPostId = QString::fromStdString(p->getPostId()).trimmed();
+
             for (int s = 0; s < m_user->getSavedPostCount(); ++s) {
                 Posts* sp = m_user->getSavedPostByIndex(s);
-                if (sp && sp->getPostId() == p->getPostId()) { saved = true; break; }
+                if (sp) {
+                    QString savedPostId = QString::fromStdString(sp->getPostId()).trimmed();
+                    if (savedPostId == currentPostId) {
+                        saved = true;
+                        break;
+                    }
+                }
             }
 
             auto* card = new PostCard(p,
                 QString::fromStdString(m_allUsers[u]->getUsername()),
                 false, saved,
-                QString::fromStdString(m_user->getUsername()));
-
+                QString::fromStdString(m_user->getUsername()),
+                m_allUsers[u]->getIsReported());
             connect(card, &PostCard::likeClicked, this, &FeedPage::onLikePost);
             connect(card, &PostCard::commentClicked, this, &FeedPage::onCommentPost);
             connect(card, &PostCard::deleteClicked, this, &FeedPage::onDeletePost);
@@ -1646,30 +1488,21 @@ void FeedPage::loadPosts() {
             connect(card, &PostCard::unsaveClicked, this, &FeedPage::onUnsavePost);
             connect(card, &PostCard::reportClicked, this, &FeedPage::onReportPost);
             connect(card, &PostCard::reportUserClicked, this, &FeedPage::onReportUserFromPost);
+
             m_feedLayout->insertWidget(m_feedLayout->count() - 1, card);
             any = true;
         }
     }
 
     if (!any) {
-        auto* emptyIcon = new QLabel("✦");
-        emptyIcon->setAlignment(Qt::AlignCenter);
-        emptyIcon->setStyleSheet("font-size: 48px; color: #1C1C30;");
-        auto* empty = new QLabel("Your feed is quiet");
+        auto* empty = new QLabel("Follow someone to see their posts here!");
         empty->setAlignment(Qt::AlignCenter);
-        empty->setStyleSheet("color: #1C1C30; font-size: 16px; font-weight: 600; padding: 8px 0;");
-        auto* emptySub = new QLabel("Follow people to see their posts here");
-        emptySub->setAlignment(Qt::AlignCenter);
-        emptySub->setStyleSheet("color: #161625; font-size: 13px;");
-        m_feedLayout->insertWidget(0, emptyIcon);
-        m_feedLayout->insertWidget(1, empty);
-        m_feedLayout->insertWidget(2, emptySub);
+        empty->setStyleSheet("color: #28284A; font-size: 14px; padding: 40px 0;");
+        m_feedLayout->insertWidget(0, empty);
     }
 }
-
 void FeedPage::onReportUserFromPost(const QString& username) {
     if (!m_user) return;
-
     User* target = nullptr;
     for (int i = 0; i < m_userCount; ++i) {
         if (m_allUsers[i] && m_allUsers[i]->getUsername() == username.toStdString()) {
@@ -1679,16 +1512,9 @@ void FeedPage::onReportUserFromPost(const QString& username) {
     }
     if (!target) return;
 
-    auto r = QMessageBox::question(this, "Report User",
-        "Are you sure you want to report user @" + username + "?",
-        QMessageBox::Yes | QMessageBox::No);
-
-    if (r == QMessageBox::Yes) {
-        target->reportUser();
-        QMessageBox::information(this, "Reported", "User @" + username + " has been reported to admins.");
-    }
+    target->reportUser();
+    QMessageBox::information(this, "Reported", "User @" + username + " has been reported to admins.");
 }
-
 void FeedPage::onSubmitPost() {
     if (!m_user) return;
     QString text = m_postInput->toPlainText().trimmed();
@@ -1699,20 +1525,21 @@ void FeedPage::onSubmitPost() {
     loadPosts();
 }
 
+
 void FeedPage::onLikePost(Posts* post) {
     if (post)
         qDebug() << "Like toggled on post:" << QString::fromStdString(post->getPostId());
 }
 
+
 void FeedPage::onCommentPost(Posts* post) {
     if (!post || !m_user) return;
-
-    CommentDialog dlg(post, QString::fromStdString(m_user->getUsername()), this);
-    dlg.exec();
+    emit requestOpenComments(post);
 }
 
 void FeedPage::onDeletePost(Posts* post) {
     if (!post) return;
+    // FIX #5: guard against deleting another user's post
     if (post->getCreatorUsername() != m_user->getUsername()) {
         QMessageBox::warning(this, APP_NAME, "You can only delete your own posts.");
         return;
@@ -1726,14 +1553,23 @@ void FeedPage::onDeletePost(Posts* post) {
 }
 
 void FeedPage::onSavePost(Posts* post, const QString& ownerUsername) {
-    if (!post || !m_user) return;
+    if (!post || !m_user || ownerUsername.isEmpty()) return;
+
     User* owner = nullptr;
     for (int i = 0; i < m_userCount; ++i) {
+        // Check for null before accessing getUsername()
         if (m_allUsers[i] && m_allUsers[i]->getUsername() == ownerUsername.toStdString()) {
-            owner = m_allUsers[i]; break;
+            owner = m_allUsers[i];
+            break;
         }
     }
-    if (owner) m_user->savePost(post->getPostId(), owner);
+
+    if (owner) {
+        m_user->savePost(post->getPostId(), owner);
+    }
+    else {
+        qDebug() << "Error: Could not find owner" << ownerUsername << "for saving post.";
+    }
 }
 
 void FeedPage::onUnsavePost(Posts* post) {
@@ -1753,6 +1589,7 @@ void FeedPage::onReportPost(Posts* post, const QString& ownerUsername) {
     m_user->reportPost(post->getPostId(), owner);
     QMessageBox::information(this, APP_NAME, "Post has been reported.");
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  MyPostsPage
@@ -1797,7 +1634,8 @@ void MyPostsPage::loadPosts() {
         auto* card = new PostCard(p,
             QString::fromStdString(m_user->getUsername()),
             true, false,
-            QString::fromStdString(m_user->getUsername()));
+            QString::fromStdString(m_user->getUsername()),
+            m_user->getIsReported());
         connect(card, &PostCard::deleteClicked, this, &MyPostsPage::onDeletePost);
         connect(card, &PostCard::editClicked, this, &MyPostsPage::onEditPost);
         connect(card, &PostCard::commentClicked, this, &MyPostsPage::onCommentPost);
@@ -1833,11 +1671,7 @@ void MyPostsPage::onEditPost(Posts* post) {
 
 void MyPostsPage::onCommentPost(Posts* post) {
     if (!post || !m_user) return;
-
-    CommentDialog dlg(post, QString::fromStdString(m_user->getUsername()), this);
-    dlg.exec();
-
-    refresh();
+    emit requestOpenComments(post);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1882,11 +1716,27 @@ void SavedPostsPage::loadSaved() {
     for (int i = 0; i < m_user->getSavedPostCount(); ++i) {
         Posts* p = m_user->getSavedPostByIndex(i);
         if (!p) continue;
+
+        // 1. Check if the creator of this saved post is reported
+        bool isAuthorReported = false;
+        for (int u = 0; u < m_userCount; ++u) {
+            if (m_allUsers[u] && m_allUsers[u]->getUsername() == p->getCreatorUsername()) {
+                isAuthorReported = m_allUsers[u]->getIsReported();
+                break;
+            }
+        }
+
+        // 2. Create the card using that report status
         auto* card = new PostCard(p,
             QString::fromStdString(p->getCreatorUsername()),
             false, true,
-            QString::fromStdString(m_user->getUsername()));
+            QString::fromStdString(m_user->getUsername()),
+            isAuthorReported);
+
+        // 3. Connect actions
         connect(card, &PostCard::unsaveClicked, this, &SavedPostsPage::onUnsavePost);
+        connect(card, &PostCard::commentClicked, this, [this, p]() { emit requestOpenComments(p); });
+
         m_savedLayout->insertWidget(m_savedLayout->count() - 1, card);
     }
 }
@@ -1900,6 +1750,7 @@ void SavedPostsPage::onUnsavePost(Posts* post) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  NotificationsPage
 // ══════════════════════════════════════════════════════════════════════════════
+// Fix #4: Add "Mark All as Read" button to NotificationsPage
 NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
     : QWidget(parent), m_user(currentUser)
 {
@@ -1911,6 +1762,7 @@ NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
     hRow->setContentsMargins(0, 0, 0, 0);
     hRow->addWidget(makeLabel("Notifications", "pageTitle"), 1);
 
+    // FIX #4: Add "Mark All as Read" button
     auto* markReadBtn = makeSecondary("✓ Mark All Read");
     markReadBtn->setFixedWidth(130);
     markReadBtn->setFixedHeight(34);
@@ -1929,7 +1781,7 @@ NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
     outer->addWidget(m_scrollArea, 1);
     loadNotifications();
 }
-
+// Add this method implementation for NotificationsPage
 void NotificationsPage::onMarkAllRead() {
     if (!m_user) return;
 
@@ -1957,6 +1809,7 @@ void NotificationsPage::onMarkAllRead() {
         file.close();
     }
 
+    // Write all notifications back as read
     if (file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QTextStream stream(&file);
         for (auto& n : notifs) {
@@ -1994,8 +1847,14 @@ void NotificationsPage::loadNotifications() {
             if (line.isEmpty()) continue;
             QStringList parts = line.split("|");
             if (parts.size() < 4) continue;
+            // File format written by Post.cpp / User.cpp:
+            //   parts[0]=type | parts[1]=message | parts[2]=timestamp | parts[3]=isRead
+            // Notification constructor is Notification(msg, type, time).
+            // Detect corrupted files (old write-back stored message|type order):
+            // if parts[0] looks like a full sentence (contains a space) it was
+            // written in the wrong order — swap to recover gracefully.
             QString p0 = parts[0], p1 = parts[1];
-            bool wasCorrupted = p0.contains(' ');
+            bool wasCorrupted = p0.contains(' ');  // type is always a single word
             QString msgStr = wasCorrupted ? p0 : p1;
             QString typeStr = wasCorrupted ? p1 : p0;
             Notification n(msgStr.toStdString(), typeStr.toStdString(), parts[2].toStdString());
@@ -2008,6 +1867,7 @@ void NotificationsPage::loadNotifications() {
         file.close();
     }
 
+    // Mark all as read and write back in the SAME format writers use: type|message|timestamp|isRead
     if (any && !notifs.isEmpty()) {
         QFile out(path);
         if (out.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
@@ -2041,17 +1901,20 @@ SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidge
     for (int i = 0; i < m_userCount; ++i)
         if (m_allUsers[i]) m_engine.addUser(m_allUsers[i]);
 
+    // 1. Root Layout (Holds the stack)
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
 
     m_searchStack = new QStackedWidget(this);
     rootLayout->addWidget(m_searchStack);
 
+    // 2. Index 0: The Main Search Screen
     m_searchMainWidget = new QWidget;
     auto* outer = new QVBoxLayout(m_searchMainWidget);
     outer->setContentsMargins(28, 24, 28, 16);
     outer->setSpacing(16);
 
+    // --- (Your old search UI building logic goes here) ---
     outer->addWidget(makeLabel("Search Users", "pageTitle"));
 
     auto* searchRow = new QHBoxLayout;
@@ -2059,10 +1922,10 @@ SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidge
     searchRow->setSpacing(10);
     m_searchInput = new QLineEdit;
     m_searchInput->setPlaceholderText("Search by username...");
-    m_searchInput->setFixedHeight(50);
+    m_searchInput->setFixedHeight(44);
     auto* searchBtn = makePrimary("Search");
     searchBtn->setFixedHeight(44);
-    searchBtn->setFixedWidth(88);
+    searchBtn->setFixedWidth(100);
     connect(searchBtn, &QPushButton::clicked, this, &SearchPage::onSearch);
     connect(m_searchInput, &QLineEdit::returnPressed, this, &SearchPage::onSearch);
     searchRow->addWidget(m_searchInput, 1);
@@ -2071,20 +1934,25 @@ SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidge
 
     m_scrollArea = makeScrollArea(m_resultsContent, m_resultsLayout);
     outer->addWidget(m_scrollArea, 1);
+    // -----------------------------------------------------
 
+    // 3. Index 1: The Profile View Screen
     m_profileWidget = new PublicProfileWidget(this);
     connect(m_profileWidget, &PublicProfileWidget::backClicked, this, [this]() {
-        m_searchStack->setCurrentIndex(0);
+        m_searchStack->setCurrentIndex(0); // Go back to search results
         });
 
-    m_searchStack->addWidget(m_searchMainWidget);
-    m_searchStack->addWidget(m_profileWidget);
+    // 4. Add both to the stack
+    m_searchStack->addWidget(m_searchMainWidget); // Index 0
+    m_searchStack->addWidget(m_profileWidget);    // Index 1
+    connect(m_profileWidget, &PublicProfileWidget::requestOpenComments, this, &SearchPage::requestOpenComments);
 }
 
 void SearchPage::onSearch() {
     QString query = m_searchInput->text().trimmed();
     if (query.isEmpty()) return;
 
+    // FIX #16: repopulate engine so users created mid-session are searchable
     m_engine = SearchEngine();
     for (int i = 0; i < m_userCount; ++i)
         if (m_allUsers[i]) m_engine.addUser(m_allUsers[i]);
@@ -2107,6 +1975,7 @@ void SearchPage::onSearch() {
         nf->setStyleSheet("color: #34345A; font-size: 13px; padding: 30px 0;");
         m_resultsLayout->insertWidget(0, nf);
     }
+
 }
 
 void SearchPage::showUserCard(User* user) {
@@ -2121,7 +1990,7 @@ void SearchPage::showUserCard(User* user) {
     topRow->setContentsMargins(0, 0, 0, 0);
     topRow->setSpacing(14);
     QString ini = QString::fromStdString(user->getUsername()).left(1).toUpper();
-    topRow->addWidget(avatar(ini, 56), 0, Qt::AlignVCenter);
+    topRow->addWidget(avatar(ini, 50), 0, Qt::AlignVCenter);
     auto* infoCol = new QVBoxLayout;
     infoCol->setSpacing(4);
     auto* nameLbl = makeLabel(QString::fromStdString(user->getUsername()));
@@ -2133,24 +2002,21 @@ void SearchPage::showUserCard(User* user) {
     topRow->addLayout(infoCol, 1);
     cl->addLayout(topRow);
 
-    // Stats mini-cards
+    // Stats
     auto* statsRow = new QHBoxLayout;
     statsRow->setContentsMargins(0, 0, 0, 0);
-    statsRow->setSpacing(12);
+    statsRow->setSpacing(0);
     auto addStat = [&](const QString& val, const QString& lbl) {
-        auto* card = new QFrame;
-        card->setStyleSheet("background: #0A0A14; border: 1px solid #111125; border-radius: 10px;");
-        auto* c = new QVBoxLayout(card);
-        c->setContentsMargins(12, 10, 12, 10);
-        c->setSpacing(2);
+        auto* c = new QVBoxLayout; c->setSpacing(2);
         auto* v = new QLabel(val);
-        v->setStyleSheet("font-size: 18px; font-weight: 700; color: #5B5BD6; letter-spacing: -1px;");
+        v->setStyleSheet("font-size: 18px; font-weight: 700; color: #6060FF;");
         v->setAlignment(Qt::AlignCenter);
         auto* l = new QLabel(lbl);
-        l->setStyleSheet("font-size: 10px; font-weight: 600; color: #2A2A44; letter-spacing: 1.5px;");
+        l->setStyleSheet("font-size: 10px; color: #36365A; letter-spacing: 1px;");
         l->setAlignment(Qt::AlignCenter);
         c->addWidget(v); c->addWidget(l);
-        statsRow->addWidget(card);
+        statsRow->addLayout(c);
+        statsRow->addSpacing(24);
         };
     addStat(QString::number(user->getPostCount()), "POSTS");
     addStat(QString::number(user->getFollowersCount()), "FOLLOWERS");
@@ -2170,32 +2036,39 @@ void SearchPage::showUserCard(User* user) {
         btnRow->setContentsMargins(0, 0, 0, 0);
         btnRow->addStretch(1);
 
+        // --- 1. VIEW PROFILE BUTTON ---
         auto* profileBtn = new QPushButton("👤 View Profile");
         profileBtn->setObjectName("secondaryBtn");
         profileBtn->setFixedWidth(130);
-        profileBtn->setFixedHeight(38);
+        profileBtn->setFixedHeight(36);
         profileBtn->setCursor(Qt::PointingHandCursor);
         connect(profileBtn, &QPushButton::clicked, this, [this, user]() {
             m_profileWidget->loadProfile(user, m_currentUser);
-            m_searchStack->setCurrentIndex(1);
+            m_searchStack->setCurrentIndex(1); // Shifts to the profile view
             });
         btnRow->addWidget(profileBtn);
         btnRow->addSpacing(10);
 
+        // --- 2. FOLLOW BUTTON ---
         bool following = m_currentUser->isFollowing(user->getUsername());
         m_followBtn = following ? makeSecondary("✓  Following") : makePrimary("+ Follow");
         m_followBtn->setFixedWidth(130);
-        m_followBtn->setFixedHeight(38);
+        m_followBtn->setFixedHeight(36);
         connect(m_followBtn, &QPushButton::clicked, this, &SearchPage::onFollowUser);
         btnRow->addWidget(m_followBtn);
         btnRow->addSpacing(10);
 
-        m_reportBtn = makeDanger("⚑ Report");
+        // --- 3. REPORT BUTTON ---
+        bool isReported = user->getIsReported();
+        m_reportBtn = makeDanger(isReported ? "⚑ Reported" : "⚑ Report");
         m_reportBtn->setFixedWidth(100);
-        m_reportBtn->setFixedHeight(38);
+        m_reportBtn->setFixedHeight(36);
+        if (isReported) {
+            m_reportBtn->setStyleSheet("background: #1C0808; border: 1px solid #4A2020; color: #CC4444; border-radius: 9px; font-size: 13px;");
+        }
         connect(m_reportBtn, &QPushButton::clicked, this, &SearchPage::onReportUser);
         btnRow->addWidget(m_reportBtn);
-
+        btnRow->addStretch(1);
         cl->addLayout(btnRow);
     }
     m_resultsLayout->insertWidget(0, card);
@@ -2229,20 +2102,37 @@ void SearchPage::onReportUser() {
     if (m_foundUser == m_currentUser) {
         QMessageBox::warning(this, APP_NAME, "You cannot report yourself."); return;
     }
+
+    // Block if already reported
+    if (m_foundUser->getIsReported()) {
+        QMessageBox::information(this, "Already Reported", "You have already reported this user.");
+        return;
+    }
+
     auto r = QMessageBox::question(this, "Report User",
         "Report @" + QString::fromStdString(m_foundUser->getUsername()) + "?",
         QMessageBox::Yes | QMessageBox::No);
+
     if (r == QMessageBox::Yes) {
         m_foundUser->reportUser();
+        m_reportBtn->setText("⚑ Reported");
+        m_reportBtn->setStyleSheet("background: #1C0808; border: 1px solid #4A2020; color: #CC4444; border-radius: 9px; font-size: 13px;");
         QMessageBox::information(this, APP_NAME, "User has been reported.");
     }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  MESSAGE FILE HELPERS
+//  File format: data/Messages/<userA>_<userB>.txt
+//  where userA < userB alphabetically (canonical pair name).
+//  Each line:  sender|timestamp|message text
+//
+//  Index file: data/Messages/<username>_index.txt
+//  One peer username per line — written whenever a new conversation starts.
 // ══════════════════════════════════════════════════════════════════════════════
 namespace {
 
+    // Canonical file path for a conversation between two users
     QString msgFilePath(const QString& a, const QString& b) {
         QDir().mkpath("data/Messages");
         QString lo = (a < b) ? a : b;
@@ -2250,9 +2140,11 @@ namespace {
         return "data/Messages/" + lo + "_" + hi + ".txt";
     }
 
+    // Add peer to user's index file (no duplicates)
     void ensureInIndex(const QString& username, const QString& peer) {
         QDir().mkpath("data/Messages");
         QString path = "data/Messages/" + username + "_index.txt";
+        // Read existing
         QStringList existing;
         QFile rf(path);
         if (rf.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -2264,6 +2156,7 @@ namespace {
             rf.close();
         }
         if (existing.contains(peer)) return;
+        // Append
         QFile wf(path);
         if (wf.open(QIODevice::Append | QIODevice::Text)) {
             QTextStream out(&wf);
@@ -2272,6 +2165,7 @@ namespace {
         }
     }
 
+    // Remove peer from user's index file
     void removeFromIndex(const QString& username, const QString& peer) {
         QString path = "data/Messages/" + username + "_index.txt";
         QFile f(path);
@@ -2296,6 +2190,7 @@ namespace {
 // ══════════════════════════════════════════════════════════════════════════════
 //  ChatView
 // ══════════════════════════════════════════════════════════════════════════════
+
 ChatView::ChatView(const QString& currentUser, const QString& peerUsername, QWidget* parent)
     : QWidget(parent), m_currentUser(currentUser), m_peer(peerUsername)
 {
@@ -2305,18 +2200,20 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername, QWid
 
     // ── Chat header ──────────────────────────────────────────────────────────
     auto* header = new QFrame;
-    header->setObjectName("msgHeader");
+    header->setStyleSheet("QFrame { background: #111119; border-bottom: 1px solid #1C1C2A; }");
     header->setFixedHeight(56);
     auto* hRow = new QHBoxLayout(header);
     hRow->setContentsMargins(20, 0, 16, 0);
     hRow->setSpacing(12);
 
+    // Avatar + peer name
     QString ini = peerUsername.isEmpty() ? "?" : peerUsername.left(1).toUpper();
     hRow->addWidget(avatar(ini, 34), 0, Qt::AlignVCenter);
     auto* peerLbl = new QLabel(peerUsername);
     peerLbl->setStyleSheet("font-size: 15px; font-weight: 700; color: #E0E0FF;");
     hRow->addWidget(peerLbl, 1);
 
+    // Delete chat button
     auto* delBtn = makeDanger("🗑  Delete Chat");
     delBtn->setFixedHeight(30);
     delBtn->setFixedWidth(110);
@@ -2337,14 +2234,14 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername, QWid
     m_bubbleLayout = new QVBoxLayout(m_bubbleContainer);
     m_bubbleLayout->setContentsMargins(16, 16, 16, 16);
     m_bubbleLayout->setSpacing(8);
-    m_bubbleLayout->addStretch(1);
+    m_bubbleLayout->addStretch(1);   // push bubbles to bottom
 
     m_scroll->setWidget(m_bubbleContainer);
     root->addWidget(m_scroll, 1);
 
     // ── Input row ────────────────────────────────────────────────────────────
     auto* inputBar = new QFrame;
-    inputBar->setObjectName("chatInputBar");
+    inputBar->setStyleSheet("QFrame { background: #0F0F16; border-top: 1px solid #1C1C2A; }");
     auto* iRow = new QHBoxLayout(inputBar);
     iRow->setContentsMargins(14, 10, 14, 10);
     iRow->setSpacing(10);
@@ -2371,6 +2268,7 @@ QString ChatView::chatFilePath() const {
 }
 
 void ChatView::clearMessages() {
+    // Remove all except the trailing stretch (last item)
     while (m_bubbleLayout->count() > 1) {
         QLayoutItem* it = m_bubbleLayout->takeAt(0);
         if (it->widget()) it->widget()->deleteLater();
@@ -2381,10 +2279,9 @@ void ChatView::clearMessages() {
 void ChatView::appendBubble(const QString& sender, const QString& text) {
     bool isMine = (sender == m_currentUser);
 
-    auto* wrapWidget = new QWidget;
-    wrapWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    auto* wl = new QHBoxLayout(wrapWidget);
-    wl->setContentsMargins(0, 0, 0, 0);
+    // Wrapper aligns bubble left or right
+    auto* wrapper = new QHBoxLayout;
+    wrapper->setContentsMargins(0, 0, 0, 0);
 
     auto* bubble = new QLabel(text);
     bubble->setWordWrap(true);
@@ -2392,24 +2289,53 @@ void ChatView::appendBubble(const QString& sender, const QString& text) {
     bubble->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 
     if (isMine) {
-        bubble->setObjectName("bubbleOwn");
+        bubble->setStyleSheet(
+            "background: #3535CC; color: #FFFFFF; border-radius: 12px 12px 2px 12px;"
+            "padding: 9px 14px; font-size: 13px;");
+        wrapper->addStretch(1);
+        wrapper->addWidget(bubble);
+    }
+    else {
+        bubble->setStyleSheet(
+            "background: #1A1A2E; color: #CCCCEE; border-radius: 12px 12px 12px 2px;"
+            "padding: 9px 14px; font-size: 13px;");
+        bubble->setToolTip(sender);   // show sender name on hover for non-self
+        // Small name label above
+        auto* col = new QVBoxLayout;
+        col->setSpacing(2);
+        auto* nameLbl = new QLabel(sender);
+        nameLbl->setStyleSheet("font-size: 10px; color: #44446A; font-weight: 600;");
+        col->addWidget(nameLbl);
+        col->addWidget(bubble);
+        wrapper->addLayout(col);
+        wrapper->addStretch(1);
+    }
+
+    // Insert before trailing stretch
+    int insertPos = m_bubbleLayout->count() - 1;
+    auto* wrapWidget = new QWidget;
+    wrapWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    auto* wl = new QHBoxLayout(wrapWidget);
+    wl->setContentsMargins(0, 0, 0, 0);
+    if (isMine) {
         wl->addStretch(1);
         wl->addWidget(bubble);
     }
     else {
-        bubble->setObjectName("bubbleOther");
         auto* col = new QVBoxLayout;
         col->setSpacing(2);
         col->setContentsMargins(0, 0, 0, 0);
         auto* nameLbl2 = new QLabel(sender);
-        nameLbl2->setStyleSheet("font-size: 10px; color: #44445A; font-weight: 600;");
+        nameLbl2->setStyleSheet("font-size: 10px; color: #44446A; font-weight: 600;");
+        // bubble already created — reuse
         col->addWidget(nameLbl2);
         col->addWidget(bubble);
         wl->addLayout(col);
         wl->addStretch(1);
     }
-    m_bubbleLayout->insertWidget(m_bubbleLayout->count() - 1, wrapWidget);
+    m_bubbleLayout->insertWidget(insertPos, wrapWidget);
 
+    // Auto-scroll to bottom
     QTimer::singleShot(0, m_scroll, [this]() {
         m_scroll->verticalScrollBar()->setValue(
             m_scroll->verticalScrollBar()->maximum());
@@ -2424,11 +2350,13 @@ void ChatView::loadMessages() {
     while (!in.atEnd()) {
         QString line = in.readLine();
         if (line.trimmed().isEmpty()) continue;
+        // Format: sender|timestamp|text
         int firstPipe = line.indexOf('|');
         if (firstPipe < 0) continue;
         int secondPipe = line.indexOf('|', firstPipe + 1);
         if (secondPipe < 0) continue;
         QString sender = line.left(firstPipe);
+        // timestamp skipped for display
         QString text = line.mid(secondPipe + 1);
         if (!text.isEmpty()) appendBubble(sender, text);
     }
@@ -2438,11 +2366,12 @@ void ChatView::loadMessages() {
 void ChatView::refresh() {
     loadMessages();
 }
-
+// Add this helper function for ChatView (before onSend method)
 void ChatView::markConversationUnread(const QString& receiver, const QString& sender) {
     QDir().mkpath("data/Messages");
     QString unreadPath = "data/Messages/" + receiver + "_unread.txt";
 
+    // Check if sender is already in unread list
     QFile checkFile(unreadPath);
     bool alreadyExists = false;
     if (checkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -2456,6 +2385,7 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
         checkFile.close();
     }
 
+    // Add to unread list if not already there
     if (!alreadyExists) {
         QFile unreadFile(unreadPath);
         if (unreadFile.open(QIODevice::Append | QIODevice::Text)) {
@@ -2465,7 +2395,7 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
         }
     }
 }
-
+// Fix #2: Add message notifications when sending
 void ChatView::onSend() {
     QString text = m_input->text().trimmed();
     if (text.isEmpty()) return;
@@ -2474,6 +2404,7 @@ void ChatView::onSend() {
         return;
     }
 
+    // Append to file
     QDir().mkpath("data/Messages");
     QFile f(chatFilePath());
     if (f.open(QIODevice::Append | QIODevice::Text)) {
@@ -2483,9 +2414,11 @@ void ChatView::onSend() {
         f.close();
     }
 
+    // Ensure both sides have each other in their index
     ensureInIndex(m_currentUser, m_peer);
     ensureInIndex(m_peer, m_currentUser);
 
+    // FIX #2: Create notification for the recipient
     QDir().mkpath("data/Notifications");
     QString notifPath = "data/Notifications/" + m_peer + "_notif.txt";
     QFile notifFile(notifPath);
@@ -2496,6 +2429,7 @@ void ChatView::onSend() {
         notifFile.close();
     }
 
+    // FIX #3: Mark conversation as unread for recipient
     markConversationUnread(m_peer, m_currentUser);
 
     m_input->clear();
@@ -2508,7 +2442,10 @@ void ChatView::onDeleteChat() {
         QMessageBox::Yes | QMessageBox::No);
     if (r != QMessageBox::Yes) return;
 
+    // Delete the message file
     QFile::remove(chatFilePath());
+
+    // Remove peer from both index files
     removeFromIndex(m_currentUser, m_peer);
     removeFromIndex(m_peer, m_currentUser);
 
@@ -2518,6 +2455,8 @@ void ChatView::onDeleteChat() {
 // ══════════════════════════════════════════════════════════════════════════════
 //  MessagesPage
 // ══════════════════════════════════════════════════════════════════════════════
+
+// static — reads the index file for username
 QStringList MessagesPage::knownPeers(const QString& username) {
     QStringList peers;
     QFile f("data/Messages/" + username + "_index.txt");
@@ -2543,19 +2482,23 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // ── LEFT PANEL ───────────────────────────────────────────────────────────
+    // ── LEFT PANEL (conversation list) ───────────────────────────────────────
     m_leftPanel = new QWidget;
     m_leftPanel->setFixedWidth(240);
-    m_leftPanel->setObjectName("msgLeftPanel");
+    m_leftPanel->setObjectName("sidebar");   // reuse sidebar style
+    m_leftPanel->setStyleSheet(
+        "QWidget { background: #0F0F16; border-right: 1px solid #1C1C2A; }");
 
     auto* ll = new QVBoxLayout(m_leftPanel);
     ll->setContentsMargins(12, 20, 12, 16);
     ll->setSpacing(10);
 
+    // Title
     auto* titleLbl = new QLabel("Messages");
     titleLbl->setStyleSheet("font-size: 17px; font-weight: 700; color: #E0E0FF; padding-bottom: 4px;");
     ll->addWidget(titleLbl);
 
+    // Search input + button
     auto* searchRow = new QHBoxLayout;
     searchRow->setSpacing(6);
     m_searchInput = new QLineEdit;
@@ -2570,8 +2513,14 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
     searchRow->addWidget(goBtn);
     ll->addLayout(searchRow);
 
-    ll->addWidget(divider());
+    ll->addWidget([&]() {   // thin divider
+        auto* f = new QFrame; f->setFrameShape(QFrame::HLine);
+        f->setFixedHeight(1);
+        f->setStyleSheet("background: #1A1A28; border: none;");
+        return f;
+        }());
 
+    // Scrollable conversation list
     auto* convScroll = new QScrollArea;
     convScroll->setWidgetResizable(true);
     convScroll->setFrameShape(QFrame::NoFrame);
@@ -2588,9 +2537,10 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
 
     root->addWidget(m_leftPanel);
 
-    // ── RIGHT PANEL ──────────────────────────────────────────────────────────
+    // ── RIGHT PANEL (placeholder / chat view) ─────────────────────────────────
     m_rightStack = new QStackedWidget;
 
+    // Placeholder (index 0)
     auto* placeholder = new QWidget;
     auto* pl = new QVBoxLayout(placeholder);
     pl->setAlignment(Qt::AlignCenter);
@@ -2604,7 +2554,7 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
     pl->addWidget(pIcon);
     pl->addSpacing(12);
     pl->addWidget(pLbl);
-    m_rightStack->addWidget(placeholder);
+    m_rightStack->addWidget(placeholder);   // index 0
 
     root->addWidget(m_rightStack, 1);
 
@@ -2615,14 +2565,15 @@ void MessagesPage::refresh() {
     loadConversationList();
     if (m_chatView) m_chatView->refresh();
 }
-
+// Fix #3: Add unread indicator to conversation buttons
 void MessagesPage::addConversationButton(const QString& peer) {
     auto* btn = new QPushButton;
-    btn->setObjectName("navBtn");
+    btn->setObjectName("sidebarBtn");
     btn->setCursor(Qt::PointingHandCursor);
-    btn->setFixedHeight(52);
+    btn->setFixedHeight(46);
     btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+    // FIX #3: Check if conversation has unread messages
     QString unreadPath = "data/Messages/" + QString::fromStdString(m_currentUser->getUsername()) + "_unread.txt";
     bool hasUnread = false;
     QFile unreadFile(unreadPath);
@@ -2637,9 +2588,10 @@ void MessagesPage::addConversationButton(const QString& peer) {
         unreadFile.close();
     }
 
+    // Add red dot indicator if unread
     QString displayText = "  " + peer.left(1).toUpper() + "  " + peer;
     if (hasUnread) {
-        displayText += " ●";
+        displayText += " ●";  // red dot
     }
 
     btn->setText(displayText);
@@ -2647,11 +2599,11 @@ void MessagesPage::addConversationButton(const QString& peer) {
         "QPushButton { background: transparent; border: none; border-radius: 8px;"
         " text-align: left; padding-left: 10px; color: #7070AA; font-size: 13px; font-weight: 500; }"
         "QPushButton:hover { background: #17171F; color: #AAAAEE; }"
-        "QPushButton:checked { background: #13132A; color: #7C7CEA; border-left: 3px solid #5B5BD6; }");
+        "QPushButton:checked { background: #1B1B2A; color: #7C7CFF; border-left: 3px solid #5050F0; }");
 
     if (hasUnread) {
         btn->setStyleSheet(btn->styleSheet() +
-            " QPushButton { color: #FF6060; font-weight: 600; }");
+            " QPushButton { color: #FF6060; font-weight: 600; }");  // red text if unread
     }
 
     btn->setCheckable(true);
@@ -2659,10 +2611,13 @@ void MessagesPage::addConversationButton(const QString& peer) {
     if (peer == m_activePeer) btn->setChecked(true);
 
     connect(btn, &QPushButton::clicked, this, [this, peer, btn]() {
-        QList<QPushButton*> siblings = m_convListContent->findChildren<QPushButton*>();
+        // Uncheck all other buttons
+        QList<QPushButton*> siblings =
+            m_convListContent->findChildren<QPushButton*>();
         for (auto* s : siblings) s->setChecked(false);
         btn->setChecked(true);
 
+        // FIX #3: Clear unread status when conversation is opened
         QString me = QString::fromStdString(m_currentUser->getUsername());
         QString unreadPath = "data/Messages/" + me + "_unread.txt";
         QFile unreadFile(unreadPath);
@@ -2688,7 +2643,6 @@ void MessagesPage::addConversationButton(const QString& peer) {
 
     m_convListLayout->insertWidget(m_convListLayout->count() - 1, btn);
 }
-
 void MessagesPage::clearConversationList() {
     while (m_convListLayout->count() > 1) {
         QLayoutItem* it = m_convListLayout->takeAt(0);
@@ -2708,6 +2662,7 @@ void MessagesPage::loadConversationList() {
         addConversationButton(peer);
 }
 
+
 void MessagesPage::onSearchUser() {
     QString peer = m_searchInput->text().trimmed();
     if (peer.isEmpty()) return;
@@ -2719,6 +2674,7 @@ void MessagesPage::onSearchUser() {
         return;
     }
 
+    // FIX: Check if user exists before opening chat
     bool userExists = false;
     for (int i = 0; i < m_userCount; ++i) {
         if (m_allUsers[i] && m_allUsers[i]->getUsername() == peer.toStdString()) {
@@ -2741,21 +2697,28 @@ void MessagesPage::openChatWith(const QString& peer) {
     QString me = QString::fromStdString(m_currentUser->getUsername());
 
     m_activePeer = peer;
+
+    // Rebuild conversation list so the new peer appears immediately
     loadConversationList();
 
+    // Remove old ChatView from stack if present
     if (m_chatView) {
         m_rightStack->removeWidget(m_chatView);
         m_chatView->deleteLater();
         m_chatView = nullptr;
     }
 
+    // Create new ChatView
     m_chatView = new ChatView(me, peer);
     connect(m_chatView, &ChatView::chatDeleted, this, &MessagesPage::onChatDeleted);
-    m_rightStack->addWidget(m_chatView);
+    m_rightStack->addWidget(m_chatView);   // index 1
     m_rightStack->setCurrentWidget(m_chatView);
 
+    // If this peer isn't in the list yet, add them (first message hasn't been sent)
     ensureInIndex(me, peer);
     ensureInIndex(peer, me);
+
+    // Re-render list so button appears highlighted
     loadConversationList();
 }
 
@@ -2766,12 +2729,15 @@ void MessagesPage::onConversationSelected(const QString& peer) {
 void MessagesPage::onChatDeleted(const QString& peer) {
     m_activePeer.clear();
 
+    // Remove ChatView from stack
     if (m_chatView) {
         m_rightStack->removeWidget(m_chatView);
         m_chatView->deleteLater();
         m_chatView = nullptr;
     }
-    m_rightStack->setCurrentIndex(0);
+    m_rightStack->setCurrentIndex(0);   // back to placeholder
+
+    // Rebuild list (peer is now gone from index)
     loadConversationList();
 }
 
@@ -2784,89 +2750,35 @@ AdminPage::AdminPage(User** allUsers, int userCount, QWidget* parent)
     auto* outer = new QVBoxLayout(this);
     outer->setContentsMargins(28, 24, 28, 16);
     outer->setSpacing(16);
+    outer->addWidget(makeLabel("Admin Dashboard", "pageTitle"));
 
-    auto* titleRow = new QHBoxLayout;
-    auto* title = makeLabel("⚡ Admin Dashboard", "pageTitle");
-    titleRow->addWidget(title);
-    titleRow->addStretch(1);
-    outer->addLayout(titleRow);
-
-    auto* sub = new QLabel("Review and manage reported content");
-    sub->setStyleSheet("font-size: 12px; color: #2A2A44; margin-top: -8px;");
-    outer->addWidget(sub);
-
-    // Stats row
-    auto* statsRow = new QHBoxLayout;
-    statsRow->setSpacing(12);
-    auto addMiniStat = [&](const QString& val, const QString& lbl) {
-        auto* card = new QFrame;
-        card->setStyleSheet("background: #0A0A14; border: 1px solid #111125; border-radius: 10px;");
-        auto* c = new QVBoxLayout(card);
-        c->setContentsMargins(12, 10, 12, 10);
-        c->setSpacing(2);
-        auto* v = new QLabel(val);
-        v->setStyleSheet("font-size: 18px; font-weight: 700; color: #5B5BD6;");
-        v->setAlignment(Qt::AlignCenter);
-        auto* l = new QLabel(lbl);
-        l->setStyleSheet("font-size: 10px; font-weight: 600; color: #2A2A44; letter-spacing: 1.5px;");
-        l->setAlignment(Qt::AlignCenter);
-        c->addWidget(v); c->addWidget(l);
-        statsRow->addWidget(card);
-        };
-    // We'll just show placeholders; real counts loaded dynamically
-    addMiniStat("—", "REPORTS");
-    addMiniStat("—", "USERS");
-    addMiniStat("—", "POSTS");
-    statsRow->addStretch(1);
-    outer->addLayout(statsRow);
-
-    // Tab bar
-    auto* tabBar = new QHBoxLayout;
-    tabBar->setSpacing(6);
-    auto* tabUsers = new QPushButton("Reported Users");
-    auto* tabPosts = new QPushButton("Reported Posts");
-    auto* tabNotifs = new QPushButton("🔔 Notifications");
-    for (auto* b : { tabUsers, tabPosts, tabNotifs }) {
-        b->setFixedHeight(34);
-        b->setCursor(Qt::PointingHandCursor);
-    }
-    tabUsers->setObjectName("primaryBtn");
-    tabPosts->setObjectName("secondaryBtn");
-    tabNotifs->setObjectName("secondaryBtn");
-
-    connect(tabUsers, &QPushButton::clicked, this, [this, tabUsers, tabPosts, tabNotifs]() {
-        tabUsers->setObjectName("primaryBtn");
-        tabPosts->setObjectName("secondaryBtn");
-        tabNotifs->setObjectName("secondaryBtn");
-        for (auto* b : { tabUsers, tabPosts, tabNotifs }) { b->style()->unpolish(b); b->style()->polish(b); }
-        onReviewReportedUsers();
-        });
-    connect(tabPosts, &QPushButton::clicked, this, [this, tabUsers, tabPosts, tabNotifs]() {
-        tabUsers->setObjectName("secondaryBtn");
-        tabPosts->setObjectName("primaryBtn");
-        tabNotifs->setObjectName("secondaryBtn");
-        for (auto* b : { tabUsers, tabPosts, tabNotifs }) { b->style()->unpolish(b); b->style()->polish(b); }
-        onReviewReportedPosts();
-        });
-    connect(tabNotifs, &QPushButton::clicked, this, [this, tabUsers, tabPosts, tabNotifs]() {
-        tabUsers->setObjectName("secondaryBtn");
-        tabPosts->setObjectName("secondaryBtn");
-        tabNotifs->setObjectName("primaryBtn");
-        for (auto* b : { tabUsers, tabPosts, tabNotifs }) { b->style()->unpolish(b); b->style()->polish(b); }
-        loadAdminNotifications();
-        });
-
-    tabBar->addWidget(tabUsers);
-    tabBar->addWidget(tabPosts);
-    tabBar->addWidget(tabNotifs);
-    tabBar->addStretch(1);
-    outer->addLayout(tabBar);
+    auto* controlRow = new QHBoxLayout;
+    controlRow->setContentsMargins(0, 0, 0, 0);
+    controlRow->setSpacing(10);
+    auto* reviewUsersBtn = makePrimary("Reported Users");
+    auto* reviewPostsBtn = makePrimary("Reported Posts");
+    auto* notifsBtn = makeSecondary("🔔 Notifications"); // ADD THIS
+    auto* refreshBtn = makeSecondary("↻ Refresh");
+    reviewUsersBtn->setFixedHeight(36);
+    reviewPostsBtn->setFixedHeight(36);
+    notifsBtn->setFixedHeight(36);                           // ADD THIS
+    refreshBtn->setFixedHeight(36);
+    connect(reviewUsersBtn, &QPushButton::clicked, this, &AdminPage::onReviewReportedUsers);
+    connect(reviewPostsBtn, &QPushButton::clicked, this, &AdminPage::onReviewReportedPosts);
+    connect(notifsBtn, &QPushButton::clicked, this, &AdminPage::loadAdminNotifications); // ADD THIS
+    connect(refreshBtn, &QPushButton::clicked, this, &AdminPage::refresh);
+    controlRow->addWidget(reviewUsersBtn);
+    controlRow->addWidget(reviewPostsBtn);
+    controlRow->addWidget(notifsBtn);                        // ADD THIS
+    controlRow->addWidget(refreshBtn);
+    controlRow->addStretch(1);
+    outer->addLayout(controlRow);
 
     m_scrollArea = makeScrollArea(m_content, m_layout);
     outer->addWidget(m_scrollArea, 1);
 }
-
 void AdminPage::loadAdminNotifications() {
+    // Clear layout
     while (m_layout->count() > 1) {
         QLayoutItem* item = m_layout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
@@ -2882,6 +2794,8 @@ void AdminPage::loadAdminNotifications() {
             QString line = in.readLine().trimmed();
             if (line.isEmpty()) continue;
 
+            // Format written by User::reportUser():
+            // timestamp|type|message|isRead
             QStringList parts = line.split("|");
             if (parts.size() < 4) continue;
 
@@ -2891,9 +2805,10 @@ void AdminPage::loadAdminNotifications() {
             bool    isRead = (parts[3] == "1");
 
             auto* card = new QFrame;
-            card->setObjectName("notifCard");
+            card->setObjectName("notifItem");
             card->setProperty("unread", !isRead);
             card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+            // re-polish so QSS [unread="true"] applies
             card->style()->unpolish(card);
             card->style()->polish(card);
 
@@ -2941,6 +2856,7 @@ void AdminPage::loadAdminNotifications() {
         m_layout->insertWidget(0, empty);
     }
 
+    // Mark all as read
     markAdminNotifsRead();
 }
 
@@ -2969,11 +2885,10 @@ void AdminPage::markAdminNotifsRead() {
         file.close();
     }
 }
-
 void AdminPage::refresh() {
     loadReportedUsers();
-}
 
+}
 void AdminPage::onReviewReportedUsers() { loadReportedUsers(); }
 void AdminPage::onReviewReportedPosts() { loadReportedPosts(); }
 
@@ -2994,12 +2909,13 @@ void AdminPage::loadReportedUsers() {
         std::string targetUsername = m_allUsers[i]->getUsername();
 
         auto* card = new QFrame;
-        card->setStyleSheet("QFrame { background: #0D0808; border: 1px solid #2A1010; border-radius: 12px; border-left: 3px solid #EE5555; }");
+        card->setObjectName("postCard");
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
         auto* row = new QHBoxLayout(card);
         row->setContentsMargins(16, 12, 16, 12);
         row->setSpacing(10);
 
+        // User info
         auto* infoCol = new QVBoxLayout;
         auto* label = makeLabel("⚠ User: " + QString::fromStdString(targetUsername));
         label->setStyleSheet("font-size: 14px; font-weight: 600; color: #EE7777;");
@@ -3008,6 +2924,7 @@ void AdminPage::loadReportedUsers() {
         infoCol->addWidget(label);
         infoCol->addWidget(reportLbl);
 
+        // DELETE button — replaces old Ban/Unban
         auto* deleteBtn = makeDanger("Delete User");
         deleteBtn->setFixedWidth(100);
         deleteBtn->setFixedHeight(32);
@@ -3050,7 +2967,9 @@ void AdminPage::loadReportedPosts() {
     for (int i = 0; i < m_userCount; ++i) {
         if (!m_allUsers[i]) continue;
 
-        m_allUsers[i]->loadAllPosts();
+
+        if (m_allUsers[i]->getPostCount() == 0)
+            m_allUsers[i]->loadAllPosts();
 
         for (int j = 0; j < m_allUsers[i]->getPostCount(); ++j) {
             Posts* post = m_allUsers[i]->getPostByIndex(j);
@@ -3060,7 +2979,7 @@ void AdminPage::loadReportedPosts() {
             std::string creatorName = post->getCreatorUsername();
 
             auto* card = new QFrame;
-            card->setStyleSheet("QFrame { background: #0D0808; border: 1px solid #2A1010; border-radius: 12px; border-left: 3px solid #EE5555; }");
+            card->setObjectName("postCard");
             card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
             auto* cl = new QVBoxLayout(card);
             cl->setContentsMargins(16, 12, 16, 12);
@@ -3105,10 +3024,15 @@ void AdminPage::loadReportedPosts() {
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  ProfilePage
+//  The profile page wraps ALL its content in a single QScrollArea so there is
+//  no inner-page overflow. The tabs (My Posts / Saved) have their own
+//  QStackedWidget inside but NO nested scroll areas — only the outer scroll
+//  area scrolls.
 // ══════════════════════════════════════════════════════════════════════════════
 ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWidget* parent)
     : QWidget(parent), m_user(currentUser), m_allUsers(allUsers), m_userCountPtr(userCount)
 {
+    // Outer layout — just holds the single scroll area edge-to-edge
     auto* outer = new QVBoxLayout(this);
     outer->setContentsMargins(0, 0, 0, 0);
     outer->setSpacing(0);
@@ -3120,6 +3044,7 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
     scroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     outer->addWidget(scroll);
 
+    // Inner container — everything lives here
     auto* inner = new QWidget;
     inner->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     auto* layout = new QVBoxLayout(inner);
@@ -3128,56 +3053,45 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
 
     layout->addWidget(makeLabel("Profile", "pageTitle"));
 
-    // ── Profile hero card ────────────────────────────────────────────────────
-    auto* pCard = new QFrame;
-    pCard->setObjectName("postCard");
-    pCard->setStyleSheet("QFrame#postCard { background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #0D0D18, stop:1 #111125); }");
+    // ── Profile card ─────────────────────────────────────────────────────────
+    auto* pCard = new QFrame; pCard->setObjectName("postCard");
     pCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     auto* pcl = new QVBoxLayout(pCard);
-    pcl->setContentsMargins(28, 28, 28, 28);
+    pcl->setContentsMargins(24, 20, 24, 20);
     pcl->setSpacing(16);
 
     auto* infoRow = new QHBoxLayout;
     infoRow->setSpacing(16);
     infoRow->setContentsMargins(0, 0, 0, 0);
     QString ini = currentUser ? QString::fromStdString(currentUser->getUsername()).left(1).toUpper() : "?";
-    auto* av = avatar(ini, 72);
-    infoRow->addWidget(av, 0, Qt::AlignVCenter);
+    infoRow->addWidget(avatar(ini, 64), 0, Qt::AlignVCenter);
 
     auto* infoCol = new QVBoxLayout; infoCol->setSpacing(5);
     m_usernameLabel = makeLabel(currentUser ? QString::fromStdString(currentUser->getUsername()) : "");
-    m_usernameLabel->setStyleSheet("font-size:22px; font-weight:700; color:#F1F1F8;");
-    auto* handleLbl = new QLabel(currentUser ? "@" + QString::fromStdString(currentUser->getUsername()) : "");
-    handleLbl->setStyleSheet("font-size:13px; color:#33334A;");
+    m_usernameLabel->setStyleSheet("font-size:20px; font-weight:800; color:#E0E0FF;");
     m_bioLabel = makeLabel(currentUser ? QString::fromStdString(currentUser->getBio()) : "");
-    m_bioLabel->setStyleSheet("font-size:13px; color:#6868A0;");
+    m_bioLabel->setStyleSheet("font-size:13px; color:#56567A;");
     infoCol->addWidget(m_usernameLabel);
-    infoCol->addWidget(handleLbl);
     infoCol->addWidget(m_bioLabel);
     infoRow->addLayout(infoCol, 1);
     pcl->addLayout(infoRow);
 
     auto* statsRow = new QHBoxLayout; statsRow->setContentsMargins(0, 0, 0, 0);
-    statsRow->setSpacing(12);
-    auto addStatBox = [&](QLabel*& outLabel, const QString& val, const QString& lbl) {
-        auto* card = new QFrame;
-        card->setStyleSheet("background: #0A0A14; border: 1px solid #111125; border-radius: 10px;");
-        auto* c = new QVBoxLayout(card);
-        c->setContentsMargins(12, 10, 12, 10);
-        c->setSpacing(2);
+    auto addStat = [&](QLabel*& outLabel, const QString& val, const QString& lbl) {
+        auto* c = new QVBoxLayout; c->setSpacing(2);
         outLabel = new QLabel(val);
-        outLabel->setStyleSheet("font-size:20px; font-weight:700; color:#5B5BD6; letter-spacing:-1px;");
+        outLabel->setStyleSheet("font-size:22px; font-weight:700; color:#6060FF;");
         outLabel->setAlignment(Qt::AlignCenter);
         auto* l = new QLabel(lbl);
-        l->setStyleSheet("font-size:10px; font-weight:600; color:#2A2A44; letter-spacing:1.5px;");
+        l->setStyleSheet("font-size:10px; color:#36365A; letter-spacing:1px;");
         l->setAlignment(Qt::AlignCenter);
         c->addWidget(outLabel); c->addWidget(l);
-        statsRow->addWidget(card);
+        statsRow->addLayout(c); statsRow->addSpacing(24);
         };
     if (currentUser) {
-        addStatBox(m_postsCountLabel, QString::number(currentUser->getPostCount()), "POSTS");
-        addStatBox(m_followersCountLabel, QString::number(currentUser->getFollowersCount()), "FOLLOWERS");
-        addStatBox(m_followingCountLabel, QString::number(currentUser->getFollowingCount()), "FOLLOWING");
+        addStat(m_postsCountLabel, QString::number(currentUser->getPostCount()), "POSTS");
+        addStat(m_followersCountLabel, QString::number(currentUser->getFollowersCount()), "FOLLOWERS");
+        addStat(m_followingCountLabel, QString::number(currentUser->getFollowingCount()), "FOLLOWING");
     }
     statsRow->addStretch(1);
     pcl->addLayout(statsRow);
@@ -3188,13 +3102,13 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
     bioCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     auto* bcl = new QVBoxLayout(bioCard);
     bcl->setContentsMargins(22, 18, 22, 18); bcl->setSpacing(10);
-    bcl->addWidget(sectionLabel("Update Bio"));
+    bcl->addWidget(makeLabel("UPDATE BIO", "sectionLbl"));
     m_newBioInput = new QLineEdit;
     m_newBioInput->setPlaceholderText("New bio...");
-    m_newBioInput->setFixedHeight(44);
+    m_newBioInput->setFixedHeight(42);
     bcl->addWidget(m_newBioInput);
     auto* saveBioBtn = makePrimary("Save Bio");
-    saveBioBtn->setFixedWidth(110); saveBioBtn->setFixedHeight(36);
+    saveBioBtn->setFixedWidth(100); saveBioBtn->setFixedHeight(36);
     connect(saveBioBtn, &QPushButton::clicked, this, &ProfilePage::onUpdateBio);
     auto* bioRow = new QHBoxLayout; bioRow->addStretch(1); bioRow->addWidget(saveBioBtn);
     bcl->addLayout(bioRow);
@@ -3205,11 +3119,11 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
     passCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     auto* playout = new QVBoxLayout(passCard);
     playout->setContentsMargins(22, 18, 22, 18); playout->setSpacing(10);
-    playout->addWidget(sectionLabel("Change Password"));
+    playout->addWidget(makeLabel("CHANGE PASSWORD", "sectionLbl"));
     m_newPassInput = new QLineEdit;
     m_newPassInput->setPlaceholderText("New password...");
     m_newPassInput->setEchoMode(QLineEdit::Password);
-    m_newPassInput->setFixedHeight(44);
+    m_newPassInput->setFixedHeight(42);
     playout->addWidget(m_newPassInput);
     auto* savePassBtn = makePrimary("Update Password");
     savePassBtn->setFixedWidth(150); savePassBtn->setFixedHeight(36);
@@ -3219,6 +3133,8 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
     layout->addWidget(passCard);
 
     // ── Posts / Saved tabs card ───────────────────────────────────────────────
+    // This card contains the two sub-pages but does NOT have its own scroll area.
+    // It has a minimum height so the outer scroll can drive scrolling.
     auto* tabsCard = new QFrame; tabsCard->setObjectName("postCard");
     tabsCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     auto* tabsCl = new QVBoxLayout(tabsCard);
@@ -3261,15 +3177,15 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
     layout->addWidget(tabsCard);
 
     // ── Danger zone card ─────────────────────────────────────────────────────
-    auto* dangerCard = new QFrame;
-    dangerCard->setStyleSheet("QFrame { background: #0A0408; border: 1px solid #2A0D0D; border-radius: 14px; }");
+    auto* dangerCard = new QFrame; dangerCard->setObjectName("postCard");
     dangerCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    dangerCard->setStyleSheet("QFrame#postCard { border:1px solid #3A1212; background:#0E0606; }");
     auto* dl = new QVBoxLayout(dangerCard);
     dl->setContentsMargins(22, 18, 22, 18); dl->setSpacing(10);
-    auto* dtitle = sectionLabel("Danger Zone");
-    dtitle->setStyleSheet("font-size:10px; font-weight:600; color:#3A1A1A; letter-spacing:1.8px;");
+    auto* dtitle = makeLabel("DANGER ZONE", "sectionLbl");
+    dtitle->setStyleSheet("font-size:10px; font-weight:600; color:#5A2222; letter-spacing:1.4px;");
     auto* ddesc = makeLabel("Permanently deletes your account and all associated data.");
-    ddesc->setStyleSheet("font-size:12px; color:#2A1010;");
+    ddesc->setStyleSheet("font-size:12px; color:#4A3030;");
     auto* delBtn = makeDanger("Delete My Account");
     delBtn->setFixedWidth(160); delBtn->setFixedHeight(36);
     connect(delBtn, &QPushButton::clicked, this, &ProfilePage::onDeleteAccount);
@@ -3279,6 +3195,8 @@ ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWi
 
     layout->addStretch(1);
     scroll->setWidget(inner);
+    connect(m_myPostsPage, &MyPostsPage::requestOpenComments, this, &ProfilePage::requestOpenComments);
+    
 }
 
 void ProfilePage::refresh() {
@@ -3289,6 +3207,7 @@ void ProfilePage::refresh() {
     if (m_followersCountLabel) m_followersCountLabel->setText(QString::number(m_user->getFollowersCount()));
     if (m_followingCountLabel) m_followingCountLabel->setText(QString::number(m_user->getFollowingCount()));
     m_myPostsPage->refresh();
+    // FIX #9: also refresh saved tab so it doesn't show stale data
     m_savedPage->refresh();
 }
 
@@ -3328,9 +3247,11 @@ void ProfilePage::onDeleteAccount() {
         QMessageBox::Yes | QMessageBox::Cancel);
     if (r == QMessageBox::Yes) {
         m_user->deleteAccount(m_allUsers, *m_userCountPtr);
+        m_user = nullptr;   
         emit accountDeleted();
     }
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  TimeSpentPage
@@ -3352,62 +3273,32 @@ TimeSpentPage::TimeSpentPage(QWidget* parent) : QWidget(parent), m_elapsed(0) {
 
     auto* clockIcon = new QLabel("⏱");
     clockIcon->setAlignment(Qt::AlignCenter);
-    clockIcon->setStyleSheet("font-size: 44px; color: #5B5BD6;");
+    clockIcon->setStyleSheet("font-size: 44px;");
     tcl->addWidget(clockIcon);
 
-    m_timerLabel = makeLabel("00:00:00", "timerDisplay");
+    m_timerLabel = makeLabel("00:00:00", "timerDisp");
     m_timerLabel->setAlignment(Qt::AlignCenter);
     tcl->addWidget(m_timerLabel);
 
     m_sessionLabel = makeLabel("Session started: —");
     m_sessionLabel->setAlignment(Qt::AlignCenter);
-    m_sessionLabel->setStyleSheet("color: #2A2A44; font-size: 12px;");
+    m_sessionLabel->setStyleSheet("color: #34345A; font-size: 12px;");
     tcl->addWidget(m_sessionLabel);
 
     outer->addWidget(timerCard);
 
-    // Info cards row
-    auto* infoRow = new QHBoxLayout;
-    infoRow->setSpacing(12);
-    auto addInfoCard = [&](const QString& icon, const QString& val, const QString& lbl) {
-        auto* card = new QFrame;
-        card->setObjectName("postCard");
-        auto* c = new QVBoxLayout(card);
-        c->setContentsMargins(16, 16, 16, 16);
-        c->setSpacing(4);
-        auto* ic = new QLabel(icon);
-        ic->setAlignment(Qt::AlignCenter);
-        ic->setStyleSheet("font-size: 28px;");
-        auto* v = new QLabel(val);
-        v->setAlignment(Qt::AlignCenter);
-        v->setStyleSheet("font-size: 20px; font-weight: 700; color: #5B5BD6;");
-        auto* la = new QLabel(lbl);
-        la->setAlignment(Qt::AlignCenter);
-        la->setStyleSheet("font-size: 10px; font-weight: 600; color: #2A2A44; letter-spacing: 1.5px;");
-        c->addWidget(ic);
-        c->addWidget(v);
-        c->addWidget(la);
-        infoRow->addWidget(card);
-        };
-    addInfoCard("🎯", "—", "TODAY'S GOAL");
-    addInfoCard("📊", "—", "AVG DAILY");
-    addInfoCard("🔥", "—", "STREAK");
-    infoRow->addStretch(1);
-    outer->addLayout(infoRow);
-
+    // Push the timer card to the top so it doesn't float awkwardly in the middle
     outer->addStretch(1);
 
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &TimeSpentPage::onTick);
 }
-
 void TimeSpentPage::startSession() {
     m_elapsed = 0;
     m_sessionStart = QDateTime::currentDateTime();
     m_sessionLabel->setText("Session started: " + m_sessionStart.toString("hh:mm AP"));
     m_timer->start(1000);
 }
-
 void TimeSpentPage::stopSession() { m_timer->stop(); }
 void TimeSpentPage::onTick() { ++m_elapsed; updateDisplay(); }
 void TimeSpentPage::updateDisplay() {
@@ -3420,6 +3311,17 @@ void TimeSpentPage::updateDisplay() {
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  MainWindow
+//  Structure (when logged in):
+//
+//    QMainWindow
+//    └─ central QWidget
+//       └─ QVBoxLayout (zero margins)
+//          └─ m_rootStack (QStackedWidget)
+//             ├─ AuthPage          (index 0)
+//             └─ appShell QWidget  (index 1)
+//
+//  The sidebar has a fixed width set here in C++ (NOT via QSS min/max-width)
+//  to guarantee it never conflicts with content area sizing.
 // ══════════════════════════════════════════════════════════════════════════════
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -3427,7 +3329,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_sidebar(nullptr),
     m_btnFeed(nullptr), m_btnNotifications(nullptr), m_btnSearch(nullptr),
     m_btnMessages(nullptr), m_btnProfile(nullptr), m_btnTimeSpent(nullptr),
-    m_btnSwitchUser(nullptr), m_btnLogout(nullptr),
+     m_btnLogout(nullptr),
     m_pages(nullptr), m_feedPage(nullptr), m_notifPage(nullptr),
     m_searchPage(nullptr), m_messagesPage(nullptr), m_profilePage(nullptr),
     m_timeSpentPage(nullptr), m_adminPage(nullptr),
@@ -3440,7 +3342,9 @@ MainWindow::MainWindow(QWidget* parent)
     QDir().mkpath("data/Users");
     QDir().mkpath("data/Messages");
 
+
     setWindowTitle(APP_NAME);
+    // Default size: sensible for 1080p; will resize by layout on smaller screens
     resize(1100, 720);
     setMinimumSize(860, 580);
     qApp->setStyleSheet(APP_STYLE);
@@ -3459,6 +3363,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_appShell->setObjectName("appShell");
     m_appShell->hide();
 
+    // FIX #2: use QStackedWidget so only one page is active at a time
     m_rootStack = new QStackedWidget(central);
     m_rootStack->addWidget(m_authPage);
     m_rootStack->addWidget(m_appShell);
@@ -3482,7 +3387,7 @@ void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
     m_shellLayout->addWidget(m_sidebar, 0);
     m_shellLayout->addWidget(m_pages, 1);
 
-    m_pages->setCurrentIndex(0);
+    m_pages->setCurrentIndex(0);   // set BEFORE showing
     m_appShell->show();
     m_rootStack->setCurrentIndex(1);
     m_timeSpentPage->startSession();
@@ -3490,6 +3395,7 @@ void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
 }
 
 void MainWindow::onLoginAdminSuccess() {
+    // FIX #3: ensure user database is loaded before handing it to AdminPage
     m_authPage->resetToLogin();
     m_allUsers = m_authPage->getAllUsers();
     m_userCount = m_authPage->getUserCount();
@@ -3498,9 +3404,10 @@ void MainWindow::onLoginAdminSuccess() {
     m_shellLayout->setContentsMargins(0, 0, 0, 0);
     m_shellLayout->setSpacing(0);
 
+    // ── Admin sidebar (minimal) ───────────────────────────────────────────
     m_sidebar = new QWidget;
     m_sidebar->setObjectName("sidebar");
-    m_sidebar->setFixedWidth(220);
+    m_sidebar->setFixedWidth(210);
     m_sidebar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
     auto* sl = new QVBoxLayout(m_sidebar);
@@ -3508,18 +3415,19 @@ void MainWindow::onLoginAdminSuccess() {
     sl->setSpacing(4);
 
     auto* brand = new QLabel(APP_NAME);
-    brand->setStyleSheet("font-size:21px; font-weight:800; color:#7C7CEA; padding: 0 4px 12px 4px;");
+    brand->setStyleSheet("font-size:21px; font-weight:800; color:#6060FF; padding: 0 4px 12px 4px;");
     sl->addWidget(brand);
     sl->addWidget(divider());
     sl->addSpacing(10);
-    sl->addWidget(sectionLabel("Administrator"));
+    sl->addWidget(makeLabel("ADMINISTRATOR", "sectionLbl"));
     sl->addStretch(1);
 
     m_btnLogout = new SidebarButton("←", "Log Out");
-    m_btnLogout->setObjectName("navBtnDanger");
+    m_btnLogout->setObjectName("sidebarBtnDanger");
     connect(m_btnLogout, &QPushButton::clicked, this, &MainWindow::onLogout);
     sl->addWidget(m_btnLogout);
 
+    // ── Admin content ─────────────────────────────────────────────────────
     m_pages = new QStackedWidget;
     m_pages->setObjectName("pageArea");
     m_adminPage = new AdminPage(m_allUsers, m_userCount);
@@ -3534,7 +3442,8 @@ void MainWindow::onLoginAdminSuccess() {
 void MainWindow::buildSidebar() {
     m_sidebar = new QWidget;
     m_sidebar->setObjectName("sidebar");
-    m_sidebar->setFixedWidth(220);
+    // Fixed width prevents it from shrinking or growing into the feed area
+    m_sidebar->setFixedWidth(210);
     m_sidebar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
     auto* sl = new QVBoxLayout(m_sidebar);
@@ -3542,32 +3451,25 @@ void MainWindow::buildSidebar() {
     sl->setSpacing(4);
 
     // Brand
-    auto* brandRow = new QHBoxLayout;
-    brandRow->setSpacing(8);
-    auto* brandCircle = new QLabel("N");
-    brandCircle->setFixedSize(32, 32);
-    brandCircle->setAlignment(Qt::AlignCenter);
-    brandCircle->setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #5B5BD6, stop:1 #7C4FD4); border-radius: 16px; font-size: 14px; font-weight: 800; color: #FFFFFF;");
     auto* brand = new QLabel(APP_NAME);
-    brand->setObjectName("brandLabel");
-    brandRow->addWidget(brandCircle);
-    brandRow->addWidget(brand, 1);
-    sl->addLayout(brandRow);
+    brand->setStyleSheet("font-size:21px; font-weight:800; color:#6060FF; padding: 0 4px 12px 4px;");
+    sl->addWidget(brand);
     sl->addWidget(divider());
-    sl->addSpacing(20);
+    sl->addSpacing(12);
 
-    // FAB
-    auto* fabBtn = new QPushButton("＋  New Post");
-    fabBtn->setObjectName("fabBtn");
-    fabBtn->setFixedHeight(40);
-    fabBtn->setCursor(Qt::PointingHandCursor);
-    connect(fabBtn, &QPushButton::clicked, this, &MainWindow::onSidebarCreatePost);
-    sl->addWidget(fabBtn);
-    sl->addSpacing(20);
+    // Compose button — centred
+    auto* plusBtn = new QPushButton("+");
+    plusBtn->setObjectName("plusCircleBtn");
+    plusBtn->setFixedSize(44, 44);
+    plusBtn->setCursor(Qt::PointingHandCursor);
+    connect(plusBtn, &QPushButton::clicked, this, &MainWindow::onSidebarCreatePost);
+    sl->addWidget(plusBtn, 0, Qt::AlignHCenter);
+    sl->addSpacing(16);
 
     // Nav label
-    sl->addWidget(sectionLabel("Menu"));
-    sl->addSpacing(8);
+    auto* navLbl = makeLabel("NAVIGATE", "sectionLbl");
+    navLbl->setContentsMargins(4, 0, 0, 2);
+    sl->addWidget(navLbl);
 
     m_btnFeed = new SidebarButton("⊞", "Feed");
     m_btnNotifications = new SidebarButton("◎", "Notifications");
@@ -3590,42 +3492,39 @@ void MainWindow::buildSidebar() {
     sl->addWidget(m_btnProfile);
     sl->addWidget(m_btnTimeSpent);
 
-    sl->addStretch(1);
+    sl->addStretch(1); // push everything below to bottom
     sl->addWidget(divider());
     sl->addSpacing(6);
 
-    // User chip
-    auto* userChip = new QFrame;
-    userChip->setObjectName("userChip");
-    auto* ucLayout = new QHBoxLayout(userChip);
-    ucLayout->setContentsMargins(8, 8, 8, 8);
-    ucLayout->setSpacing(8);
+    // User row (avatar + username)
+    auto* userRow = new QHBoxLayout;
+    userRow->setContentsMargins(4, 0, 4, 0);
+    userRow->setSpacing(8);
     QString ini = m_currentUser ? QString::fromStdString(m_currentUser->getUsername()).left(1).toUpper() : "?";
-    ucLayout->addWidget(avatar(ini, 28), 0, Qt::AlignVCenter);
+    userRow->addWidget(avatar(ini, 28), 0, Qt::AlignVCenter);
     auto* uname = new QLabel(m_currentUser ? QString::fromStdString(m_currentUser->getUsername()) : "");
-    uname->setStyleSheet("font-size:12px; color:#6868A0; font-weight:600;");
+    uname->setStyleSheet("font-size:12px; color:#7070AA; font-weight:600;");
     uname->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    uname->setMaximumWidth(110);
+    uname->setMaximumWidth(110); // prevent overflow on long names
     uname->setWordWrap(false);
-    ucLayout->addWidget(uname, 1);
-    sl->addWidget(userChip);
-    sl->addSpacing(8);
+    userRow->addWidget(uname, 1);
+    sl->addLayout(userRow);
+    sl->addSpacing(6);
 
-    m_btnSwitchUser = new SidebarButton("⇄", "Switch User");
-    m_btnSwitchUser->setObjectName("navBtnDanger");
-    connect(m_btnSwitchUser, &QPushButton::clicked, this, &MainWindow::onSwitchUser);
-    sl->addWidget(m_btnSwitchUser);
+    
 
     m_btnLogout = new SidebarButton("←", "Log Out");
-    m_btnLogout->setObjectName("navBtnDanger");
+    m_btnLogout->setObjectName("sidebarBtnDanger");
     connect(m_btnLogout, &QPushButton::clicked, this, &MainWindow::onLogout);
     sl->addWidget(m_btnLogout);
 }
 
 void MainWindow::buildPages() {
+    // Use a plain container — manual show/hide controls visibility
     m_pages = new QStackedWidget;
     m_pages->setObjectName("pageArea");
 
+    // 1. Initialize all pages
     m_feedPage = new FeedPage(m_currentUser, m_allUsers, m_userCount);
     m_notifPage = new NotificationsPage(m_currentUser);
     m_searchPage = new SearchPage(m_allUsers, m_userCount, m_currentUser);
@@ -3633,21 +3532,46 @@ void MainWindow::buildPages() {
     m_profilePage = new ProfilePage(m_currentUser, m_allUsers, &m_userCount);
     m_timeSpentPage = new TimeSpentPage;
 
-    connect(m_profilePage, &ProfilePage::accountDeleted,
-        this, &MainWindow::onLogout);
+    // Initialize the new Comments Page
+    m_commentsPage = new CommentsPage(QString::fromStdString(m_currentUser->getUsername()));
 
-    m_pages->addWidget(m_feedPage);
-    m_pages->addWidget(m_notifPage);
-    m_pages->addWidget(m_searchPage);
-    m_pages->addWidget(m_messagesPage);
-    m_pages->addWidget(m_profilePage);
-    m_pages->addWidget(m_timeSpentPage);
+    // 2. Connect core app signals
+    connect(m_profilePage, &ProfilePage::accountDeleted, this, &MainWindow::onLogout);
 
+    // 3. Add widgets to the stack (Indices 0 through 6)
+    m_pages->addWidget(m_feedPage);       // Index 0
+    m_pages->addWidget(m_notifPage);      // Index 1
+    m_pages->addWidget(m_searchPage);     // Index 2
+    m_pages->addWidget(m_messagesPage);   // Index 3
+    m_pages->addWidget(m_profilePage);    // Index 4
+    m_pages->addWidget(m_timeSpentPage);  // Index 5
+    m_pages->addWidget(m_commentsPage);   // Index 6
+
+    // 4. Handle the Back Button from the Comments view
+    connect(m_commentsPage, &CommentsPage::backClicked, this, [this]() {
+        m_pages->setCurrentIndex(m_previousPageIndex);
+
+        // Refresh the page we are returning to so comment counts update instantly
+        if (m_previousPageIndex == 0) {
+            m_feedPage->refresh();
+        }
+        else if (m_previousPageIndex == 4) {
+            m_profilePage->refresh();
+        }
+        });
+
+    // 5. Catch the open comment signals from all relevant pages
+    connect(m_feedPage, &FeedPage::requestOpenComments, this, &MainWindow::onOpenComments);
+    connect(m_searchPage, &SearchPage::requestOpenComments, this, &MainWindow::onOpenComments);
+    connect(m_profilePage, &ProfilePage::requestOpenComments, this, &MainWindow::onOpenComments);
+
+    // 6. Hide everything — onNavFeed() will explicitly show the feed after login
     m_notifPage->hide();
     m_searchPage->hide();
     m_messagesPage->hide();
     m_profilePage->hide();
     m_timeSpentPage->hide();
+    m_commentsPage->hide();
 }
 
 void MainWindow::onSidebarCreatePost() {
@@ -3665,44 +3589,47 @@ void MainWindow::setActiveSidebarButton(SidebarButton* active) {
     for (auto* b : btns) if (b) b->setActive(b == active);
 }
 
+
+
+
 void MainWindow::onNavFeed() {
     if (!m_pages || !m_feedPage) return;
     m_pages->setCurrentIndex(0);
     m_feedPage->refresh();
     setActiveSidebarButton(m_btnFeed);
+    // DELETE: animateFade(m_feedPage);
 }
-
 void MainWindow::onNavNotifications() {
     if (!m_pages || !m_notifPage) return;
     m_pages->setCurrentIndex(1);
     m_notifPage->refresh();
     setActiveSidebarButton(m_btnNotifications);
+    // DELETE: animateFade(m_notifPage);
 }
-
 void MainWindow::onNavSearch() {
     if (!m_pages) return;
     m_pages->setCurrentIndex(2);
     setActiveSidebarButton(m_btnSearch);
+    // DELETE: animateFade(m_searchPage);
 }
-
 void MainWindow::onNavMessages() {
     if (!m_pages || !m_messagesPage) return;
     m_pages->setCurrentIndex(3);
     m_messagesPage->refresh();
     setActiveSidebarButton(m_btnMessages);
 }
-
 void MainWindow::onNavProfile() {
     if (!m_pages || !m_profilePage) return;
     m_pages->setCurrentIndex(4);
     m_profilePage->refresh();
     setActiveSidebarButton(m_btnProfile);
+    // DELETE: animateFade(m_profilePage);
 }
-
 void MainWindow::onNavTimeSpent() {
     if (!m_pages) return;
     m_pages->setCurrentIndex(5);
     setActiveSidebarButton(m_btnTimeSpent);
+    // DELETE: animateFade(m_timeSpentPage);
 }
 
 void MainWindow::onLogout() {
@@ -3712,31 +3639,35 @@ void MainWindow::onLogout() {
     if (r != QMessageBox::Yes) return;
     if (m_currentUser) m_currentUser->logOut();
     if (m_timeSpentPage) m_timeSpentPage->stopSession();
-    m_appShell->hide();
+    m_appShell->hide();          // hide shell BEFORE teardown
     tearDownShell();
     m_currentUser = nullptr;
     m_authPage->resetToLogin();
     m_rootStack->setCurrentIndex(0);
+
+
 }
 
-void MainWindow::onSwitchUser() {
-    if (m_currentUser) m_currentUser->logOut();
-    if (m_timeSpentPage) m_timeSpentPage->stopSession();
-    m_appShell->hide();
-    tearDownShell();
-    m_currentUser = nullptr;
-    m_authPage->resetToLogin();
-    m_rootStack->setCurrentIndex(0);
-}
+void MainWindow::onOpenComments(Posts* post) {
+    // Save where we came from so "Back" works
+    m_previousPageIndex = m_pages->currentIndex();
 
+    // Load the post into the comments page
+    m_commentsPage->loadPost(post);
+
+    // Switch the view!
+    m_pages->setCurrentWidget(m_commentsPage);
+}
 void MainWindow::tearDownShell() {
     if (m_appShell) {
+        // Delete ALL child widgets of appShell, not just layout items
         QList<QWidget*> children = m_appShell->findChildren<QWidget*>(
             QString(), Qt::FindDirectChildrenOnly);
         for (QWidget* w : children) {
             w->hide();
             w->deleteLater();
         }
+        // Now safe to delete the layout
         delete m_appShell->layout();
     }
 
@@ -3744,7 +3675,7 @@ void MainWindow::tearDownShell() {
     m_btnFeed = nullptr; m_btnNotifications = nullptr;
     m_btnSearch = nullptr; m_btnMessages = nullptr;
     m_btnProfile = nullptr; m_btnTimeSpent = nullptr;
-    m_btnSwitchUser = nullptr; m_btnLogout = nullptr;
+     m_btnLogout = nullptr;
     m_pages = nullptr; m_feedPage = nullptr;
     m_notifPage = nullptr; m_searchPage = nullptr;
     m_messagesPage = nullptr; m_profilePage = nullptr;

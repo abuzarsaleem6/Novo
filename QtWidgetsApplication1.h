@@ -23,46 +23,23 @@
 #include <QDateTime>
 #include <QDir>
 #include <QDialog>
-#include <QPainter>
-#include <QClipboard>
-#include <QToolTip>
+#include <QInputDialog>
 
-// Forward declarations
 class User;
 class Posts;
 class Notification;
 
-// ─────────────────────────────────────────────────────────────
-//  SidebarButton
-//  Custom painted nav button with active left-bar indicator
-//  and optional notification badge
-// ─────────────────────────────────────────────────────────────
 class SidebarButton : public QPushButton {
     Q_OBJECT
 public:
     SidebarButton(const QString& icon, const QString& label, QWidget* parent = nullptr);
     void setActive(bool active);
-    void setNotifCount(int count);
-protected:
-    void paintEvent(QPaintEvent* event) override;
-private:
-    bool m_active = false;
-    bool m_hasNotif = false;
-    int  m_notifCount = 0;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  PostCard
-// ─────────────────────────────────────────────────────────────
 class PostCard : public QFrame {
     Q_OBJECT
 public:
-    PostCard(Posts* post,
-        const QString& authorUsername,
-        bool isOwner,
-        bool isSaved,
-        const QString& viewerUsername,
-        QWidget* parent = nullptr);
+    PostCard(Posts* post, const QString& authorUsername, bool isOwner, bool isSaved, const QString& viewerUsername, bool isAuthorReported = false, QWidget* parent = nullptr);
 signals:
     void likeClicked(Posts* post);
     void commentClicked(Posts* post);
@@ -78,30 +55,24 @@ private:
     bool    m_isOwner;
     bool    m_isSaved;
     QString m_viewerUsername;
+    bool    m_isAuthorReported; // NEW
+    bool    m_isPostReported;   // NEW
 };
 
-// ─────────────────────────────────────────────────────────────
-//  NotificationItem
-// ─────────────────────────────────────────────────────────────
 class NotificationItem : public QFrame {
     Q_OBJECT
 public:
     NotificationItem(const Notification& notif, QWidget* parent = nullptr);
 };
 
-// ─────────────────────────────────────────────────────────────
-//  AuthPage
-// ─────────────────────────────────────────────────────────────
 class AuthPage : public QWidget {
     Q_OBJECT
 public:
     explicit AuthPage(QWidget* parent = nullptr);
     ~AuthPage();
     void resetToLogin();
-
     User** getAllUsers() const { return m_allUsers; }
     int getUserCount() const { return m_userCount; }
-
 signals:
     void loginSuccess(User* user, User** allUsers, int userCount);
     void loginAdminSuccess();
@@ -113,7 +84,6 @@ private:
     QWidget* createLoginWidget();
     QWidget* createSignupWidget();
     QWidget* createAdminLoginWidget();
-
     QStackedWidget* m_stack;
     QLineEdit* m_loginUser;
     QLineEdit* m_loginPass;
@@ -124,34 +94,27 @@ private:
     int        m_userCount;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  PublicProfileWidget
-// ─────────────────────────────────────────────────────────────
 class PublicProfileWidget : public QWidget {
     Q_OBJECT
 public:
     PublicProfileWidget(QWidget* parent = nullptr);
     void loadProfile(User* targetUser, User* viewer);
-
 signals:
     void backClicked();
-
+    void requestOpenComments(Posts* post); // NEW
 private:
     QVBoxLayout* m_mainLayout;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  FeedPage
-// ─────────────────────────────────────────────────────────────
 class FeedPage : public QWidget {
     Q_OBJECT
 public:
     FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* parent = nullptr);
     void refresh();
-
     QFrame* m_composerCard;
     QTextEdit* m_postInput;
-
+signals:
+    void requestOpenComments(Posts* post); // NEW
 private slots:
     void onLikePost(Posts* post);
     void onCommentPost(Posts* post);
@@ -164,7 +127,6 @@ private slots:
 private:
     void loadPosts();
     void clearFeed();
-
     User* m_user;
     User** m_allUsers;
     int          m_userCount;
@@ -173,14 +135,13 @@ private:
     QVBoxLayout* m_feedLayout;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  MyPostsPage
-// ─────────────────────────────────────────────────────────────
 class MyPostsPage : public QWidget {
     Q_OBJECT
 public:
     MyPostsPage(User* currentUser, QWidget* parent = nullptr);
     void refresh();
+signals:
+    void requestOpenComments(Posts* post); // NEW
 private slots:
     void onDeletePost(Posts* post);
     void onEditPost(Posts* post);
@@ -194,14 +155,13 @@ private:
     QVBoxLayout* m_postsLayout;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  SavedPostsPage
-// ─────────────────────────────────────────────────────────────
 class SavedPostsPage : public QWidget {
     Q_OBJECT
 public:
     SavedPostsPage(User* currentUser, User** allUsers, int userCount, QWidget* parent = nullptr);
     void refresh();
+signals:
+    void requestOpenComments(Posts* post); // NEW
 private slots:
     void onUnsavePost(Posts* post);
 private:
@@ -215,9 +175,6 @@ private:
     QVBoxLayout* m_savedLayout;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  NotificationsPage
-// ─────────────────────────────────────────────────────────────
 class NotificationsPage : public QWidget {
     Q_OBJECT
 public:
@@ -225,20 +182,19 @@ public:
     void refresh();
 private:
     void loadNotifications();
-    void onMarkAllRead();
     User* m_user;
     QScrollArea* m_scrollArea;
     QWidget* m_listContent;
     QVBoxLayout* m_listLayout;
+    void onMarkAllRead();
 };
 
-// ─────────────────────────────────────────────────────────────
-//  SearchPage
-// ─────────────────────────────────────────────────────────────
 class SearchPage : public QWidget {
     Q_OBJECT
 public:
     SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
+signals:
+    void requestOpenComments(Posts* post); // NEW
 private slots:
     void onSearch();
     void onFollowUser();
@@ -261,9 +217,6 @@ private:
     SearchEngine m_engine;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  ProfilePage
-// ─────────────────────────────────────────────────────────────
 class ProfilePage : public QWidget {
     Q_OBJECT
 public:
@@ -271,6 +224,7 @@ public:
     void refresh();
 signals:
     void accountDeleted();
+    void requestOpenComments(Posts* post); 
 private slots:
     void onUpdateBio();
     void onUpdatePassword();
@@ -279,36 +233,31 @@ private:
     User* m_user;
     User** m_allUsers;
     int* m_userCountPtr;
-
     QLabel* m_usernameLabel;
     QLabel* m_bioLabel;
     QLineEdit* m_newBioInput;
     QLineEdit* m_newPassInput;
-
     MyPostsPage* m_myPostsPage;
     SavedPostsPage* m_savedPage;
-
     QLabel* m_postsCountLabel = nullptr;
     QLabel* m_followersCountLabel = nullptr;
     QLabel* m_followingCountLabel = nullptr;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  CommentDialog
-// ─────────────────────────────────────────────────────────────
-class CommentDialog : public QDialog {
+// ── THIS REPLACES CommentDialog ──
+class CommentsPage : public QWidget {
     Q_OBJECT
 public:
-    CommentDialog(Posts* post, const QString& currentUser, QWidget* parent = nullptr);
-
+    CommentsPage(const QString& currentUser, QWidget* parent = nullptr);
+    void loadPost(Posts* post);
+signals:
+    void backClicked();
 private slots:
     void onAddComment();
     void onEditComment(int index);
     void onDeleteComment(int index);
-
 private:
     void loadComments();
-
     Posts* m_post;
     QString m_currentUser;
     QVBoxLayout* m_commentsLayout;
@@ -316,9 +265,6 @@ private:
     QLineEdit* m_input;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  TimeSpentPage
-// ─────────────────────────────────────────────────────────────
 class TimeSpentPage : public QWidget {
     Q_OBJECT
 public:
@@ -336,20 +282,13 @@ private:
     QLabel* m_sessionLabel;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  ChatView
-// ─────────────────────────────────────────────────────────────
 class ChatView : public QWidget {
     Q_OBJECT
 public:
-    ChatView(const QString& currentUser,
-        const QString& peerUsername,
-        QWidget* parent = nullptr);
+    ChatView(const QString& currentUser, const QString& peerUsername, QWidget* parent = nullptr);
     void refresh();
-
 signals:
     void chatDeleted(const QString& peer);
-
 private slots:
     void onSend();
     void onDeleteChat();
@@ -358,9 +297,7 @@ private:
     QString   chatFilePath() const;
     void      loadMessages();
     void      clearMessages();
-    void      appendBubble(const QString& sender,
-        const QString& text);
-
+    void      appendBubble(const QString& sender, const QString& text);
     QString       m_currentUser;
     QString       m_peer;
     QScrollArea* m_scroll;
@@ -369,47 +306,33 @@ private:
     QLineEdit* m_input;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  MessagesPage
-// ─────────────────────────────────────────────────────────────
 class MessagesPage : public QWidget {
     Q_OBJECT
 public:
-    MessagesPage(User* currentUser, User** allUsers, int userCount,
-        QWidget* parent = nullptr);
+    MessagesPage(User* currentUser, User** allUsers, int userCount, QWidget* parent = nullptr);
     void refresh();
-
     void openChatWith(const QString& peer);
-
 private slots:
     void onSearchUser();
     void onConversationSelected(const QString& peer);
     void onChatDeleted(const QString& peer);
-
 private:
     void   loadConversationList();
     void   clearConversationList();
     void   addConversationButton(const QString& peer);
     static QStringList knownPeers(const QString& username);
-
     User* m_currentUser;
     User** m_allUsers;
     int           m_userCount;
-
     QWidget* m_leftPanel;
     QLineEdit* m_searchInput;
     QWidget* m_convListContent;
     QVBoxLayout* m_convListLayout;
-
     QStackedWidget* m_rightStack;
     ChatView* m_chatView;
-
     QString       m_activePeer;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  AdminPage
-// ─────────────────────────────────────────────────────────────
 class AdminPage : public QWidget {
     Q_OBJECT
 public:
@@ -430,15 +353,11 @@ private:
     QVBoxLayout* m_layout;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  MainWindow
-// ─────────────────────────────────────────────────────────────
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
-
 private slots:
     void onLoginSuccess(User* user, User** allUsers, int userCount);
     void onLoginAdminSuccess();
@@ -449,9 +368,9 @@ private slots:
     void onNavProfile();
     void onNavTimeSpent();
     void onLogout();
-    void onSwitchUser();
+    
     void onSidebarCreatePost();
-
+    void onOpenComments(Posts* post); // NEW
 private:
     void buildSidebar();
     void buildPages();
@@ -470,7 +389,7 @@ private:
     SidebarButton* m_btnMessages;
     SidebarButton* m_btnProfile;
     SidebarButton* m_btnTimeSpent;
-    SidebarButton* m_btnSwitchUser;
+    
     SidebarButton* m_btnLogout;
 
     QStackedWidget* m_pages;
@@ -481,6 +400,9 @@ private:
     ProfilePage* m_profilePage;
     TimeSpentPage* m_timeSpentPage;
     AdminPage* m_adminPage;
+    CommentsPage* m_commentsPage = nullptr; // NEW
+
+    int m_previousPageIndex = 0; // NEW
 
     User* m_currentUser;
     User** m_allUsers;

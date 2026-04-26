@@ -232,10 +232,7 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 
     if (!file.is_open()) {
         qDebug() << "Post file not found:" << QString::fromStdString(path);
-        // Set a default valid state
-        this->postId = postId;
-        this->creatorUsername = ownerUsername;
-        return;
+        return; 
     }
 
     string line;
@@ -349,10 +346,7 @@ QList<Comment> Posts::getComments() const {
 }
 
 void Posts::saveCommentsToFile() const {
-    if (commentList.isEmpty()) {
-        qDebug() << "No comments to save";
-        return;  // ✅ Don't create empty files
-    }
+    
 
     QString path = QString::fromStdString("data/Posts/" + this->creatorUsername + "/"
         + this->postId + "_comments.txt");
@@ -476,6 +470,14 @@ void Posts::loadCommentsFromFile() {
         }
     }
 
+    if (fieldCount >= 5 && !commentId.isEmpty()) {
+        Comment c(content, commentId, creatorUsername);
+        c.setTimeOfCreation(timeOfCreation);
+        c.setIsReported(isReported);
+        c.setLikeCount(likeCount);
+        commentList.append(c);
+    }
+
     file.close();
     commentsCount = commentList.size();
     qDebug() << "Comments loaded. Count:" << commentsCount;
@@ -518,7 +520,32 @@ bool Posts::getIsReported() const {
     return this->isReported;
 }
 
-void Posts::reportPost() {
+void Posts::reportPost(const string& reporterUsername) {
+    // Check if this user already reported this post
+    QString reportedFilePath = QString::fromStdString(
+        "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt");
+
+    QFile checkFile(reportedFilePath);
+    if (checkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&checkFile);
+        while (!in.atEnd()) {
+            if (in.readLine().trimmed().toStdString() == reporterUsername) {
+                qDebug() << "User already reported this post.";
+                checkFile.close();
+                return;
+            }
+        }
+        checkFile.close();
+    }
+
+    // Record this reporter
+    QFile outFile(reportedFilePath);
+    if (outFile.open(QIODevice::Append | QIODevice::Text)) {
+        QTextStream out(&outFile);
+        out << QString::fromStdString(reporterUsername) << "\n";
+        outFile.close();
+    }
+
     this->reportCount++;
     if (this->reportCount >= 3) {
         this->isReported = true;

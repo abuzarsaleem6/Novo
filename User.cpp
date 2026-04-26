@@ -186,7 +186,7 @@ void User::reportPost(string postId, User* postOwner) {
 		Posts* p = postOwner->getPostByIndex(i);
 		if (!p || !p->isValid()) continue;
 		if (p->getPostId() == postId) {
-			p->reportPost();   // calls Posts::reportPost() above
+			p->reportPost(this->username);   
 			return;
 		}
 	}
@@ -309,6 +309,7 @@ void User::removeFromUser_List(string username) {
 	ifstream file("data/users_list.txt", ios::in);
 
 	while (getline(file, line)) {
+		if (!line.empty() && line.back() == '\r') line.pop_back();
 		if (line != username) {
 			updatedContent = updatedContent + line + "\n";
 		}
@@ -654,7 +655,7 @@ void User::loadAllPosts() {
 	ifstream listFile2(listPath);
 	string postId;
 	while (getline(listFile2, postId)) {
-		if (postId.empty()) continue;
+		if (!postId.empty() && postId.back() == '\r') postId.pop_back();
 		posts[postCount] = new Posts();
 		posts[postCount]->loadPostFromFile(this->username, postId);
 		postCount++;
@@ -1081,6 +1082,7 @@ void User::loadSavedPosts(User** allUsers, int userCount) {
 
 	ifstream file2(path);
 	while (getline(file2, line)) {
+		if (!line.empty() && line.back() == '\r') line.pop_back();
 		if (line.empty()) continue;
 
 
@@ -1135,7 +1137,8 @@ void User::savePost(string postId, User* postOwner) {
 			}
 		}
 	}
-
+	if (postOwner->posts == nullptr && postOwner->postCount > 0)
+		postOwner->loadAllPosts();
 	Posts* p = postOwner->getPostById(postId);
 	if (p == nullptr) {
 		qDebug() << "Post not found.";
