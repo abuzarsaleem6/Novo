@@ -7,5 +7,5 @@ isReportedCount|1
 notificationCount|0
 followingCount|0
 followersCount|0
-postCount|0
+postCount|1
 savedPostCount|0
