@@ -3404,7 +3404,7 @@ void AdminPage::loadAdminNotifications() {
     if (!m_admin) return;
 
     // ✅ GET NOTIFICATIONS FROM BACKEND
-    QList<QString> notifications = m_admin->getAllNotifications();
+    QList<Notification> notifications = m_admin->getAllNotifications();
 
     if (notifications.isEmpty()) {
         auto* empty = new QLabel("No admin notifications yet.");
@@ -3415,7 +3415,7 @@ void AdminPage::loadAdminNotifications() {
     }
 
     // ✅ DISPLAY NOTIFICATIONS
-    for (const QString& notif : notifications) {
+    for (const Notification& notif : notifications) {
         auto* card = new QFrame;
         card->setObjectName("notifItem");
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -3429,7 +3429,7 @@ void AdminPage::loadAdminNotifications() {
         icon->setAlignment(Qt::AlignCenter);
         icon->setStyleSheet("font-size: 16px;");
 
-        auto* msg = makeLabel(notif);
+        auto* msg = makeLabel(QString::fromStdString(notif.getMessage()));
         msg->setStyleSheet("font-size: 13px; color: #EE7777;");
 
         row->addWidget(icon, 0, Qt::AlignVCenter);
