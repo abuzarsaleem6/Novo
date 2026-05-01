@@ -8,8 +8,7 @@
 #include "Admin.h"
 #include "PasswordChecker.h"
 #include "Notification.h"
-#include "Message.h"   
-#include "Group.h"     
+#include "Message.h"      
 #include <QMap>       
 #include "SearchEngine.h"
 #include <QtWidgets/QStackedWidget>
@@ -42,7 +41,7 @@ public:
 class PostCard : public QFrame {
     Q_OBJECT
 public:
-    PostCard(Posts* post, const QString& authorUsername, bool isOwner, bool isSaved, const QString& viewerUsername, bool isAuthorReported = false, QWidget* parent = nullptr);
+    PostCard(Posts* post, const QString& authorUsername, bool isOwner, bool isSaved, const QString& viewerUsername, bool isAuthorReported = false, bool isPostReported = false, QWidget* parent = nullptr);
 signals:
     void likeClicked(Posts* post);
     void commentClicked(Posts* post);
@@ -192,7 +191,7 @@ private:
     QScrollArea* m_scrollArea;
     QWidget* m_listContent;
     QVBoxLayout* m_listLayout;
-    void onMarkAllRead();
+
 };
 
 
@@ -288,7 +287,8 @@ private:
 class SearchPage : public QWidget {
     Q_OBJECT
 public:
-    SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent = nullptr);
+    SearchPage(User**& allUsers, int& userCount, User* currentUser, QWidget* parent = nullptr);
+    
 signals:
     void requestOpenComments(Posts* post);
     void requestViewProfile(User* user);
@@ -302,8 +302,8 @@ private:
 
     SearchEngine m_engine;
     User* m_currentUser;
-    User** m_allUsers;
-    int m_userCount;
+    User** &m_allUsers;
+    int & m_userCount;
     QLineEdit* m_searchInput;
     QScrollArea* m_scrollArea;
     QWidget* m_resultsContent;
@@ -322,8 +322,7 @@ private slots:
     void onSearchUser();
     void onConversationSelected(const QString& peer);
     void onChatDeleted(const QString& peer);
-    void onCreateGroup();
-    void onJoinGroup();
+   
 private:
     void loadConversationList();
     void clearConversationList();
@@ -339,13 +338,13 @@ private:
     QStackedWidget* m_rightStack;
     ChatView* m_chatView;
     QString m_activePeer;
-    QMap<QString, Group*> m_userGroups;  // ← ADD THIS
+   
 };
 
 class AdminPage : public QWidget {
     Q_OBJECT
 public:
-    AdminPage(Admin* admin, User** allUsers, int userCount, QWidget* parent = nullptr);
+    AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* parent = nullptr);  // ← & on both
     void refresh();
 private slots:
     void onReviewReportedUsers();
@@ -355,8 +354,8 @@ private:
     void loadReportedUsers();
     void loadReportedPosts();
     Admin* m_admin;
-    User** m_allUsers;
-    int m_userCount;
+    User**& m_allUsers;  // ← reference
+    int& m_userCount;    // ← reference
     QScrollArea* m_scrollArea;
     QWidget* m_content;
     QVBoxLayout* m_layout;

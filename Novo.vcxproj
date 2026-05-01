@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClInclude Include="Admin.h" />
     <ClInclude Include="Feed.h" />
-    <ClInclude Include="Group.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="Notification.h" />
     <ClInclude Include="PasswordChecker.h" />
@@ -36,7 +35,6 @@
     <ClCompile Include="Admin.cpp" />
     <ClCompile Include="Comment.cpp" />
     <ClCompile Include="Feed.cpp" />
-    <ClCompile Include="Group.cpp" />
     <ClCompile Include="Message.cpp" />
     <ClCompile Include="Notification.cpp" />
     <ClCompile Include="Novo.cpp" />

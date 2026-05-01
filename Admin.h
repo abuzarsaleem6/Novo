@@ -18,8 +18,6 @@ private:
     int reportedUserCount;
     int reportedPostCount;
     QList<QString> adminNotifications;
-    QSet<QString> processedUserReports;
-    QSet<QString> processedPostReports;
 
 public:
     // ─── CONSTRUCTORS & DESTRUCTORS ───
@@ -37,8 +35,7 @@ public:
     void deleteUser(User**& allUsers, int& userCount, const QString& username);
     void deletePost(User** allUsers, int userCount, const QString& postId);
     void deleteComment(Posts* post, int commentIndex);
-    void banUser(User* user);
-    void unbanUser(User* user);
+    
 
     // ─── REPORT REVIEW ───
     void reviewReports(User**& allUsers, int& userCount);
@@ -60,8 +57,7 @@ public:
     void loadReportsFromFile(User**& allUsers, int& userCount);
     void saveAdminToFile();
     void loadAdminFromFile();
-    void saveProcessedReports();
-    void loadProcessedReports();
+   
 
     // ─── DISPLAY ───
     void displayAdminDashboard();

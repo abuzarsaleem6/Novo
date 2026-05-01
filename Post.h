@@ -67,4 +67,5 @@ public:
 
     // ─── REPORTING ───
     void reportPost(const string& reporterUsername);
+    bool hasReportedBy(const string& username) const;
 };

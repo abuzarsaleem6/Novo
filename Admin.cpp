@@ -32,8 +32,7 @@ Admin::Admin(const Admin& other) : User(other) {
     reportedUserCount = other.reportedUserCount;
     reportedPostCount = other.reportedPostCount;
     adminNotifications = other.adminNotifications;
-    processedUserReports = other.processedUserReports;
-    processedPostReports = other.processedPostReports;
+    
 }
 
 Admin& Admin::operator=(const Admin& other) {
@@ -45,8 +44,7 @@ Admin& Admin::operator=(const Admin& other) {
         reportedUserCount = other.reportedUserCount;
         reportedPostCount = other.reportedPostCount;
         adminNotifications = other.adminNotifications;
-        processedUserReports = other.processedUserReports;
-        processedPostReports = other.processedPostReports;
+        
     }
     return *this;
 }
@@ -143,23 +141,6 @@ void Admin::deleteComment(Posts* post, int commentIndex) {
     qDebug() << "Comment deleted by admin at index:" << commentIndex;
 }
 
-void Admin::banUser(User* user) {
-    if (!user) return;
-
-    user->setBan(true);
-    QString username = QString::fromStdString(user->getUsername());
-    addNotification("🚫 User banned: @" + username);
-    qDebug() << "User banned:" << username;
-}
-
-void Admin::unbanUser(User* user) {
-    if (!user) return;
-
-    user->setBan(false);
-    QString username = QString::fromStdString(user->getUsername());
-    addNotification("✓ User unbanned: @" + username);
-    qDebug() << "User unbanned:" << username;
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  REPORT REVIEW & THRESHOLD CHECKING
@@ -190,14 +171,7 @@ void Admin::reviewReports(User**& allUsers, int& userCount) {
 }
 
 void Admin::checkReportThresholds(User* user, const QString& username) {
-    // Check if this user has been reported 3+ times
-    if (reportedUsers.count(user) >= 3) {
-        if (!processedUserReports.contains(username)) {
-            addNotification("⚠️  ALERT: User @" + username + " reached 3+ reports!");
-            processedUserReports.insert(username);
-            saveProcessedReports();
-        }
-    }
+    addNotification("⚠️  ALERT: User @" + username + " reached 3+ reports!");
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -296,59 +270,55 @@ void Admin::saveReportsToFile() {
 }
 
 void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
-    // Load reported posts
-    QString postsPath = "data/Admin/reported_posts.txt";
-    QFile postsFile(postsPath);
+    reportedUsers.clear();
+    reportedPosts.clear();
 
-    if (postsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&postsFile);
-        QString postId, creator;
-        int reportCount = 0;
+    // ── Load reported posts by scanning _reported.txt files ──────────────────
+    if (allUsers && userCount > 0) {
+        for (int i = 0; i < userCount; i++) {
+            if (!allUsers[i]) continue;
 
-        while (!in.atEnd()) {
-            QString line = in.readLine().trimmed();
-            if (line.isEmpty()) continue;
+            QString uname = QString::fromStdString(allUsers[i]->getUsername());
+            if (uname.isEmpty()) continue;
 
-            QStringList parts = line.split("|");
-            if (parts.size() < 2) continue;
+            allUsers[i]->loadAllPosts();
 
-            if (parts[0] == "postId") {
-                postId = parts[1];
-            }
-            else if (parts[0] == "creator") {
-                creator = parts[1];
-            }
-            else if (parts[0] == "reportCount") {
-                reportCount = parts[1].toInt();
+            int postCount = allUsers[i]->getPostCount();
+            for (int j = 0; j < postCount; j++) {
+                Posts* post = allUsers[i]->getPostByIndex(j);
+                if (!post || !post->isValid()) continue;
 
-                // Find and add post
-                for (int i = 0; i < userCount; i++) {
-                    if (!allUsers[i]) continue;
-                    if (QString::fromStdString(allUsers[i]->getUsername()) == creator) {
-                        Posts* post = allUsers[i]->getPostById(postId.toStdString());
-                        if (post) {
-                            for (int j = 0; j < reportCount; j++) {
-                                reportedPosts.append(post);
-                            }
-                        }
-                        break;
-                    }
+                QString pid = QString::fromStdString(post->getPostId());
+                if (pid.isEmpty()) continue;
+
+                QString reportedPath = "data/Posts/" + uname + "/" + pid + "_reported.txt";
+                QFile rf(reportedPath);
+                if (!rf.exists()) continue;
+
+                if (!rf.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
+
+                int reporterCount = 0;
+                QTextStream in(&rf);
+                while (!in.atEnd()) {
+                    QString line = in.readLine().trimmed();
+                    if (!line.isEmpty())
+                        reporterCount++;
                 }
+                rf.close();
+
+                if (reporterCount >= 3)
+                    reportedPosts.append(post);
             }
         }
-        postsFile.close();
-        qDebug() << "Reported posts loaded";
     }
+    qDebug() << "Reported posts loaded:" << reportedPosts.size();
 
-    // Load reported users
+    // ── Load reported users from reported_users.txt ───────────────────────────
     QString usersPath = "data/Admin/reported_users.txt";
     QFile usersFile(usersPath);
-
-    if (usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (usersFile.exists() && usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QTextStream in(&usersFile);
         QString username;
-        int reportCount = 0;
-
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
             if (line.isEmpty()) continue;
@@ -357,37 +327,34 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
             if (parts.size() < 2) continue;
 
             if (parts[0] == "username") {
-                username = parts[1];
+                username = parts[1].trimmed();
             }
-            else if (parts[0] == "reportCount") {
-                reportCount = parts[1].toInt();
-
-                // Find and add user
+            else if (parts[0] == "reportCount" && !username.isEmpty()) {
+                if (!allUsers || userCount <= 0) continue;
                 for (int i = 0; i < userCount; i++) {
                     if (!allUsers[i]) continue;
                     if (QString::fromStdString(allUsers[i]->getUsername()) == username) {
-                        for (int j = 0; j < reportCount; j++) {
-                            reportedUsers.append(allUsers[i]);
-                        }
+                        reportedUsers.append(allUsers[i]);
                         break;
                     }
                 }
+                username.clear();
             }
         }
         usersFile.close();
-        qDebug() << "Reported users loaded";
     }
+    qDebug() << "Reported users loaded:" << reportedUsers.size();
 
     reportedUserCount = reportedUsers.size();
     reportedPostCount = reportedPosts.size();
 }
 
+   
+
 void Admin::saveAdminToFile() {
     QDir().mkpath("data/Admin");
-
     QString path = "data/Admin/adminInfo.txt";
     QFile file(path);
-
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);
         out << "username|" << QString::fromStdString(getUsername()) << "\n"
@@ -402,83 +369,47 @@ void Admin::saveAdminToFile() {
 void Admin::loadAdminFromFile() {
     QString path = "data/Admin/adminInfo.txt";
     QFile file(path);
-
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QTextStream in(&file);
-
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
             if (line.isEmpty()) continue;
-
             QStringList parts = line.split("|");
             if (parts.size() < 2) continue;
-
-            if (parts[0] == "adminLevel") {
+            if (parts[0] == "adminLevel")
                 adminLevel = parts[1];
-            }
-            else if (parts[0] == "reportedUserCount") {
+            else if (parts[0] == "reportedUserCount")
                 reportedUserCount = parts[1].toInt();
-            }
-            else if (parts[0] == "reportedPostCount") {
+            else if (parts[0] == "reportedPostCount")
                 reportedPostCount = parts[1].toInt();
-            }
         }
         file.close();
         qDebug() << "Admin info loaded";
     }
-}
 
-void Admin::saveProcessedReports() {
-    QDir().mkpath("data/Admin");
-
-    QString usersPath = "data/Admin/processed_user_reports.txt";
-    QFile usersFile(usersPath);
-    if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&usersFile);
-        for (const QString& username : processedUserReports) {
-            out << username << "\n";
-        }
-        usersFile.close();
-    }
-
-    QString postsPath = "data/Admin/processed_post_reports.txt";
-    QFile postsFile(postsPath);
-    if (postsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&postsFile);
-        for (const QString& postId : processedPostReports) {
-            out << postId << "\n";
-        }
-        postsFile.close();
-    }
-}
-
-void Admin::loadProcessedReports() {
-    QString usersPath = "data/Admin/processed_user_reports.txt";
-    QFile usersFile(usersPath);
-    if (usersFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&usersFile);
+    // Load persisted notifications from file
+    adminNotifications.clear();
+    QFile nf("data/Admin/admin_notifications.txt");
+    if (nf.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&nf);
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
-            if (!line.isEmpty()) {
-                processedUserReports.insert(line);
-            }
-        }
-        usersFile.close();
-    }
+            if (line.isEmpty()) continue;
 
-    QString postsPath = "data/Admin/processed_post_reports.txt";
-    QFile postsFile(postsPath);
-    if (postsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&postsFile);
-        while (!in.atEnd()) {
-            QString line = in.readLine().trimmed();
-            if (!line.isEmpty()) {
-                processedPostReports.insert(line);
-            }
+            // Format: timestamp|type|message|isRead
+            int p1 = line.indexOf('|');
+            int p2 = line.indexOf('|', p1 + 1);
+            int p3 = line.lastIndexOf('|');
+            if (p1 == -1 || p2 == -1 || p3 == p2) continue;
+
+            QString time = line.mid(0, p1).trimmed();
+            QString msg = line.mid(p2 + 1, p3 - p2 - 1).trimmed();
+            adminNotifications.append(time + " | " + msg);
         }
-        postsFile.close();
+        nf.close();
     }
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  DISPLAY METHODS (Console)
