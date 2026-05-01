@@ -25,6 +25,7 @@
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="QtWidgetsApplication1.cpp" />
     <ClCompile Include="Message.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
