@@ -150,24 +150,7 @@ void Feed::sortByNewest() {
     qDebug() << "Feed sorted by newest posts";
 }
 
-void Feed::refreshFeed() {
-    cout << "\n--- " << ownerUsername << "'s Social Feed ---" << endl;
-    cout << "Total posts: " << postCount << endl;
-    cout << "============================================" << endl;
 
-    if (postCount == 0 || feedPosts == nullptr) {
-        cout << "Your feed is empty!" << endl;
-        return;
-    }
-
-    for (int i = 0; i < postCount; i++) {
-        if (feedPosts[i]) {
-            feedPosts[i]->display();
-        }
-    }
-
-    cout << "============================================" << endl;
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  GETTERS - USED BY Qt GUI

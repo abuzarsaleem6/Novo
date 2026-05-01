@@ -5,6 +5,7 @@
 int main(int argc, char* argv[])
 {
     // Create necessary directories
+    QDir().mkpath("data");
     QDir().mkpath("data/Users");
     QDir().mkpath("data/Posts");
     QDir().mkpath("data/Following");

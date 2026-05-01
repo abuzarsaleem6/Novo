@@ -712,7 +712,12 @@ CommentsPage::CommentsPage(const QString& currentUser, QWidget* parent)
     backBtn->setFixedWidth(100);
     backBtn->setFixedHeight(36);
     backBtn->setCursor(Qt::PointingHandCursor);
-    connect(backBtn, &QPushButton::clicked, this, &CommentsPage::backClicked);
+
+    // FIX 3a: clear m_post when leaving so dangling pointer can never be used
+    connect(backBtn, &QPushButton::clicked, this, [this]() {
+        m_post = nullptr;
+        emit backClicked();
+        });
 
     auto* title = new QLabel("Comments");
     title->setObjectName("pageTitle");
@@ -782,10 +787,14 @@ void CommentsPage::loadComments() {
     for (int i = 0; i < comments.size(); ++i) {
         const Comment& c = comments[i];
 
-        // Removed the fromStdString conversions here!
         QString creatorName = c.getCreatorUsername();
         QString creationTime = c.getTimeOfCreation();
         QString contentText = c.getContent();
+
+        // FIX 3b: capture the stable comment ID, not the position index.
+        // If a comment is added or deleted before this slot fires, the index
+        // would point to the wrong comment. The ID is stable across mutations.
+        QString commentId = c.getCommentId();
 
         bool isMine = (creatorName == m_currentUser);
 
@@ -798,7 +807,6 @@ void CommentsPage::loadComments() {
         auto* headerRow = new QHBoxLayout;
         auto* nameLbl = new QLabel(creatorName);
         nameLbl->setStyleSheet("font-weight: bold; color: #A0A0D0; font-size: 12px;");
-
         auto* timeLbl = new QLabel(creationTime);
         timeLbl->setStyleSheet("color: #56567A; font-size: 10px;");
 
@@ -810,15 +818,26 @@ void CommentsPage::loadComments() {
             auto* editBtn = new QPushButton("✎");
             editBtn->setFixedSize(24, 24);
             editBtn->setCursor(Qt::PointingHandCursor);
-            editBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #AAAAFF; }");
+            editBtn->setStyleSheet(
+                "QPushButton { background: transparent; border: none; color: #8888AA; }"
+                "QPushButton:hover { color: #AAAAFF; }");
 
             auto* delBtn = new QPushButton("🗑");
             delBtn->setFixedSize(24, 24);
             delBtn->setCursor(Qt::PointingHandCursor);
-            delBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #8888AA; } QPushButton:hover { color: #FFAAAA; }");
+            delBtn->setStyleSheet(
+                "QPushButton { background: transparent; border: none; color: #8888AA; }"
+                "QPushButton:hover { color: #FFAAAA; }");
 
-            connect(editBtn, &QPushButton::clicked, this, [this, i]() { onEditComment(i); });
-            connect(delBtn, &QPushButton::clicked, this, [this, i]() { onDeleteComment(i); });
+            // FIX 3b cont.: resolve commentId → current index at click time,
+            // not at render time. This is safe even if comments were added/deleted
+            // between render and click.
+            connect(editBtn, &QPushButton::clicked, this, [this, commentId]() {
+                onEditComment(commentId);
+                });
+            connect(delBtn, &QPushButton::clicked, this, [this, commentId]() {
+                onDeleteComment(commentId);
+                });
 
             headerRow->addWidget(editBtn);
             headerRow->addWidget(delBtn);
@@ -836,34 +855,58 @@ void CommentsPage::loadComments() {
 }
 
 void CommentsPage::onAddComment() {
+    if (!m_post) return;  // FIX 3a: guard against dangling pointer
     QString text = m_input->text().trimmed();
     if (text.isEmpty()) return;
-    if (text.contains('|')) { QMessageBox::warning(this, "Novo", "Comments cannot contain '|'."); return; }
-
-    // Removed the toStdString conversions here!
+    if (text.contains('|')) {
+        QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
+        return;
+    }
     m_post->addComment(text, m_currentUser);
     m_input->clear();
     loadComments();
 }
 
-void CommentsPage::onEditComment(int index) {
-    // Removed the fromStdString conversion here!
-    QString oldText = m_post->getComments()[index].getContent();
+void CommentsPage::onEditComment(const QString& commentId) {
+    if (!m_post) return;  // FIX 3a: guard against dangling pointer
+
+    // FIX 3b: resolve ID → index at call time so we always hit the right comment
+    QList<Comment> comments = m_post->getComments();
+    int index = -1;
+    for (int i = 0; i < comments.size(); ++i) {
+        if (comments[i].getCommentId() == commentId) { index = i; break; }
+    }
+    if (index == -1) return;  // comment was deleted between render and click
+
+    QString oldText = comments[index].getContent();
     bool ok;
-    QString newText = QInputDialog::getText(this, "Edit Comment", "Update your comment:", QLineEdit::Normal, oldText, &ok);
+    QString newText = QInputDialog::getText(this, "Edit Comment",
+        "Update your comment:", QLineEdit::Normal, oldText, &ok);
 
     if (ok && !newText.trimmed().isEmpty()) {
-        if (newText.contains('|')) { QMessageBox::warning(this, "Novo", "Comments cannot contain '|'."); return; }
-        // Removed the toStdString conversions here!
+        if (newText.contains('|')) {
+            QMessageBox::warning(this, "Novo", "Comments cannot contain '|'.");
+            return;
+        }
         m_post->editComment(index, newText.trimmed(), m_currentUser);
         loadComments();
     }
 }
 
-void CommentsPage::onDeleteComment(int index) {
-    auto r = QMessageBox::question(this, "Delete Comment", "Delete this comment?", QMessageBox::Yes | QMessageBox::No);
+void CommentsPage::onDeleteComment(const QString& commentId) {
+    if (!m_post) return;  // FIX 3a: guard against dangling pointer
+
+    // FIX 3b: resolve ID → index at call time
+    QList<Comment> comments = m_post->getComments();
+    int index = -1;
+    for (int i = 0; i < comments.size(); ++i) {
+        if (comments[i].getCommentId() == commentId) { index = i; break; }
+    }
+    if (index == -1) return;  // already deleted
+
+    auto r = QMessageBox::question(this, "Delete Comment",
+        "Delete this comment?", QMessageBox::Yes | QMessageBox::No);
     if (r == QMessageBox::Yes) {
-        // Removed the toStdString conversion here!
         m_post->deleteComment(index, m_currentUser);
         loadComments();
     }
@@ -871,19 +914,28 @@ void CommentsPage::onDeleteComment(int index) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  PublicProfileWidget Implementation
 // ══════════════════════════════════════════════════════════════════════════════
-PublicProfileWidget::PublicProfileWidget(QWidget* parent) : QWidget(parent) {
+PublicProfileWidget::PublicProfileWidget(QWidget* parent)
+    : QWidget(parent), m_allUsers(nullptr), m_userCount(0)
+{
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
 }
 
-void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
+void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
+    User** allUsers, int userCount)
+{
+    // FIX 6: store the live arrays so loadSavedPosts gets real data
+    m_allUsers = allUsers;
+    m_userCount = userCount;
+
+    // Clear previous content
     QLayoutItem* item;
     while ((item = m_mainLayout->takeAt(0)) != nullptr) {
         if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
 
-    // --- Back Button Header ---
+    // ── Back button ──────────────────────────────────────────────────────────
     auto* topRow = new QHBoxLayout;
     topRow->setContentsMargins(28, 24, 28, 0);
     auto* backBtn = new QPushButton("← Back to Search");
@@ -899,7 +951,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     headerWrapper->setLayout(topRow);
     m_mainLayout->addWidget(headerWrapper);
 
-    // --- Scrollable Profile Content ---
+    // ── Scrollable content ───────────────────────────────────────────────────
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
@@ -910,7 +962,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     layout->setContentsMargins(28, 16, 28, 24);
     layout->setSpacing(20);
 
-    // 1. PROFILE HEADER CARD
+    // ── 1. Profile header card ───────────────────────────────────────────────
     auto* headerCard = new QFrame;
     headerCard->setObjectName("postCard");
     auto* hLayout = new QVBoxLayout(headerCard);
@@ -920,7 +972,9 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     auto* av = new QLabel(ini);
     av->setFixedSize(60, 60);
     av->setAlignment(Qt::AlignCenter);
-    av->setStyleSheet("background: #202040; border-radius: 30px; font-size: 24px; font-weight: bold; color: #7070FF;");
+    av->setStyleSheet(
+        "background: #202040; border-radius: 30px;"
+        "font-size: 24px; font-weight: bold; color: #7070FF;");
     row->addWidget(av);
 
     auto* nameCol = new QVBoxLayout;
@@ -943,7 +997,8 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
         auto* l = new QLabel(lbl);
         l->setStyleSheet("font-size: 10px; color: #36365A; letter-spacing: 1px;");
         l->setAlignment(Qt::AlignCenter);
-        c->addWidget(v); c->addWidget(l);
+        c->addWidget(v);
+        c->addWidget(l);
         statsRow->addLayout(c);
         };
     addStat(QString::number(targetUser->getPostCount()), "POSTS");
@@ -952,13 +1007,16 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     hLayout->addLayout(statsRow);
     layout->addWidget(headerCard);
 
-    // 2. USERS POSTS FEED
+    // ── 2. Posts feed ────────────────────────────────────────────────────────
     auto* postsTitle = new QLabel("Recent Posts");
     postsTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #E8E8F8;");
     layout->addWidget(postsTitle);
 
     targetUser->loadAllPosts();
-    viewer->loadSavedPosts(nullptr, 0);  // ensure saved posts are fresh
+
+    // FIX 6: was loadSavedPosts(nullptr, 0) — null array crashes if the
+    // implementation iterates allUsers to resolve post owners.
+    viewer->loadSavedPosts(m_allUsers, m_userCount);
 
     if (targetUser->getPostCount() == 0) {
         auto* empty = new QLabel("This user hasn't posted anything yet.");
@@ -971,17 +1029,8 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
             Posts* p = targetUser->getPostByIndex(i);
             if (!p || !p->isValid()) continue;
 
-            // check saved using backend
-            bool isSaved = false;
-            for (int s = 0; s < viewer->getSavedPostCount(); ++s) {
-                Posts* sp = viewer->getSavedPostByIndex(s);
-                if (sp && sp->getPostId() == p->getPostId()) {
-                    isSaved = true;
-                    break;
-                }
-            }
-
-            // per-viewer report flag using backend
+            // FIX: use domain method instead of inline loop (from loadPosts_patch)
+            bool isSaved = viewer->hasSavedPost(p->getPostId());
             bool reportedByMe = targetUser->hasReportedUser(viewer->getUsername());
 
             auto* card = new PostCard(p,
@@ -1002,16 +1051,17 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
                     viewer->unsavePost(post->getPostId());
                 });
             connect(card, &PostCard::likeClicked, this, [](Posts* post) {
-                (void)post; // likePost() already saves internally
+                (void)post; // likePost() saves internally
                 });
-            connect(card, &PostCard::reportUserClicked, this, [this, viewer, targetUser](const QString&) {
-                if (targetUser->hasReportedUser(viewer->getUsername())) {
-                    QMessageBox::information(this, "Already Reported",
-                        "You have already reported this user.");
-                    return;
-                }
-                targetUser->reportUserBy(viewer->getUsername());
-                QMessageBox::information(this, "Reported", "User has been reported.");
+            connect(card, &PostCard::reportUserClicked, this,
+                [this, viewer, targetUser](const QString&) {
+                    if (targetUser->hasReportedUser(viewer->getUsername())) {
+                        QMessageBox::information(this, "Already Reported",
+                            "You have already reported this user.");
+                        return;
+                    }
+                    targetUser->reportUserBy(viewer->getUsername());
+                    QMessageBox::information(this, "Reported", "User has been reported.");
                 });
 
             layout->addWidget(card);
@@ -1022,6 +1072,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer) {
     scroll->setWidget(container);
     m_mainLayout->addWidget(scroll, 1);
 }
+//==========================================
 //  NotificationItem
 // ══════════════════════════════════════════════════════════════════════════════
 NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
@@ -1073,7 +1124,16 @@ AuthPage::AuthPage(QWidget* parent)
     : QWidget(parent), m_userCount(0), m_adminUser(nullptr), m_adminPass(nullptr)
 {
     setObjectName("authBg");
-    m_allUsers = new User * [500]();
+    // Count lines in users_list.txt first
+    int count = 0;
+    ifstream f("data/users_list.txt");
+    string line;
+    while (getline(f, line))
+        if (!line.empty() && line != "\r") count++;
+    f.close();
+
+    // Allocate exactly what we need (minimum 1 to avoid zero-size array)
+    m_allUsers = new User * [max(count, 1)]();
 
     // Outer layout centres the card both horizontally and vertically
     auto* outer = new QVBoxLayout(this);
@@ -1119,17 +1179,21 @@ AuthPage::~AuthPage() {
 void AuthPage::resetToLogin() {
     m_loginUser->clear();  m_loginPass->clear();
     m_signupUser->clear(); m_signupPass->clear(); m_signupBio->clear();
-    if (m_adminUser) m_adminUser->clear();   // ADD
-    if (m_adminPass) m_adminPass->clear();   // ADD
+    if (m_adminUser) m_adminUser->clear();
+    if (m_adminPass) m_adminPass->clear();
     m_stack->setCurrentIndex(0);
-    for (int i = 0; i < m_userCount; ++i)
-        if (m_allUsers[i]) m_allUsers[i]->clearSavedPostsArray();
 
-    for (int i = 0; i < m_userCount; ++i) {
-        delete m_allUsers[i];
-        m_allUsers[i] = nullptr;
-    }
+    int count = 0;
+    ifstream f("data/users_list.txt");
+    string line;
+    while (getline(f, line))
+        if (!line.empty() && line != "\r") count++;
+    f.close();
+    // FIX — add before the new allocation:
+    delete[] m_allUsers;
+    m_allUsers = nullptr;
 
+    m_allUsers = new User * [max(count, 1)]();
     m_userCount = 0;
     loadAllUsers(m_allUsers, m_userCount);
 }
@@ -1275,13 +1339,19 @@ void AuthPage::onLogin() {
     }
     User* user = findAndLogin(m_allUsers, m_userCount, uname.toStdString(), pass.toStdString());
     if (user) {
-
         user->loadFollowing(m_allUsers, m_userCount);
         user->loadFollowers(m_allUsers, m_userCount);
         user->loadSavedPosts(m_allUsers, m_userCount);
         m_loginUser->clear();
         m_loginPass->clear();
-        emit loginSuccess(user, m_allUsers, m_userCount);
+
+        // Transfer ownership to MainWindow
+        User** arr = m_allUsers;
+        int cnt = m_userCount;
+        m_allUsers = nullptr;   // AuthPage gives up ownership
+        m_userCount = 0;
+
+        emit loginSuccess(user, arr, cnt);
     }
     else {
         QMessageBox::critical(this, APP_NAME, "Invalid username or password.");
@@ -1499,19 +1569,8 @@ void FeedPage::loadPosts() {
             Posts* p = m_allUsers[u]->getPostByIndex(i);
             if (!p || !p->isValid()) continue;
 
-            bool saved = false;
-            string postId = p->getPostId();
-            string postOwner = m_allUsers[u]->getUsername();
-            for (int s = 0; s < m_user->getSavedPostCount(); ++s) {
-                Posts* sp = m_user->getSavedPostByIndex(s);
-                if (sp && sp->getPostId() == postId &&
-                    sp->getCreatorUsername() == postOwner) {
-                    saved = true;
-                    break;
-                }
-            }
-
-            // per-viewer report flag using backend
+            // FIX: replaced inline saved-post loop with domain method
+            bool saved = m_user->hasSavedPost(p->getPostId());
             bool reportedByMe = m_allUsers[u]->hasReportedUser(m_user->getUsername());
 
             auto* card = new PostCard(p,
@@ -1762,10 +1821,13 @@ void SavedPostsPage::loadSaved() {
         Posts* p = m_user->getSavedPostByIndex(i);
         if (!p) continue;
 
-        // per-viewer report flag using backend
+        // Find the post author in the user list to get their reported flag.
+        // This loop is necessary here because we need the *author* User object,
+        // not just a postId — hasSavedPost() doesn't help with this lookup.
         bool reportedByMe = false;
         for (int u = 0; u < m_userCount; ++u) {
-            if (m_allUsers[u] && m_allUsers[u]->getUsername() == p->getCreatorUsername()) {
+            if (m_allUsers[u] &&
+                m_allUsers[u]->getUsername() == p->getCreatorUsername()) {
                 reportedByMe = m_allUsers[u]->hasReportedUser(m_user->getUsername());
                 break;
             }
@@ -1773,30 +1835,36 @@ void SavedPostsPage::loadSaved() {
 
         auto* card = new PostCard(p,
             QString::fromStdString(p->getCreatorUsername()),
-            false, true,
+            false, true,                                    // always saved here
             QString::fromStdString(m_user->getUsername()),
             reportedByMe);
 
         connect(card, &PostCard::likeClicked, this, [](Posts* post) { (void)post; });
         connect(card, &PostCard::unsaveClicked, this, &SavedPostsPage::onUnsavePost);
+        connect(card, &PostCard::commentClicked, this, [this, p]() {
+            emit requestOpenComments(p);
+            });
         connect(card, &PostCard::reportUserClicked, this, [this](const QString& username) {
             User* target = nullptr;
             for (int i = 0; i < m_userCount; ++i) {
-                if (m_allUsers[i] && m_allUsers[i]->getUsername() == username.toStdString()) {
+                if (m_allUsers[i] &&
+                    m_allUsers[i]->getUsername() == username.toStdString()) {
                     target = m_allUsers[i];
                     break;
                 }
             }
             if (!target) return;
             if (target->hasReportedUser(m_user->getUsername())) {
-                QMessageBox::information(this, "Already Reported", "You have already reported this user.");
+                QMessageBox::information(this, "Already Reported",
+                    "You have already reported this user.");
                 return;
             }
             target->reportUserBy(m_user->getUsername());
-            QMessageBox::information(this, "Reported", "User @" + username + " has been reported.");
+            QMessageBox::information(this, "Reported",
+                "User @" + username + " has been reported.");
             refresh();
             });
-        connect(card, &PostCard::commentClicked, this, [this, p]() { emit requestOpenComments(p); });
+
         m_savedLayout->insertWidget(m_savedLayout->count() - 1, card);
     }
 }
@@ -2368,13 +2436,14 @@ void ChatView::clearMessages() {
         delete it;
     }
 }
-
 void ChatView::appendBubble(const QString& sender, const QString& text) {
     bool isMine = (sender == m_currentUser);
 
-    // Wrapper aligns bubble left or right
-    auto* wrapper = new QHBoxLayout;
-    wrapper->setContentsMargins(0, 0, 0, 0);
+    auto* wrapWidget = new QWidget;
+    wrapWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    auto* wl = new QHBoxLayout(wrapWidget);
+    wl->setContentsMargins(0, 0, 0, 0);
+    wl->setSpacing(0);
 
     auto* bubble = new QLabel(text);
     bubble->setWordWrap(true);
@@ -2383,50 +2452,32 @@ void ChatView::appendBubble(const QString& sender, const QString& text) {
 
     if (isMine) {
         bubble->setStyleSheet(
-            "background: #3535CC; color: #FFFFFF; border-radius: 12px 12px 2px 12px;"
+            "background: #3535CC; color: #FFFFFF;"
+            "border-radius: 12px 12px 2px 12px;"
             "padding: 9px 14px; font-size: 13px;");
-        wrapper->addStretch(1);
-        wrapper->addWidget(bubble);
-    }
-    else {
-        bubble->setStyleSheet(
-            "background: #1A1A2E; color: #CCCCEE; border-radius: 12px 12px 12px 2px;"
-            "padding: 9px 14px; font-size: 13px;");
-        bubble->setToolTip(sender);   // show sender name on hover for non-self
-        // Small name label above
-        auto* col = new QVBoxLayout;
-        col->setSpacing(2);
-        auto* nameLbl = new QLabel(sender);
-        nameLbl->setStyleSheet("font-size: 10px; color: #44446A; font-weight: 600;");
-        col->addWidget(nameLbl);
-        col->addWidget(bubble);
-        wrapper->addLayout(col);
-        wrapper->addStretch(1);
-    }
-
-    // Insert before trailing stretch
-    int insertPos = m_bubbleLayout->count() - 1;
-    auto* wrapWidget = new QWidget;
-    wrapWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    auto* wl = new QHBoxLayout(wrapWidget);
-    wl->setContentsMargins(0, 0, 0, 0);
-    if (isMine) {
         wl->addStretch(1);
         wl->addWidget(bubble);
     }
     else {
+        bubble->setStyleSheet(
+            "background: #1A1A2E; color: #CCCCEE;"
+            "border-radius: 12px 12px 12px 2px;"
+            "padding: 9px 14px; font-size: 13px;");
+        bubble->setToolTip(sender);
+
         auto* col = new QVBoxLayout;
         col->setSpacing(2);
         col->setContentsMargins(0, 0, 0, 0);
-        auto* nameLbl2 = new QLabel(sender);
-        nameLbl2->setStyleSheet("font-size: 10px; color: #44446A; font-weight: 600;");
-        // bubble already created — reuse
-        col->addWidget(nameLbl2);
-        col->addWidget(bubble);
+        auto* nameLbl = new QLabel(sender);
+        nameLbl->setStyleSheet("font-size: 10px; color: #44446A; font-weight: 600;");
+        col->addWidget(nameLbl);
+        col->addWidget(bubble);   // bubble has exactly ONE parent from here on
         wl->addLayout(col);
         wl->addStretch(1);
     }
-    m_bubbleLayout->insertWidget(insertPos, wrapWidget);
+
+    // Insert before the trailing stretch
+    m_bubbleLayout->insertWidget(m_bubbleLayout->count() - 1, wrapWidget);
 
     // Auto-scroll to bottom
     QTimer::singleShot(0, m_scroll, [this]() {
@@ -3397,7 +3448,7 @@ void AdminPage::loadAdminNotifications() {
 //  QStackedWidget inside but NO nested scroll areas — only the outer scroll
 //  area scrolls.
 // ══════════════════════════════════════════════════════════════════════════════
-ProfilePage::ProfilePage(User* currentUser, User** allUsers, int* userCount, QWidget* parent)
+ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount, QWidget* parent)
     : QWidget(parent), m_user(currentUser), m_allUsers(allUsers), m_userCountPtr(userCount)
 {
     // Outer layout — just holds the single scroll area edge-to-edge
@@ -3644,14 +3695,18 @@ void ProfilePage::onUpdatePassword() {
 }
 
 void ProfilePage::onDeleteAccount() {
-    auto r = QMessageBox::warning(this, "Delete Account",
-        "This will permanently delete your account.\nAre you absolutely sure?",
-        QMessageBox::Yes | QMessageBox::Cancel);
-    if (r == QMessageBox::Yes) {
-        m_user->deleteAccount(m_allUsers, *m_userCountPtr);
-        m_user = nullptr;   
-        emit accountDeleted();
-    }
+    auto r = QMessageBox::question(this, "Delete Account",
+        "Permanently delete your account? This cannot be undone.",
+        QMessageBox::Yes | QMessageBox::No);
+    if (r != QMessageBox::Yes) return;
+
+    m_user->deleteAccount(m_allUsers, *m_userCountPtr);
+    m_user = nullptr;
+
+    QMessageBox::information(this, "Account Deleted",
+        "Your account has been permanently removed from Novo.");
+
+    emit accountDeleted();
 }
 
 
@@ -3776,8 +3831,8 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
     m_currentUser = user;
-    m_allUsers = m_authPage->getAllUsers();
-    m_userCount = m_authPage->getUserCount();
+    m_allUsers = allUsers;
+    m_userCount = userCount;
 
     m_shellLayout = new QHBoxLayout(m_appShell);
     m_shellLayout->setContentsMargins(0, 0, 0, 0);
@@ -3948,7 +4003,24 @@ void MainWindow::buildPages() {
     m_commentsPage = new CommentsPage(QString::fromStdString(m_currentUser->getUsername()));
 
     // 2. Connect core app signals
-    connect(m_profilePage, &ProfilePage::accountDeleted, this, &MainWindow::onLogout);
+    connect(m_profilePage, &ProfilePage::accountDeleted, this, [this]() {
+        m_currentUser = nullptr;
+        if (m_timeSpentPage) m_timeSpentPage->stopSession();
+        m_appShell->hide();
+        tearDownShell();
+
+        // MainWindow is sole owner — safe to delete
+        for (int i = 0; i < m_userCount; ++i) {
+            delete m_allUsers[i];
+            m_allUsers[i] = nullptr;
+        }
+        delete[] m_allUsers;
+        m_allUsers = nullptr;
+        m_userCount = 0;
+
+        m_authPage->resetToLogin();
+        m_rootStack->setCurrentIndex(0);
+        });
 
     // 3. Add widgets to the stack (Indices 0 through 6)
     m_pages->addWidget(m_feedPage);       // Index 0
@@ -3977,9 +4049,10 @@ void MainWindow::buildPages() {
     connect(m_searchPage, &SearchPage::requestOpenComments, this, &MainWindow::onOpenComments);
     connect(m_profilePage, &ProfilePage::requestOpenComments, this, &MainWindow::onOpenComments);
     connect(m_searchPage, &SearchPage::requestViewProfile, this, [this](User* user) {
-        m_publicProfilePage->loadProfile(user, m_currentUser);
-        m_pages->setCurrentWidget(m_publicProfilePage);
-        });
+                 m_publicProfilePage->loadProfile(user, m_currentUser,
+                                                  m_allUsers, m_userCount); 
+                 m_pages->setCurrentWidget(m_publicProfilePage);
+             });
 
     connect(m_publicProfilePage, &PublicProfileWidget::backClicked, this, [this]() {
         m_pages->setCurrentWidget(m_searchPage);

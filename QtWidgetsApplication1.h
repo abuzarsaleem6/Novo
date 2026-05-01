@@ -4,7 +4,6 @@
 #include "User.h"
 #include "Post.h"
 #include "Comment.h"
-#include "Notification.h"
 #include "Feed.h"
 #include "Admin.h"
 #include "PasswordChecker.h"
@@ -99,18 +98,19 @@ private:
     User** m_allUsers;
     int        m_userCount;
 };
-
 class PublicProfileWidget : public QWidget {
-    Q_OBJECT
-public:
-    PublicProfileWidget(QWidget* parent = nullptr);
-    void loadProfile(User* targetUser, User* viewer);
-signals:
-    void backClicked();
-    void requestOpenComments(Posts* post); // NEW
-private:
-    QVBoxLayout* m_mainLayout;
-};
+         Q_OBJECT
+     public:
+         PublicProfileWidget(QWidget* parent = nullptr);
+         void loadProfile(User* targetUser, User* viewer,User** allUsers, int userCount);   
+     signals:
+         void backClicked();
+         void requestOpenComments(Posts* post);
+     private:
+         QVBoxLayout* m_mainLayout;
+         User**  m_allUsers  = nullptr;   
+         int m_userCount = 0;
+     };
 
 class FeedPage : public QWidget {
     Q_OBJECT
@@ -200,7 +200,7 @@ private:
 class ProfilePage : public QWidget {
     Q_OBJECT
 public:
-    ProfilePage(User* currentUser, User** allUsers, int* userCount, QWidget* parent = nullptr);
+    ProfilePage(User* currentUser, User**& allUsers, int* userCount, QWidget* parent = nullptr);
     void refresh();
 signals:
     void accountDeleted();
@@ -211,7 +211,7 @@ private slots:
     void onDeleteAccount();
 private:
     User* m_user;
-    User** m_allUsers;
+    User**& m_allUsers;
     int* m_userCountPtr;
     QLabel* m_usernameLabel;
     QLabel* m_bioLabel;
@@ -234,12 +234,12 @@ signals:
     void backClicked();
 private slots:
     void onAddComment();
-    void onEditComment(int index);
-    void onDeleteComment(int index);
+    void onEditComment(const QString& commentId);   // FIX: was int index
+    void onDeleteComment(const QString& commentId); // FIX: was int index
 private:
     void loadComments();
     Posts* m_post;
-    QString m_currentUser;
+    QString      m_currentUser;
     QVBoxLayout* m_commentsLayout;
     QWidget* m_commentsContainer;
     QLineEdit* m_input;

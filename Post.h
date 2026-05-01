@@ -1,5 +1,3 @@
-// Post.h - ADD THESE METHODS (keep existing code)
-
 #pragma once
 #include <QString>
 #include <QList>
@@ -46,8 +44,7 @@ public:
     void setContent(const string& newContent);
     void setTimeOfCreation(const string& time);
 
-    // ─── CONTENT ───
-    void inputContent(string& content);
+    // ─── ID GENERATION ───
     string generatePostId();
 
     // ─── FILE I/O ───
@@ -70,12 +67,4 @@ public:
 
     // ─── REPORTING ───
     void reportPost(const string& reporterUsername);
-
-    // ─── Qt HELPER METHODS ─── (NEW)
-    QString getDisplayContent() const;
-    QString getDisplayTime() const;
-    QString getDisplayAuthor() const;
-    QList<Comment> getCommentsAsQList() const;
-    int getUnreadCommentCount() const;
-    void display() const;
 };

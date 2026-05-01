@@ -501,7 +501,8 @@ void Admin::displayReportedUsers() {
     for (User* user : reportedUsers) {
         uniqueUsers.insert(user);
     }
-
+    // I AM KALA G .. OOO YEAHHH.
+    // I AM MASTER OF CODING.
     for (User* user : uniqueUsers) {
         if (!user) continue;
         int count = reportedUsers.count(user);
