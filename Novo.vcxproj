@@ -29,7 +29,6 @@
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="Message.cpp" />
     <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="User.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
