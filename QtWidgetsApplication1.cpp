@@ -519,6 +519,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         emit likeClicked(m_post);
         });
 
+   
     auto* likeLayout = new QHBoxLayout;
     likeLayout->setSpacing(4);
     likeLayout->addWidget(likeBtn);
@@ -540,7 +541,6 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     commentLayout->addWidget(commentBtn);
     commentLayout->addWidget(commentCountLbl);
     actRow->addLayout(commentLayout);
-
     // Declare saveBtn pointer here so it is accessible outside the IF block
     QPushButton* saveBtn = nullptr;
 
