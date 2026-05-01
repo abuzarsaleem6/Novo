@@ -1,3 +1,7 @@
+data/
+x64/
+*.user
+*.vcxproj.filters
 .vs/
 bin/
 obj/
@@ -25,3 +29,4 @@ x86/
 # OS files
 Thumbs.db
 .DS_Store
+/Novo.cpp
