@@ -53,7 +53,7 @@ Timer::~Timer() {
     delete[] ownerUsername;
 }
 
-/
+
 void Timer::start() {
     if (!isRunning) {
         time_t now = time(0);
