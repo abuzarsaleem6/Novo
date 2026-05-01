@@ -1,22 +1,40 @@
 #pragma once
+#ifndef TIMER_H
+#define TIMER_H
+
 #include <iostream>
-#include <chrono>
-#include <fstream>
+#include <cstring>
+#include <ctime>
 
 class Timer {
 private:
-   
-    std::chrono::time_point<std::chrono::steady_clock> startTime;
+    char* ownerUsername;
+    int startHour;
+    int startMinute;
+    int startSecond;
+    int elapsedSeconds;
     bool isRunning;
 
-public:
-   
-    Timer();
-    ~Timer(); 
+    
+    void allocateAndCopy(char*& dest, const char* source);
 
-  
-    void startSession();
-    double getSessionDuration() const;
-    void displaySessionTime() const;  
-    void saveSessionLog(const char* username) const;
+public:
+    
+    Timer(const char* username);
+    Timer(const Timer& other);
+    Timer& operator=(const Timer& other);
+    ~Timer();
+
+    
+    void start();
+    void stop();
+    void reset();
+    void update(); 
+
+    
+    void displayTimeSpent() const;
+    int getElapsedSeconds() const;
+    bool getIsRunning() const;
 };
+
+#endif
