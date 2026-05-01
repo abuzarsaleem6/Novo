@@ -227,12 +227,27 @@ int Admin::getReportedPostCount() const {
 void Admin::addNotification(const QString& message) {
     QString timestampedMsg = QDateTime::currentDateTime().toString("hh:mm:ss")
         + " | " + message;
-    adminNotifications.append(timestampedMsg);
+
+    Notification n(
+        timestampedMsg.toStdString(),  // msg
+        "admin",                        // type
+        QDateTime::currentDateTime().toString().toStdString()  // time
+    );
+    adminNotifications.append(n);
     qDebug() << "Admin notification:" << message;
 }
-
-QList<QString> Admin::getAllNotifications() const {
+QList<Notification> Admin::getAllNotifications() const {
     return adminNotifications;
+}
+
+void Admin::viewAllNotifications() const {
+    qDebug() << "=== ADMIN NOTIFICATIONS ===";
+    for (const Notification& n : adminNotifications) {
+        qDebug() << QString::fromStdString(n.getMessage())
+            << "| Type:" << QString::fromStdString(n.getType())
+            << "| Time:" << QString::fromStdString(n.getTimestamp())
+            << "| Status:" << (n.getStatus() ? "Read" : "Unread");
+    }
 }
 
 void Admin::clearNotifications() {

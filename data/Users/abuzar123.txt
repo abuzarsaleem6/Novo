@@ -3,8 +3,8 @@ password|Abuzar56@
 bio|hey there
 isBanned|0
 isReported|0
-isReportedCount|0
-followingCount|0
+isReportedCount|2
+followingCount|1
 followersCount|1
-postCount|3
+postCount|1
 savedPostCount|0

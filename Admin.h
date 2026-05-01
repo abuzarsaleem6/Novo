@@ -9,6 +9,7 @@
 #include <QString>
 #include <QDir>
 #include <QDebug>
+#include"Notification.h"
 
 class Admin : public User {
 private:
@@ -17,7 +18,7 @@ private:
     QList<Posts*> reportedPosts;
     int reportedUserCount;
     int reportedPostCount;
-    QList<QString> adminNotifications;
+    QList<Notification> adminNotifications;
     QSet<QString> processedUserReports;
     QSet<QString> processedPostReports;
 
@@ -52,8 +53,10 @@ public:
 
     // ─── NOTIFICATION MANAGEMENT ───
     void addNotification(const QString& message);
-    QList<QString> getAllNotifications() const;
+    QList<Notification> getAllNotifications() const;
     void clearNotifications();
+	void viewAllNotifications() const;
+
 
     // ─── FILE I/O ───
     void saveReportsToFile();
