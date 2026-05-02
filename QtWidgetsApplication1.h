@@ -77,7 +77,7 @@ public:
     int getUserCount() const { return m_userCount; }
 signals:
     void loginSuccess(User* user, User** allUsers, int userCount);
-    void loginAdminSuccess();
+    void loginAdminSuccess(User** allUsers, int userCount);
 private slots:
     void onLogin();
     void onSignUp();
@@ -369,6 +369,9 @@ private:
     User**& m_allUsers;  // ← reference
     int& m_userCount;    // ← reference
     QScrollArea* m_scrollArea;
+    QLabel* m_reportedUsersStatLbl = nullptr;
+    QLabel* m_reportedPostsStatLbl = nullptr;
+    QLabel* m_totalUsersStatLbl = nullptr;
     QWidget* m_content;
     QVBoxLayout* m_layout;
 };
@@ -379,7 +382,7 @@ public:
     ~MainWindow();
 private slots:
     void onLoginSuccess(User* user, User** allUsers, int userCount);
-    void onLoginAdminSuccess();
+    void onLoginAdminSuccess(User** allUsers, int userCount);
     void onNavFeed();
     void onNavNotifications();
     void onNavSearch();

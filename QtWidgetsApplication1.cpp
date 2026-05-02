@@ -1211,7 +1211,13 @@ QWidget* AuthPage::createAdminLoginWidget() {
         if (authenticated) {
             m_adminUser->clear();
             m_adminPass->clear();
-            emit loginAdminSuccess();
+
+            // ── ADD THIS: Transfer ownership of the users array to MainWindow
+            User** arr = m_allUsers;
+            int    cnt = m_userCount;
+            m_allUsers = nullptr;
+            m_userCount = 0;
+            emit loginAdminSuccess(arr, cnt);
         }
         else {
             QMessageBox::critical(this, "Novo", "Invalid Admin Credentials.");
@@ -1978,11 +1984,7 @@ void SearchPage::onSearch() {
         return;
     }
 
-    if (found->getIsBanned()) {
-        QMessageBox::warning(this, "Novo", "User @" + query + " is banned.");
-        return;
-    }
-
+    
     m_foundUser = found;
     showUserCard(found);
 }
@@ -2363,7 +2365,7 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
     QDir().mkpath("data/Messages");
     QString markerPath = "data/Messages/" + receiver + "_unread_" + sender + ".flag";
     QFile f(markerPath);
-    (void)f.open(QIODevice::WriteOnly);
+    f.open(QIODevice::WriteOnly);
     f.close();
 }
 
@@ -3050,23 +3052,25 @@ AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* pa
     sl->setContentsMargins(20, 16, 20, 16);
     sl->setSpacing(0);
 
-    auto addAdminStat = [&](const QString& val, const QString& lbl) {
+    auto addAdminStat = [&](QLabel*& outLbl, const QString& val, const QString& lbl) {
         auto* c = new QVBoxLayout; c->setSpacing(2);
-        auto* v = new QLabel(val);
-        v->setStyleSheet("font-size:22px;font-weight:700;color:#6060FF;");
-        v->setAlignment(Qt::AlignCenter);
+        outLbl = new QLabel(val);
+        outLbl->setStyleSheet("font-size:22px;font-weight:700;color:#6060FF;");
+        outLbl->setAlignment(Qt::AlignCenter);
         auto* l = new QLabel(lbl);
         l->setStyleSheet("font-size:10px;color:#36365A;letter-spacing:1.2px;");
         l->setAlignment(Qt::AlignCenter);
-        c->addWidget(v); c->addWidget(l);
+        c->addWidget(outLbl); c->addWidget(l);
         sl->addLayout(c);
         };
 
+
     if (m_admin) {
         m_admin->loadReportsFromFile(m_allUsers, m_userCount);
-        addAdminStat(QString::number(m_admin->getReportedUserCount()), "REPORTED USERS");
-        addAdminStat(QString::number(m_admin->getReportedPostCount()), "REPORTED POSTS");
-        addAdminStat(QString::number(m_userCount), "TOTAL USERS");
+        m_admin->loadAdminFromFile();
+        addAdminStat(m_reportedUsersStatLbl, QString::number(m_admin->getReportedUserCount()), "REPORTED USERS");
+        addAdminStat(m_reportedPostsStatLbl, QString::number(m_admin->getReportedPostCount()), "REPORTED POSTS");
+        addAdminStat(m_totalUsersStatLbl, QString::number(m_userCount), "TOTAL USERS");
     }
     outer->addWidget(statsCard);
 
@@ -3121,7 +3125,16 @@ AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* pa
 }
 
 void AdminPage::refresh() {
-    if (m_admin) m_admin->loadReportsFromFile(m_allUsers, m_userCount);
+    if (m_admin) {
+        m_admin->loadReportsFromFile(m_allUsers, m_userCount);
+        m_admin->loadAdminFromFile();
+        if (m_reportedUsersStatLbl)
+            m_reportedUsersStatLbl->setText(QString::number(m_admin->getReportedUserCount()));
+        if (m_reportedPostsStatLbl)
+            m_reportedPostsStatLbl->setText(QString::number(m_admin->getReportedPostCount()));
+        if (m_totalUsersStatLbl)
+            m_totalUsersStatLbl->setText(QString::number(m_userCount));
+    }
     loadReportedUsers();
 }
 
@@ -3201,34 +3214,13 @@ void AdminPage::loadReportedUsers() {
         nameLbl->setStyleSheet("font-size:15px;font-weight:700;color:#DCDCF8;");
         nameRow->addWidget(nameLbl, 1);
 
-        auto* banBtn = new QPushButton(u->getIsBanned() ? "🔓 Unban" : "🔨 Ban");
-        banBtn->setObjectName(u->getIsBanned() ? "secondaryBtn" : "dangerBtn");
-        banBtn->setFixedHeight(32);
-        banBtn->setFixedWidth(90);
-        banBtn->setCursor(Qt::PointingHandCursor);
-        connect(banBtn, &QPushButton::clicked, this, [this, u, banBtn]() {
-            if (u->getIsBanned()) {
-                u->setBan(false);
-                banBtn->setText("🔨 Ban");
-                banBtn->setObjectName("dangerBtn");
-                QMessageBox::information(this, "Admin", "User unbanned.");
-            }
-            else {
-                auto r = QMessageBox::question(this, "Ban User",
-                    "Ban @" + QString::fromStdString(u->getUsername()) + "?",
-                    QMessageBox::Yes | QMessageBox::No);
-                if (r == QMessageBox::Yes) {
-                    u->setBan(true);
-                    u->saveToFile();
-                    banBtn->setText("🔓 Unban");
-                    banBtn->setObjectName("secondaryBtn");
-                    QMessageBox::information(this, "Admin", "User banned.");
-                }
-            }
-            banBtn->style()->unpolish(banBtn);
-            banBtn->style()->polish(banBtn);
-            });
-        nameRow->addWidget(banBtn);
+        // ── REPORT BADGE ADDED HERE ──
+        int rCount = u->getIsReportedCount();
+        auto* reportBadge = new QLabel(QString("⚑ %1 reports").arg(rCount));
+        reportBadge->setStyleSheet("background:#1C0808;color:#CC4444;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;");
+        nameRow->addWidget(reportBadge);
+        nameRow->addSpacing(12);
+        // ─────────────────────────────
 
         auto* deleteBtn = new QPushButton("🗑 Delete User");
         deleteBtn->setObjectName("dangerBtn");
@@ -3246,7 +3238,7 @@ void AdminPage::loadReportedUsers() {
                 refresh();
             }
             });
-        nameRow->addSpacing(8);
+
         nameRow->addWidget(deleteBtn);
         cl->addLayout(nameRow);
 
@@ -3325,7 +3317,7 @@ void AdminPage::loadReportedPosts() {
             if (r == QMessageBox::Yes) {
                 m_admin->deletePost(m_allUsers, m_userCount, p->getPostId());
                 QMessageBox::information(this, "Admin", "Post deleted.");
-                loadReportedPosts();
+                refresh();  
             }
             });
         btnRow->addWidget(delPostBtn);
@@ -3578,7 +3570,11 @@ void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
     m_pages->setCurrentIndex(0);
 }
 
-void MainWindow::onLoginAdminSuccess() {
+void MainWindow::onLoginAdminSuccess(User** allUsers, int userCount) {
+    // Save the global user list to the admin shell
+    m_allUsers = allUsers;
+    m_userCount = userCount;
+
     // Build minimal admin shell (no user, no posts)
     m_currentUser = nullptr;
 
@@ -3707,21 +3703,32 @@ void MainWindow::onOpenComments(Posts* post) {
     setActiveSidebarButton(nullptr);
 }
 
+// REPLACE entire onLogout() with:
 void MainWindow::onLogout() {
     auto r = QMessageBox::question(this, "Logout",
         "Are you sure you want to logout?",
         QMessageBox::Yes | QMessageBox::No);
     if (r != QMessageBox::Yes) return;
 
+    // Mark current user as logged out and persist it
+    if (m_currentUser)
+        m_currentUser->logOut();
+
     tearDownShell();
 
-    // Remove the shell widget from the root stack
     while (m_rootStack->count() > 1)
         m_rootStack->removeWidget(m_rootStack->widget(1));
 
     m_currentUser = nullptr;
+
+    // Clear non-owned savedPosts pointers on ALL users before any destructor runs
     if (m_allUsers) {
-        for (int i = 0; i < m_userCount; ++i) delete m_allUsers[i];
+        for (int i = 0; i < m_userCount; ++i)
+            if (m_allUsers[i]) m_allUsers[i]->clearSavedPostsArray();
+
+        for (int i = 0; i < m_userCount; ++i)
+            delete m_allUsers[i];
+
         delete[] m_allUsers;
         m_allUsers = nullptr;
         m_userCount = 0;

@@ -304,12 +304,18 @@ int Admin::getReportedPostCount() const {
 
 void Admin::addNotification(const string& message) {
     string ts = currentTimestamp();
-    string fullMsg = ts + " | " + message;
 
     if (adminNotifCount >= adminNotifCapacity) expandNotifications();
+    adminNotifications[adminNotifCount++] = Notification(message, "admin", ts);
 
-    Notification n(fullMsg, "admin", ts);
-    adminNotifications[adminNotifCount++] = n;
+    // Persist immediately so it survives session restarts
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Admin");
+    ofstream nf("data/Admin/admin_notifications.txt", ios::app);
+    if (nf.is_open()) {
+        nf << ts << "|admin|" << message << "\n";
+        nf.close();
+    }
 
     cout << "Admin notification: " << message << endl;
 }
@@ -329,6 +335,7 @@ void Admin::viewAllNotifications() const {
         cout << n.getMessage()
             << " | Type: " << n.getType()
             << " | Time: " << n.getTimestamp()
+           
            
             << endl;
     }
@@ -439,41 +446,31 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     }
     cout << "Reported posts loaded: " << reportedPostCount << endl;
 
-    // ── Load reported users from reported_users.txt ───────────────────────────
-    ifstream usersFile("data/Admin/reported_users.txt");
-    if (usersFile.is_open()) {
-        string username;
-        string line;
-        while (getline(usersFile, line)) {
-            if (line.empty()) continue;
+    // ── Load reported users by checking isReported flag on each user ──────────
+    if (allUsers && userCount > 0) {
+        for (int i = 0; i < userCount; i++) {
+            if (!allUsers[i]) continue;
 
-            // split on '|'
-            size_t sep = line.find('|');
-            if (sep == string::npos) continue;
-            string key = line.substr(0, sep);
-            string val = line.substr(sep + 1);
+            // Check if the user is flagged as reported
+            if (allUsers[i]->getIsReported()) {
 
-            if (key == "username") {
-                username = val;
-            }
-            else if (key == "reportCount" && !username.empty()) {
-                if (!allUsers || userCount <= 0) continue;
-                for (int i = 0; i < userCount; i++) {
-                    if (!allUsers[i]) continue;
-                    if (allUsers[i]->getUsername() == username) {
-                        if (reportedUserCount >= reportedUserCapacity) expandReportedUsers();
-                        reportedUsers[reportedUserCount++] = allUsers[i];
+                // Prevent duplicate entries in the array
+                bool alreadyLoaded = false;
+                for (int j = 0; j < reportedUserCount; j++) {
+                    if (reportedUsers[j] == allUsers[i]) {
+                        alreadyLoaded = true;
                         break;
                     }
                 }
-                username.clear();
+
+                if (!alreadyLoaded) {
+                    if (reportedUserCount >= reportedUserCapacity) expandReportedUsers();
+                    reportedUsers[reportedUserCount++] = allUsers[i];
+                }
             }
         }
-        usersFile.close();
     }
     cout << "Reported users loaded: " << reportedUserCount << endl;
-
-    reportedPostCount = reportedPostCount; // already set
 }
 
 void Admin::saveAdminToFile() {
@@ -519,20 +516,29 @@ void Admin::loadAdminFromFile() {
     if (nf.is_open()) {
         string line;
         while (getline(nf, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
             if (line.empty()) continue;
 
-            // Format: timestamp|type|message|isRead
+            // Format: timestamp|type|message
             size_t p1 = line.find('|');
+            if (p1 == string::npos) continue;
+
             size_t p2 = line.find('|', p1 + 1);
-            size_t p3 = line.rfind('|');
-            if (p1 == string::npos || p2 == string::npos || p3 == p2) continue;
+            if (p2 == string::npos) continue;
 
             string ts = line.substr(0, p1);
-            string msg = line.substr(p2 + 1, p3 - p2 - 1);
+            string type = line.substr(p1 + 1, p2 - p1 - 1);
+            string msg = line.substr(p2 + 1);
+
+            // trim \r
+            while (!ts.empty() && ts.back() == '\r') ts.pop_back();
+            while (!type.empty() && type.back() == '\r') type.pop_back();
+            while (!msg.empty() && msg.back() == '\r') msg.pop_back();
+
+            if (ts.empty() || msg.empty()) continue;
 
             if (adminNotifCount >= adminNotifCapacity) expandNotifications();
-            Notification n(msg, "admin", ts);
-            adminNotifications[adminNotifCount++] = n;
+            adminNotifications[adminNotifCount++] = Notification(msg, type, ts);
         }
         nf.close();
     }

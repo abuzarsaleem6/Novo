@@ -313,7 +313,7 @@ void Posts::reportPost(const string& reporterUsername) {
         if (notifFile.is_open()) {
             notifFile << currentTimeString() << "|post_reported|Post '"
                 << postId << "' by @" << creatorUsername
-                << " has reached 3 reports and is marked for review.|0\n";
+                << " has reached 3 reports and is marked for review \n";
             notifFile.close();
         }
     }

@@ -14,7 +14,7 @@ private:
     string password;
     string bio;
     bool isReported;
-    bool isBanned;
+    bool isLoggedIn;
     int isReportedCount;
     int followingCount;
     int followersCount;
@@ -58,7 +58,8 @@ public:
     string getBio()           const;
     string getPassword()      const;
     bool   getIsReported()    const;
-    bool   getIsBanned()      const;
+    int getIsReportedCount() const;
+    bool   getIsLoggedIn()    const;
     int    getFollowingCount()const;
     int    getFollowersCount()const;
     int    getPostCount()     const;
@@ -67,7 +68,6 @@ public:
     // ─── SETTERS ───
     void setBio(string bio);
     void setPassword(string password);
-    void setBan(bool banned);
 
     // ─── FOLLOWING / FOLLOWERS ───
     void followUser(User* target, User** allUsers, int userCount);

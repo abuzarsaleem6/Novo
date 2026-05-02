@@ -3,6 +3,8 @@
 #include <fstream>
 #include <string>
 #include <ctime>
+#include <cstdlib>
+#include <cstdio>
 #include "User.h"
 #include "Post.h"
 #include "Notification.h"
@@ -14,10 +16,8 @@ using namespace std;
 #ifdef _WIN32
 #include <direct.h>
 static void mkdirIfNeeded(const char* path) { _mkdir(path); }
-// file delete on Windows
 #include <cstdio>
 static void removeFile(const string& path) { remove(path.c_str()); }
-// recursive dir remove (best-effort, only removes known files)
 static void removeDirRecursive(const string&) { /* handled per-file above */ }
 #else
 #include <sys/stat.h>
@@ -55,7 +55,7 @@ User::User() {
     password = "";
     bio = "";
     isReported = false;
-    isBanned = false;
+    isLoggedIn = false;
     isReportedCount = 0;
     followingCount = 0;
     followersCount = 0;
@@ -73,7 +73,7 @@ User::User(string username, string password, string bio) {
     this->posts = nullptr;
     this->savedPosts = nullptr;
     this->isReported = false;
-    this->isBanned = false;
+    this->isLoggedIn = false;
     this->isReportedCount = 0;
     this->followingCount = 0;
     this->followersCount = 0;
@@ -95,7 +95,7 @@ User::User(const User& o) {
     password = o.password;
     bio = o.bio;
     isReported = o.isReported;
-    isBanned = o.isBanned;
+    isLoggedIn = o.isLoggedIn;
     isReportedCount = o.isReportedCount;
     followingCount = o.followingCount;
     followersCount = o.followersCount;
@@ -145,7 +145,7 @@ User& User::operator=(const User& o) {
     password = o.password;
     bio = o.bio;
     isReported = o.isReported;
-    isBanned = o.isBanned;
+    isLoggedIn = o.isLoggedIn;
     isReportedCount = o.isReportedCount;
     followingCount = o.followingCount;
     followersCount = o.followersCount;
@@ -184,21 +184,30 @@ User& User::operator=(const User& o) {
 }
 
 User::~User() {
-    for (int i = 0; i < postCount; i++) {
-        delete posts[i];
-        posts[i] = nullptr;
+    // posts[i] are owned — deep delete
+    if (posts) {
+        for (int i = 0; i < postCount; i++) {
+            delete posts[i];
+            posts[i] = nullptr;
+        }
+        delete[] posts;
+        posts = nullptr;
     }
-    delete[] posts;
-    posts = nullptr;
+    postCount = 0;
 
+    // savedPosts are NON-OWNED — only delete the array, never the elements
     delete[] savedPosts;
     savedPosts = nullptr;
+    savedPostCount = 0;
 
+    // following/followers are NON-OWNED — only delete the arrays
     delete[] following;
     following = nullptr;
+    followingCount = 0;
 
     delete[] followers;
     followers = nullptr;
+    followersCount = 0;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -242,29 +251,17 @@ string User::validatePostContent(const string& content) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 bool User::login(string password) {
-    return (password == this->password);
+    if (password == this->password) {
+        isLoggedIn = true;
+        saveToFile();
+        return true;
+    }
+    return false;
 }
 
 void User::logOut() {
-    for (int i = 0; i < postCount; i++) {
-        delete posts[i];
-        posts[i] = nullptr;
-    }
-    delete[] posts;
-    posts = nullptr;
-    postCount = 0;
-
-    delete[] following;
-    following = nullptr;
-    followingCount = 0;
-
-    delete[] followers;
-    followers = nullptr;
-    followersCount = 0;
-
-    delete[] savedPosts;
-    savedPosts = nullptr;
-    savedPostCount = 0;
+    isLoggedIn = false;
+    saveToFile();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -303,7 +300,7 @@ void User::saveToFile() {
     file << "username|" << this->username << "\n";
     file << "password|" << this->password << "\n";
     file << "bio|" << this->bio << "\n";
-    file << "isBanned|" << (this->isBanned ? 1 : 0) << "\n";
+    file << "isLoggedIn|" << (this->isLoggedIn ? 1 : 0) << "\n";
     file << "isReported|" << (this->isReported ? 1 : 0) << "\n";
     file << "isReportedCount|" << this->isReportedCount << "\n";
     file << "followingCount|" << this->followingCount << "\n";
@@ -337,7 +334,7 @@ void User::loadFromFile(string username) {
             if (key == "username")        this->username = value;
             else if (key == "password")        this->password = value;
             else if (key == "bio")             this->bio = value;
-            else if (key == "isBanned")        this->isBanned = (value == "1");
+            else if (key == "isLoggedIn")      this->isLoggedIn = (value == "1");
             else if (key == "isReported")      this->isReported = (value == "1");
             else if (key == "isReportedCount") this->isReportedCount = stoi(value);
             else if (key == "followingCount")  this->followingCount = stoi(value);
@@ -399,7 +396,7 @@ string User::getUsername()       const { return this->username; }
 string User::getBio()            const { return this->bio; }
 string User::getPassword()       const { return this->password; }
 bool   User::getIsReported()     const { return this->isReported; }
-bool   User::getIsBanned()       const { return this->isBanned; }
+bool   User::getIsLoggedIn()     const { return this->isLoggedIn; }
 int    User::getFollowingCount() const { return this->followingCount; }
 int    User::getFollowersCount() const { return this->followersCount; }
 int    User::getPostCount()      const { return this->postCount; }
@@ -407,7 +404,6 @@ int    User::getSavedPostCount() const { return this->savedPostCount; }
 
 void User::setBio(string bio) { this->bio = bio; }
 void User::setPassword(string password) { this->password = password; }
-void User::setBan(bool banned) { this->isBanned = banned; saveToFile(); }
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  FOLLOWING / FOLLOWERS
@@ -460,7 +456,6 @@ bool User::isFollowing(string username) {
 void User::addFollower(User* ptr) {
     if (!ptr) return;
 
-    // Guard: don't double-add if already a follower
     for (int i = 0; i < followersCount; i++) {
         if (followers && followers[i] &&
             followers[i]->getUsername() == ptr->getUsername()) return;
@@ -531,7 +526,6 @@ void User::removeFollower(const string& usernameToRemove) {
 
     string path = "data/Following/" + this->username + "_followers.txt";
 
-    // Read file, skip the removed follower
     string updatedContent;
     int    newCount = 0;
     ifstream rf(path);
@@ -550,7 +544,6 @@ void User::removeFollower(const string& usernameToRemove) {
     ofstream wf(path, ios::out);
     if (wf.is_open()) { wf << updatedContent; wf.close(); }
 
-    // Rebuild in-memory array
     delete[] followers;
     followers = nullptr;
     followersCount = newCount;
@@ -709,7 +702,6 @@ void User::deletePost(string postId) {
     removeFile(base + "_comments.txt");
     removeFile(base + "_reported.txt");
 
-    // Update posts_list.txt
     string listPath = "data/Posts/" + this->username + "/posts_list.txt";
     string updatedList;
     ifstream listIn(listPath);
@@ -725,14 +717,20 @@ void User::deletePost(string postId) {
     ofstream listOut(listPath, ios::out);
     if (listOut.is_open()) { listOut << updatedList; listOut.close(); }
 
-    // Rebuild posts array
-    Posts** newPosts = postCount > 1 ? new Posts * [postCount - 1] : nullptr;
     int idx = 0;
-    for (int i = 0; i < postCount; i++) {
-        if (posts[i]->getPostId() != postId)
-            newPosts[idx++] = posts[i];
-        else
-            delete posts[i];
+    Posts** newPosts = nullptr;
+    if (postCount > 1) {
+        newPosts = new Posts * [postCount - 1];
+        for (int i = 0; i < postCount; i++) {
+            if (posts[i]->getPostId() != postId)
+                newPosts[idx++] = posts[i];
+            else
+                delete posts[i];
+        }
+    }
+    else {
+        // only one post — just delete it
+        delete posts[0];
     }
     delete[] posts;
     posts = newPosts;
@@ -894,7 +892,6 @@ void User::reportUser() {
         }
     }
 
-    // Read current reported_users.txt into parallel arrays
     mkdirIfNeeded("data/Admin");
     const int MAX_REPORTED = 256;
     string    rNames[MAX_REPORTED];
@@ -923,7 +920,6 @@ void User::reportUser() {
         rf.close();
     }
 
-    // Update or insert count for this user
     bool found = false;
     for (int i = 0; i < rSize; i++) {
         if (rNames[i] == username) { rCounts[i] = isReportedCount; found = true; break; }
@@ -934,7 +930,6 @@ void User::reportUser() {
         rSize++;
     }
 
-    // Rewrite file
     ofstream wf("data/Admin/reported_users.txt", ios::out);
     if (wf.is_open()) {
         for (int i = 0; i < rSize; i++)
@@ -965,14 +960,18 @@ void User::reportUserBy(const string& reporterUsername) {
     if (file.is_open()) { file << reporterUsername << "\n"; file.close(); }
     reportUser();
 }
-
+int User::getIsReportedCount() const { return this->isReportedCount; }
 // ══════════════════════════════════════════════════════════════════════════════
 //  ACCOUNT DELETION
 // ══════════════════════════════════════════════════════════════════════════════
 
 void User::deleteAccount(User**& allUsers, int& userCount) {
+    // 1. Store username locally to ensure it is available throughout the wipe process
     string uname = this->username;
+    cout << "User: Initiating full system wipe for @" << uname << "..." << endl;
 
+    // ─── PART 1: SOCIAL GRAPH CLEANUP ───
+    // Load lists to identify which other users need their records updated
     loadFollowers(allUsers, userCount);
     loadFollowing(allUsers, userCount);
 
@@ -1041,24 +1040,32 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         followedUser->saveToFile();
     }
 
-    // Delete this user's post files
-    loadAllPosts();
-    for (int i = 0; i < postCount; i++) {
-        if (!posts[i]) continue;
-        string pid = posts[i]->getPostId();
-        string base = "data/Posts/" + uname + "/" + pid;
-        removeFile(base + ".txt");
-        removeFile(base + "_comments.txt");
-        removeFile(base + "_reported.txt");
-    }
+    // ─── PART 2: THE 3 FILESYSTEM WIPES ───
 
-    // Delete misc files
-    removeFile("data/Posts/" + uname + "/" + uname + "_liked.txt");
-    removeFile("data/Posts/" + uname + "/posts_list.txt");
-    removeFile("data/Posts/" + uname + "/saved_posts.txt");
-    removeDirRecursive("data/Posts/" + uname);
+    // 1. Wipe all Message files involving this user (Wildcard Deletion)
+#ifdef _WIN32
+    string msgCmd = "del /q \"data\\Messages\\*" + uname + "*\" 2>nul";
+    system(msgCmd.c_str());
+#else
+    string msgCmd = "rm -f data/Messages/*" + uname + "*";
+    system(msgCmd.c_str());
+#endif
 
-    // Remove this user's comments from other users' posts
+    // 2. Wipe entire Posts Folder recursively (Posts, Comments, Reports)
+    string postDirPath = "data/Posts/" + uname;
+#ifdef _WIN32
+    system(("rmdir /s /q \"" + postDirPath + "\" 2>nul").c_str());
+#else
+    system(("rm -rf \"data/Posts/" + uname + "\""));
+#endif
+
+    // 3. Wipe Notification File
+    string notifPath = "data/Notifications/" + uname + "_notif.txt";
+    remove(notifPath.c_str());
+
+    // ─── PART 3: CLEANUP REMAINING DATA ON OTHER USERS ───
+
+    // Remove user's comments from other users' posts
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         allUsers[u]->loadAllPosts();
@@ -1074,7 +1081,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
     }
 
-    // Remove this user's saved posts from other users' saved_posts.txt
+    // Remove user's saved post references from other users' records
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         string savedPath = "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt";
@@ -1084,7 +1091,6 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
             string line;
             while (getline(sf, line)) {
                 if (!line.empty() && line.back() == '\r') line.pop_back();
-                // line format: postId|ownerUsername  — skip lines owned by uname
                 size_t sep = line.find('|');
                 if (sep != string::npos) {
                     string owner = line.substr(sep + 1);
@@ -1100,51 +1106,34 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         if (swf.is_open()) { swf << remaining; swf.close(); }
     }
 
-    // Delete following/followers/notifications files
+    // Delete stray management files
     removeFile("data/Following/" + uname + "_following.txt");
     removeFile("data/Following/" + uname + "_followers.txt");
-    removeFile("data/Notifications/" + uname + "_notif.txt");
     removeFile("data/Users/" + uname + "_reporters.txt");
-
-    // Clean up messages — remove any chat file containing uname
-    // (best-effort: remove files named *uname* in data/Messages/)
     removeFile("data/Messages/" + uname + "_index.txt");
-
-    // Remove uname from every other user's message index
-    for (int u = 0; u < userCount; u++) {
-        if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
-        string indexPath = "data/Messages/" + allUsers[u]->getUsername() + "_index.txt";
-        string remaining;
-        ifstream mf(indexPath);
-        if (mf.is_open()) {
-            string line;
-            while (getline(mf, line)) {
-                if (!line.empty() && line.back() == '\r') line.pop_back();
-                if (!line.empty() && line != uname) remaining += line + "\n";
-            }
-            mf.close();
-        }
-        ofstream mwf(indexPath, ios::out);
-        if (mwf.is_open()) { mwf << remaining; mwf.close(); }
-    }
-
-    // Delete user file and remove from users_list.txt
     removeFile("data/Users/" + uname + ".txt");
+
+    // ─── PART 4: LOGICAL SYSTEM DELETE ───
     removeFromUser_List(uname);
 
-    // Remove from allUsers array
-    User** newArray = (userCount - 1 > 0) ? new User * [userCount - 1] : nullptr;
-    int idx = 0;
-    for (int i = 0; i < userCount; i++)
-        if (allUsers[i] && allUsers[i]->getUsername() != uname)
-            newArray[idx++] = allUsers[i];
-    delete[] allUsers;
-    allUsers = newArray;
-    userCount--;
+    int deleteIdx = -1;
+    for (int i = 0; i < userCount; i++) {
+        if (allUsers[i] && allUsers[i]->getUsername() == uname) {
+            deleteIdx = i;
+            break;
+        }
+    }
 
-    cout << "Account fully deleted: " << uname << endl;
+    if (deleteIdx != -1) {
+        // Shift global array to fill the gap left by the deleted user
+        for (int i = deleteIdx; i < userCount - 1; i++) {
+            allUsers[i] = allUsers[i + 1];
+        }
+        userCount--;
+    }
+
+    cout << "Full system wipe complete for: " << uname << endl;
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1161,7 +1150,7 @@ bool User::hasPost(const string& postId) const {
 
 string* User::getConversationHistory(const string& username, int& outCount) {
     outCount = 0;
-    int      capacity = 16;
+    int capacity = 16;
     string* peers = new string[capacity];
 
     string path = "data/Messages/" + username + "_index.txt";
@@ -1173,7 +1162,6 @@ string* User::getConversationHistory(const string& username, int& outCount) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) continue;
 
-        // check duplicate
         bool already = false;
         for (int i = 0; i < outCount; i++)
             if (peers[i] == line) { already = true; break; }
@@ -1197,7 +1185,6 @@ void User::addConversationToHistory(const string& username, const string& peerUs
     mkdirIfNeeded("data/Messages");
     string path = "data/Messages/" + username + "_index.txt";
 
-    // Check if already exists
     ifstream rf(path);
     if (rf.is_open()) {
         string line;
@@ -1267,7 +1254,6 @@ User* findAndLogin(User**& allUsers, int userCount, string username, string pass
     for (int i = 0; i < userCount; i++) {
         if (!allUsers[i]) continue;
         if (allUsers[i]->getUsername() == username) {
-            if (allUsers[i]->getIsBanned()) return nullptr;
             if (allUsers[i]->login(password)) return allUsers[i];
             return nullptr;
         }
