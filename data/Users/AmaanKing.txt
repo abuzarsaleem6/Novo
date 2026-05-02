@@ -1,0 +1,10 @@
+username|AmaanKing
+password|123gay123@SSS
+bio|I am AX Friend
+isBanned|0
+isReported|0
+isReportedCount|0
+followingCount|1
+followersCount|1
+postCount|1
+savedPostCount|8

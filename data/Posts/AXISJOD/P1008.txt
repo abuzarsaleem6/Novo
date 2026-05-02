@@ -1,0 +1,8 @@
+postId|P1008
+content|7
+authorUsername|AXISJOD
+timeOfCreation|2026-05-02 18:02:44
+isReported|0
+reportCount|0
+commentCount|1
+likeCount|0

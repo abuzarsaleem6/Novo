@@ -1,0 +1,10 @@
+username|Abuzar
+password|123gay123@SS
+bio|AX ka fanboy
+isBanned|0
+isReported|0
+isReportedCount|0
+followingCount|0
+followersCount|0
+postCount|1
+savedPostCount|0

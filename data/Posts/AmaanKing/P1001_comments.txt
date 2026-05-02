@@ -1,0 +1,14 @@
+commentId|C1777726882105
+content|Omg Amaan !
+creatorUsername|AXISJOD
+timeOfCreation|2026-05-02 18:01:22
+isReported|0
+likeCount|0
+---
+commentId|C1777727248665
+content|Love you
+creatorUsername|AmaanKing
+timeOfCreation|2026-05-02 18:07:28
+isReported|0
+likeCount|0
+---

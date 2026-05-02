@@ -1,0 +1,8 @@
+postId|P1000
+content|I will score an ace today
+authorUsername|AXISJOD
+timeOfCreation|2026-05-02 17:55:44
+isReported|0
+reportCount|0
+commentCount|1
+likeCount|1

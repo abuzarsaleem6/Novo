@@ -1,0 +1,10 @@
+username|admin123
+password|Admin#123
+bio|Platform Administrator
+isBanned|0
+isReported|0
+isReportedCount|0
+followingCount|0
+followersCount|0
+postCount|0
+savedPostCount|0

@@ -1,0 +1,8 @@
+postId|P1009
+content|Abdullah is my friend
+authorUsername|Abuzar
+timeOfCreation|2026-05-02 23:35:17
+isReported|0
+reportCount|0
+commentCount|0
+likeCount|0

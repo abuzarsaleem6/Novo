@@ -19,7 +19,7 @@ private:
     void allocateAndCopy(char*& dest, const char* source);
 
 public:
-    
+   
     Timer(const char* username);
     Timer(const Timer& other);
     Timer& operator=(const Timer& other);
@@ -29,7 +29,7 @@ public:
     void start();
     void stop();
     void reset();
-    void update(); 
+    void update();
 
     
     void displayTimeSpent() const;

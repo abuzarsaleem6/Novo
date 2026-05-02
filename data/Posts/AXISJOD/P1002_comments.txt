@@ -1,0 +1,21 @@
+commentId|C1777727136137
+content|1
+creatorUsername|AmaanKing
+timeOfCreation|2026-05-02 18:05:36
+isReported|0
+likeCount|0
+---
+commentId|C1777727143977
+content|2
+creatorUsername|AmaanKing
+timeOfCreation|2026-05-02 18:05:43
+isReported|0
+likeCount|0
+---
+commentId|C1777727145689
+content|3
+creatorUsername|AmaanKing
+timeOfCreation|2026-05-02 18:05:45
+isReported|0
+likeCount|0
+---

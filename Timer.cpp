@@ -67,7 +67,7 @@ void Timer::start() {
 
 void Timer::stop() {
     isRunning = false;
-    update(); 
+    update();
 }
 
 void Timer::reset() {
@@ -84,11 +84,9 @@ void Timer::update() {
         int currentMinute = ltm->tm_min;
         int currentSecond = ltm->tm_sec;
 
-      
         int startInSeconds = startHour * 3600 + startMinute * 60 + startSecond;
         int currentInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
 
-      
         if (currentInSeconds < startInSeconds) {
             currentInSeconds += 24 * 3600;
         }

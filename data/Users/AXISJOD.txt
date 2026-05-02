@@ -1,0 +1,10 @@
+username|AXISJOD
+password|Kz1eu@sss
+bio|I like Gaming with Amaan
+isBanned|0
+isReported|0
+isReportedCount|0
+followingCount|1
+followersCount|1
+postCount|8
+savedPostCount|1
