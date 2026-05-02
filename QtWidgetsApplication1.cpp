@@ -366,7 +366,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     auto* timeRightLbl = makeLabel(timeStr, "postTime");
     timeRightLbl->setStyleSheet("color: #888888; font-size: 11px;");
     timeRightLbl->setAlignment(Qt::AlignRight);
-    timeRightLbl->setFixedWidth(80);
+    timeRightLbl->setFixedWidth(130); // Increased width for better date visibility
     headerRow->addWidget(timeRightLbl, 0, Qt::AlignVCenter);
 
     if (m_isOwner) {
@@ -377,8 +377,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         editBtn->setStyleSheet(
             "QPushButton{background:transparent;border:none;color:#888888;font-size:16px;border-radius:6px;}"
             "QPushButton:hover{background:#1E1E1E;color:#AAAAFF;}");
-        connect(editBtn, &QPushButton::clicked, this,
-            [this]() { emit editClicked(m_post); });
+        connect(editBtn, &QPushButton::clicked, this, [this]() { emit editClicked(m_post); });
         headerRow->addWidget(editBtn, 0, Qt::AlignVCenter);
 
         auto* delBtn = new QPushButton("🗑️");
@@ -387,8 +386,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         delBtn->setStyleSheet(
             "QPushButton{background:transparent;border:none;color:#666688;font-size:18px;border-radius:6px;}"
             "QPushButton:hover{background:rgba(255,68,68,0.1);color:#FF4444;}");
-        connect(delBtn, &QPushButton::clicked, this,
-            [this]() { emit deleteClicked(m_post); });
+        connect(delBtn, &QPushButton::clicked, this, [this]() { emit deleteClicked(m_post); });
         headerRow->addWidget(delBtn, 0, Qt::AlignVCenter);
     }
 
@@ -406,7 +404,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     actRow->setContentsMargins(0, 10, 0, 0);
     actRow->setSpacing(20);
 
-    // Like button
+    // Like button logic
     bool alreadyLiked = !m_isOwner && m_post->isLikedBy(m_viewerUsername.toStdString());
     auto* likeBtn = new QPushButton(alreadyLiked ? "♥" : "♡");
     likeBtn->setFixedSize(36, 36);
@@ -447,23 +445,18 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     likeLayout->addWidget(likeCountLbl);
     actRow->addLayout(likeLayout);
 
-    // Comment button
-    // Comment button — hidden for owner's own posts
+    // Comment button logic
     auto* commentBtn = new QPushButton("💬");
     commentBtn->setFixedSize(36, 36);
     commentBtn->setCursor(Qt::PointingHandCursor);
-    commentBtn->setStyleSheet(
-        "QPushButton{background:transparent;border:none;color:#A0A0C0;font-size:20px;}"
-        "QPushButton:hover{color:#7070FF;}");
+    commentBtn->setStyleSheet("QPushButton{background:transparent;border:none;color:#A0A0C0;font-size:20px;} QPushButton:hover{color:#7070FF;}");
+
     if (m_isOwner) {
         commentBtn->setEnabled(false);
-        commentBtn->setToolTip("You cannot comment on your own posts.");
-        commentBtn->setStyleSheet(
-            "QPushButton{background:transparent;border:none;color:#3A3A5A;font-size:20px;}");
+        commentBtn->setStyleSheet("QPushButton{background:transparent;border:none;color:#3A3A5A;font-size:20px;}");
     }
     else {
-        connect(commentBtn, &QPushButton::clicked, this,
-            [this]() { emit commentClicked(m_post); });
+        connect(commentBtn, &QPushButton::clicked, this, [this]() { emit commentClicked(m_post); });
     }
 
     auto* commentCountLbl = new QLabel(QString::number(m_post->getCommentsCount()));
@@ -475,50 +468,35 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     commentLayout->addWidget(commentCountLbl);
     actRow->addLayout(commentLayout);
 
-    QPushButton* saveBtn = nullptr;
-
+    // ── Save button (Refactored to use members) ───────────────────────────
     if (!m_isOwner) {
-        // ── Save button ──────────────────────────────────────────────────────
         auto* saveCol = new QVBoxLayout;
         saveCol->setSpacing(2);
         saveCol->setAlignment(Qt::AlignCenter);
 
-        saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
-        saveBtn->setCursor(Qt::PointingHandCursor);
-        saveBtn->setFixedSize(24, 24);
+        m_saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
+        m_saveBtn->setCursor(Qt::PointingHandCursor);
+        m_saveBtn->setFixedSize(24, 24);
 
-        QLabel* saveLbl = new QLabel(m_isSaved ? "Saved" : "Save");
-        saveLbl->setAlignment(Qt::AlignCenter);
+        m_saveLbl = new QLabel(m_isSaved ? "Saved" : "Save");
+        m_saveLbl->setAlignment(Qt::AlignCenter);
 
-        if (m_isSaved) {
-            saveBtn->setStyleSheet("background:#0F1F10;border:none;color:#44CC55;font-size:15px;border-radius:7px;");
-            saveLbl->setStyleSheet("color:#44CC55;font-size:11px;");
-        }
-        else {
-            saveBtn->setStyleSheet("background:transparent;border:none;color:#44664A;font-size:15px;border-radius:7px;");
-            saveLbl->setStyleSheet("color:#F5A623;font-size:11px;");
-        }
+        // Apply initial styling
+        updateSaveStatus(m_isSaved);
 
-        saveCol->addWidget(saveBtn, 0, Qt::AlignCenter);
-        saveCol->addWidget(saveLbl, 0, Qt::AlignCenter);
+        saveCol->addWidget(m_saveBtn, 0, Qt::AlignCenter);
+        saveCol->addWidget(m_saveLbl, 0, Qt::AlignCenter);
 
-        connect(saveBtn, &QPushButton::clicked, this, [this, saveBtn, saveLbl]() {
+        connect(m_saveBtn, &QPushButton::clicked, this, [this]() {
             if (m_isSaved) {
                 emit unsaveClicked(m_post);
                 m_isSaved = false;
-                saveBtn->setText("☆");
-                saveBtn->setStyleSheet("background:transparent;border:none;color:#44664A;font-size:15px;border-radius:7px;");
-                saveLbl->setText("Save");
-                saveLbl->setStyleSheet("color:#F5A623;font-size:11px;");
             }
             else {
                 emit saveClicked(m_post, m_authorUsername);
                 m_isSaved = true;
-                saveBtn->setText("★");
-                saveBtn->setStyleSheet("background:#0F1F10;border:none;color:#44CC55;font-size:15px;border-radius:7px;");
-                saveLbl->setText("Saved");
-                saveLbl->setStyleSheet("color:#44CC55;font-size:11px;");
             }
+            updateSaveStatus(m_isSaved); // Use the helper function here
             });
 
         actRow->addLayout(saveCol);
@@ -552,9 +530,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
                 QMessageBox::information(this, "Already Reported", "You have already reported this post.");
                 return;
             }
-            auto r = QMessageBox::question(this, "Report Post",
-                "Are you sure you want to report this post?",
-                QMessageBox::Yes | QMessageBox::No);
+            auto r = QMessageBox::question(this, "Report Post", "Are you sure you want to report this post?", QMessageBox::Yes | QMessageBox::No);
             if (r == QMessageBox::Yes) {
                 emit reportClicked(m_post, m_authorUsername);
                 m_isPostReported = true;
@@ -594,9 +570,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
                 QMessageBox::information(this, "Already Reported", "You have already reported this user.");
                 return;
             }
-            auto r = QMessageBox::question(this, "Report User",
-                "Report user @" + m_authorUsername + "?",
-                QMessageBox::Yes | QMessageBox::No);
+            auto r = QMessageBox::question(this, "Report User", "Report user @" + m_authorUsername + "?", QMessageBox::Yes | QMessageBox::No);
             if (r == QMessageBox::Yes) {
                 emit reportUserClicked(m_authorUsername);
                 m_isAuthorReported = true;
@@ -610,6 +584,29 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
 
     root->addLayout(actRow);
 }
+
+// ── Helper Function for Styling ──────────────────────────────────────────
+void PostCard::updateSaveStatus(bool isSaved) {
+    if (!m_saveBtn || !m_saveLbl) return;
+
+    if (isSaved) {
+        m_saveBtn->setText("★");
+        m_saveBtn->setStyleSheet("background:#0F1F10;border:none;color:#44CC55;font-size:15px;border-radius:7px;");
+        m_saveLbl->setText("Saved");
+        m_saveLbl->setStyleSheet("color:#44CC55;font-size:11px;");
+    }
+    else {
+        m_saveBtn->setText("☆");
+        m_saveBtn->setStyleSheet("background:transparent;border:none;color:#44664A;font-size:15px;border-radius:7px;");
+        m_saveLbl->setText("Save");
+        m_saveLbl->setStyleSheet("color:#F5A623;font-size:11px;");
+    }
+
+    m_saveBtn->style()->unpolish(m_saveBtn);
+    m_saveBtn->style()->polish(m_saveBtn);
+    m_saveBtn->update();
+}
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  CommentsPage
@@ -832,59 +829,76 @@ PublicProfileWidget::PublicProfileWidget(QWidget* parent)
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
 }
-
-void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
-    User** allUsers, int userCount)
-{
+void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** allUsers, int userCount) {
+    // 1. Context aur data refresh karein
+    m_targetUser = targetUser;
+    m_viewer = viewer;
     m_allUsers = allUsers;
     m_userCount = userCount;
 
-    // Clear previous content
+    // Latest saved posts load karein taake Save/Saved status sahi show ho
+    if (m_viewer) {
+        m_viewer->loadSavedPosts(allUsers, userCount);
+    }
+
+    // 2. Purane widgets ko layout se saaf karein
     QLayoutItem* item;
     while ((item = m_mainLayout->takeAt(0)) != nullptr) {
         if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
 
-    // Back button row
-    auto* topRow = new QHBoxLayout;
-    topRow->setContentsMargins(28, 24, 28, 0);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0);
+    m_mainLayout->setSpacing(0);
+
+    // PART A: THE PROTECTED HEADER (Physical Shield)
+    // Is wrapper ko fixed height aur solid background diya gaya hai
+    auto* headerWrapper = new QWidget;
+    headerWrapper->setObjectName("fixedHeader");
+    headerWrapper->setFixedHeight(80);
+    headerWrapper->setStyleSheet("background: #0C0C10; border-bottom: 1px solid #1A1A2A;");
+
+    auto* topRow = new QHBoxLayout(headerWrapper);
+    topRow->setContentsMargins(28, 20, 28, 10);
+
     auto* backBtn = new QPushButton("← Back to Search");
     backBtn->setObjectName("secondaryBtn");
-    backBtn->setFixedWidth(150);
-    backBtn->setFixedHeight(34);
+    backBtn->setFixedWidth(160);
+    backBtn->setFixedHeight(40);
     backBtn->setCursor(Qt::PointingHandCursor);
+
+    // Back button connection
     connect(backBtn, &QPushButton::clicked, this, &PublicProfileWidget::backClicked);
+
     topRow->addWidget(backBtn);
     topRow->addStretch(1);
-    auto* headerWrapper = new QWidget;
-    headerWrapper->setLayout(topRow);
-    m_mainLayout->addWidget(headerWrapper);
 
-    // Scrollable content
+    // Header ko layout mein sab se uper lock karein
+    m_mainLayout->addWidget(headerWrapper, 0, Qt::AlignTop);
+
+    // PART B: THE SCROLL AREA
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setStyleSheet("background: transparent; border: none;");
+    scroll->setStyleSheet("background: transparent;");
 
     auto* container = new QWidget;
     auto* layout = new QVBoxLayout(container);
-    layout->setContentsMargins(28, 16, 28, 24);
+    layout->setContentsMargins(28, 10, 28, 24);
     layout->setSpacing(20);
 
-    // Profile header card
+    // --- Profile Identity Card (Avatar & Stats) ---
     auto* headerCard = new QFrame;
     headerCard->setObjectName("postCard");
     auto* hLayout = new QVBoxLayout(headerCard);
+    hLayout->setContentsMargins(20, 20, 20, 20);
 
     auto* row = new QHBoxLayout;
     QString ini = QString::fromStdString(targetUser->getUsername()).left(1).toUpper();
     auto* av = new QLabel(ini);
     av->setFixedSize(60, 60);
     av->setAlignment(Qt::AlignCenter);
-    av->setStyleSheet(
-        "background:#202040;border-radius:30px;"
-        "font-size:24px;font-weight:bold;color:#7070FF;");
+    av->setStyleSheet("background:#202040;border-radius:30px;font-size:24px;font-weight:bold;color:#7070FF;");
     row->addWidget(av);
 
     auto* nameCol = new QVBoxLayout;
@@ -916,14 +930,13 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
     hLayout->addLayout(statsRow);
     layout->addWidget(headerCard);
 
-    // Posts
+    // --- User's Recent Posts ---
     auto* postsTitle = new QLabel("Recent Posts");
     postsTitle->setStyleSheet("font-size:16px;font-weight:bold;color:#E8E8F8;");
     layout->addWidget(postsTitle);
 
-    targetUser->loadAllPosts();
-    viewer->loadSavedPosts(m_allUsers, m_userCount);
-
+    if (targetUser->getPostCount() == 0)
+        targetUser->loadAllPosts();
     if (targetUser->getPostCount() == 0) {
         auto* empty = new QLabel("This user hasn't posted anything yet.");
         empty->setStyleSheet("color:#56567A;font-size:13px;");
@@ -935,59 +948,86 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
             Posts* p = targetUser->getPostByIndex(i);
             if (!p || !p->isValid()) continue;
 
-            bool isSaved = viewer->hasSavedPost(p->getPostId());
-            bool isAuthorReported = targetUser->hasReportedUser(viewer->getUsername());
-            bool isPostReported = p->hasReportedBy(viewer->getUsername());
+            // Null check fix applied here
+            bool isSaved = viewer ? viewer->hasSavedPost(p->getPostId()) : false;
+            QString viewerName = viewer ? QString::fromStdString(viewer->getUsername()) : "";
+            bool isAuthorReported = viewer ? viewer->hasReportedUser(targetUser->getUsername()) : false;
+            bool isPostReported = p->hasReportedBy(viewerName.toStdString());
 
-            auto* card = new PostCard(p,
-                QString::fromStdString(targetUser->getUsername()),
-                false, isSaved,
-                QString::fromStdString(viewer->getUsername()),
-                isAuthorReported,
-                isPostReported);
+            auto* card = new PostCard(p, QString::fromStdString(targetUser->getUsername()),
+                false, isSaved, viewerName,
+                isAuthorReported, isPostReported);
+
+            // Helper lambda jo header ko hamesha z-order mein top par rakhega
+            auto ensureHeaderTop = [headerWrapper]() {
+                headerWrapper->raise();
+                headerWrapper->update();
+                };
+
+            connect(card, &PostCard::saveClicked, this, [this, viewer, targetUser, card, ensureHeaderTop](Posts* post) {
+                if (viewer && targetUser && post) {
+                    viewer->savePost(post->getPostId(), targetUser);
+                    card->updateSaveStatus(true);
+                    ensureHeaderTop();
+                }
+                });
+
+            connect(card, &PostCard::unsaveClicked, this, [this, viewer, card, ensureHeaderTop](Posts* post) {
+                if (viewer && post) {
+                    viewer->unsavePost(post->getPostId()); // removes from memory + writes file
+                    card->updateSaveStatus(false);         // immediately show ☆ Save
+                    ensureHeaderTop();
+                }
+                });
+
+            connect(card, &PostCard::likeClicked, this, [ensureHeaderTop]() {
+                ensureHeaderTop();
+                });
+
+            connect(card, &PostCard::reportClicked, this, [this, viewer, ensureHeaderTop](Posts* post, const QString&) {
+                if (viewer && post) {
+                    post->reportPost(viewer->getUsername()); // ← Actually report it
+                    post->savePostToFile();                  // ← PERSIST to disk
+                    ensureHeaderTop();
+                }
+                });
+
+            // Report logic fix applied here
+            connect(card, &PostCard::reportUserClicked, this, [this, viewer, targetUser, ensureHeaderTop](const QString&) {
+                if (viewer && targetUser) {
+                    targetUser->reportUserBy(viewer->getUsername());
+                    targetUser->saveToFile(); // ← PERSIST to disk
+                    ensureHeaderTop();
+                    QMessageBox::information(this, "Reported", "User has been reported.");
+                }
+                });
 
             connect(card, &PostCard::commentClicked, this, [p, this]() {
                 emit requestOpenComments(p);
                 });
-            connect(card, &PostCard::saveClicked, this, [viewer, targetUser](Posts* post) {
-                if (viewer && targetUser && post)
-                    viewer->savePost(post->getPostId(), targetUser);
-                });
-            connect(card, &PostCard::unsaveClicked, this, [viewer](Posts* post) {
-                if (viewer && post)
-                    viewer->unsavePost(post->getPostId());
-                });
-            connect(card, &PostCard::likeClicked, this, [](Posts*) {});
-            connect(card, &PostCard::reportUserClicked, this,
-                [this, viewer, targetUser](const QString&) {
-                    if (targetUser->hasReportedUser(viewer->getUsername())) {
-                        QMessageBox::information(this, "Already Reported",
-                            "You have already reported this user.");
-                        return;
-                    }
-                    targetUser->reportUserBy(viewer->getUsername());
-                    QMessageBox::information(this, "Reported", "User has been reported.");
-                });
-            connect(card, &PostCard::reportClicked, this,
-                [this, viewer](Posts* post, const QString&) {
-                    if (!post || !viewer) return;
-                    if (post->hasReportedBy(viewer->getUsername())) {
-                        QMessageBox::information(this, "Already Reported",
-                            "You have already reported this post.");
-                        return;
-                    }
-                    post->reportPost(viewer->getUsername());
-                    QMessageBox::information(this, "Reported", "Post has been reported to admins.");
-                });
+
             layout->addWidget(card);
         }
     }
 
     layout->addStretch(1);
     scroll->setWidget(container);
-    m_mainLayout->addWidget(scroll, 1);
-}
 
+    // Scroll area baaqi space le lega lekin header ke niche rahega
+    m_mainLayout->addWidget(scroll, 1);
+
+    // Final raise taake layout bante hi header top par ho
+    headerWrapper->raise();
+}
+void PublicProfileWidget::refresh() {
+    if (m_targetUser && m_viewer) {
+        // Must reload target's posts FIRST so loadSavedPosts() can find them by ID
+        m_targetUser->loadAllPosts();
+        // Now reload viewer's saved list — it will correctly find the fresh Posts* pointers
+        m_viewer->loadSavedPosts(m_allUsers, m_userCount);
+        loadProfile(m_targetUser, m_viewer, m_allUsers, m_userCount);
+    }
+}
 // ══════════════════════════════════════════════════════════════════════════════
 //  NotificationItem
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1415,7 +1455,17 @@ void FeedPage::loadPosts() {
             if (!p || !p->isValid()) continue;
 
             bool saved = m_user->hasSavedPost(p->getPostId());
-            bool reportedByMe = m_allUsers[u]->hasReportedUser(m_user->getUsername());
+            bool reportedByMe = [&]() -> bool {
+                string path = "data/Users/" + m_allUsers[u]->getUsername() + "_reporters.txt";
+                ifstream f(path);
+                if (!f.is_open()) return false;
+                string line;
+                while (getline(f, line)) {
+                    if (!line.empty() && line.back() == '\r') line.pop_back();
+                    if (line == m_user->getUsername()) return true;
+                }
+                return false;
+                }();
             bool postReportedByMe = p->hasReportedBy(m_user->getUsername());
 
             auto* card = new PostCard(p,
@@ -1511,11 +1561,24 @@ void FeedPage::onReportUserFromPost(const QString& username) {
         }
     }
     if (!target) return;
-    if (target->hasReportedUser(m_user->getUsername())) {
+    // Correct check: is currentUser's name in target's reporters file?
+    bool alreadyReported = [&]() -> bool {
+        string path = "data/Users/" + target->getUsername() + "_reporters.txt";
+        ifstream f(path);
+        if (!f.is_open()) return false;
+        string line;
+        while (getline(f, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line == m_user->getUsername()) return true;
+        }
+        return false;
+        }();
+    if (alreadyReported) {
         QMessageBox::information(this, "Already Reported", "You have already reported this user.");
         return;
     }
     target->reportUserBy(m_user->getUsername());
+    target->saveToFile(); // ← persist so refresh reads correct state
     QMessageBox::information(this, "Reported", "User @" + username + " has been reported.");
 }
 
@@ -1683,10 +1746,13 @@ void MyPostsPage::loadPosts() {
         Posts* p = m_user->getPostByIndex(i);
         if (!p || !p->isValid()) continue;
         auto* card = new PostCard(p,
-            QString::fromStdString(m_user->getUsername()),
-            true, false,
-            QString::fromStdString(m_user->getUsername()),
-            m_user->getIsReported());
+            QString::fromStdString(m_user->getUsername()), // 1: authorUsername
+            true,                                          // 2: isOwner
+            false,                                         // 3: isSaved
+            QString::fromStdString(m_user->getUsername()), // 4: viewerUsername
+            m_user->getIsReported(),                       // 5: isAuthorReported
+            false                                          // 6: isPostReported
+        );
         connect(card, &PostCard::deleteClicked, this, &MyPostsPage::onDeletePost);
         connect(card, &PostCard::editClicked, this, &MyPostsPage::onEditPost);
         connect(card, &PostCard::commentClicked, this, &MyPostsPage::onCommentPost);
@@ -1910,10 +1976,7 @@ SearchPage::SearchPage(User**& allUsers, int& userCount, User* currentUser, QWid
     : QWidget(parent),
     m_currentUser(currentUser),
     m_allUsers(allUsers),
-    m_userCount(userCount),
-    m_foundUser(nullptr),
-    m_followBtn(nullptr),
-    m_reportBtn(nullptr)
+    m_userCount(userCount)
 {
     m_engine.setUsers(m_allUsers, m_userCount);
 
@@ -1948,45 +2011,29 @@ SearchPage::SearchPage(User**& allUsers, int& userCount, User* currentUser, QWid
 
 void SearchPage::onSearch() {
     QString query = m_searchInput->text().trimmed();
-    if (query.isEmpty()) {
-        QMessageBox::warning(this, "Novo", "Please enter a search query.");
-        return;
-    }
+    if (query.isEmpty()) return;
 
-    // Refresh search engine index in case users changed since login
-    m_engine.setUsers(m_allUsers, m_userCount);
+    clearResults(); // Purane results saaf karein
 
-    clearResults();
-    m_foundUser = nullptr;
-    m_followBtn = nullptr;
-    m_reportBtn = nullptr;
+    int resultsCount = 0;
+    // New engine method call karein
+    User** foundUsers = m_engine.searchUsersBySubstring(query.toStdString(), resultsCount);
 
-    // Pure C++ backend search
-    User* found = m_engine.searchUser(query.toStdString());
-
-    if (!found) {
-        // Partial match: iterate manually
-        for (int i = 0; i < m_userCount; ++i) {
-            if (!m_allUsers[i]) continue;
-            string uname = m_allUsers[i]->getUsername();
-            if (uname.find(query.toStdString()) != string::npos) {
-                found = m_allUsers[i];
-                break;
-            }
-        }
-    }
-
-    if (!found) {
-        auto* nf = new QLabel("No user found for \"" + query + "\"");
+    if (!foundUsers || resultsCount == 0) {
+        auto* nf = new QLabel("No users found matching \"" + query + "\"");
         nf->setAlignment(Qt::AlignCenter);
         nf->setStyleSheet("color:#34345A;font-size:13px;padding:30px 0;");
         m_resultsLayout->insertWidget(0, nf);
         return;
     }
 
-    
-    m_foundUser = found;
-    showUserCard(found);
+    // Har dhoonde gaye user ke liye card banayein
+    for (int i = 0; i < resultsCount; i++) {
+        showUserCard(foundUsers[i]);
+    }
+
+    // Memory cleanup (Sirf array delete karein, users nahi!)
+    delete[] foundUsers;
 }
 
 void SearchPage::clearResults() {
@@ -2061,6 +2108,7 @@ void SearchPage::showUserCard(User* user) {
         btnRow->setContentsMargins(0, 0, 0, 0);
         btnRow->addStretch(1);
 
+        // 1. View Profile (Captured lambda - already working)
         auto* profileBtn = new QPushButton("👤 View Profile");
         profileBtn->setObjectName("secondaryBtn");
         profileBtn->setFixedWidth(130);
@@ -2072,25 +2120,63 @@ void SearchPage::showUserCard(User* user) {
         btnRow->addWidget(profileBtn);
         btnRow->addSpacing(10);
 
+        // 2. Follow Button (Local pointer instead of member variable)
         bool following = m_currentUser->isFollowing(user->getUsername());
-        m_followBtn = following ? makeSecondary("✓ Following") : makePrimary("+ Follow");
-        m_followBtn->setFixedWidth(130);
-        m_followBtn->setFixedHeight(36);
-        connect(m_followBtn, &QPushButton::clicked, this, &SearchPage::onFollowUser);
-        btnRow->addWidget(m_followBtn);
+        auto* followBtn = following ? makeSecondary("✓ Following") : makePrimary("+ Follow");
+        followBtn->setFixedWidth(130);
+        followBtn->setFixedHeight(36);
+
+        // Lambda captures 'user' and 'followBtn' specifically for THIS card
+        connect(followBtn, &QPushButton::clicked, this, [this, user, followBtn]() {
+            string targetName = user->getUsername();
+            if (m_currentUser->isFollowing(targetName)) {
+                m_currentUser->unfollowUser(targetName);
+                followBtn->setText("+ Follow");
+                followBtn->setObjectName("primaryBtn");
+            }
+            else {
+                m_currentUser->followUser(user, m_allUsers, m_userCount);
+                followBtn->setText("✓ Following");
+                followBtn->setObjectName("secondaryBtn");
+            }
+            followBtn->style()->unpolish(followBtn);
+            followBtn->style()->polish(followBtn);
+            followBtn->update();
+            });
+        btnRow->addWidget(followBtn);
         btnRow->addSpacing(10);
 
-        bool alreadyReported = user->hasReportedUser(m_currentUser->getUsername())
-            || user->getIsReported();
-        m_reportBtn = makeDanger(alreadyReported ? "⚑ Reported" : "⚑ Report");
-        m_reportBtn->setFixedWidth(100);
-        m_reportBtn->setFixedHeight(36);
-        m_reportBtn->setEnabled(!alreadyReported);
-        if (alreadyReported)
-            m_reportBtn->setStyleSheet(
-                "background:#1C0808;border:1px solid #4A2020;color:#CC4444;border-radius:9px;font-size:13px;");
-        connect(m_reportBtn, &QPushButton::clicked, this, &SearchPage::onReportUser);
-        btnRow->addWidget(m_reportBtn);
+        // 3. Report Button (Local pointer)
+       // Correct check: is currentUser's name in the TARGET user's reporters file?
+        bool alreadyReported = [&]() -> bool {
+            string path = "data/Users/" + user->getUsername() + "_reporters.txt";
+            ifstream f(path);
+            if (!f.is_open()) return false;
+            string line;
+            while (getline(f, line)) {
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (line == m_currentUser->getUsername()) return true;
+            }
+            return false;
+            }();
+        auto* reportBtn = makeDanger(alreadyReported ? "⚑ Reported" : "⚑ Report");
+        reportBtn->setFixedWidth(100);
+        reportBtn->setFixedHeight(36);
+        reportBtn->setEnabled(!alreadyReported);
+
+        connect(reportBtn, &QPushButton::clicked, this, [this, user, reportBtn]() {
+            auto r = QMessageBox::question(this, "Report User",
+                "Report @" + QString::fromStdString(user->getUsername()) + "?",
+                QMessageBox::Yes | QMessageBox::No);
+            if (r == QMessageBox::Yes) {
+                user->reportUserBy(m_currentUser->getUsername());
+                user->saveToFile(); // ← persist so next search reads correct state
+                reportBtn->setText("⚑ Reported");
+                reportBtn->setEnabled(false);
+                reportBtn->setStyleSheet("background:#1C0808;color:#CC4444;border-radius:9px;");
+            }
+            });
+        btnRow->addWidget(reportBtn);
         btnRow->addStretch(1);
         cl->addLayout(btnRow);
     }
@@ -2098,58 +2184,7 @@ void SearchPage::showUserCard(User* user) {
     m_resultsLayout->insertWidget(0, card);
 }
 
-void SearchPage::onFollowUser() {
-    if (!m_foundUser || !m_currentUser || !m_followBtn) return;
 
-    string foundName = m_foundUser->getUsername();
-
-    // Re-fetch live pointer
-    User* found = nullptr;
-    for (int i = 0; i < m_userCount; ++i) {
-        if (m_allUsers[i] && m_allUsers[i]->getUsername() == foundName) {
-            found = m_allUsers[i]; break;
-        }
-    }
-    if (!found) return;
-
-    if (m_currentUser->isFollowing(foundName)) {
-        m_currentUser->unfollowUser(foundName);
-        m_followBtn->setText("+ Follow");
-        m_followBtn->setObjectName("primaryBtn");
-    }
-    else {
-        m_currentUser->followUser(found, m_allUsers, m_userCount);
-        m_followBtn->setText("✓ Following");
-        m_followBtn->setObjectName("secondaryBtn");
-    }
-    m_followBtn->style()->unpolish(m_followBtn);
-    m_followBtn->style()->polish(m_followBtn);
-    m_followBtn->update();
-}
-
-void SearchPage::onReportUser() {
-    if (!m_foundUser || !m_currentUser) return;
-    if (m_foundUser == m_currentUser) {
-        QMessageBox::warning(this, "Novo", "You cannot report yourself.");
-        return;
-    }
-    if (m_foundUser->hasReportedUser(m_currentUser->getUsername())) {
-        QMessageBox::information(this, "Already Reported",
-            "You have already reported this user.");
-        return;
-    }
-    auto r = QMessageBox::question(this, "Report User",
-        "Report @" + QString::fromStdString(m_foundUser->getUsername()) + "?",
-        QMessageBox::Yes | QMessageBox::No);
-    if (r == QMessageBox::Yes) {
-        m_foundUser->reportUserBy(m_currentUser->getUsername());
-        m_reportBtn->setText("⚑ Reported");
-        m_reportBtn->setStyleSheet(
-            "background:#1C0808;border:1px solid #4A2020;color:#CC4444;border-radius:9px;font-size:13px;");
-        m_reportBtn->setEnabled(false);
-        QMessageBox::information(this, "Novo", "User has been reported to admins.");
-    }
-}
 // ============================================================================
 //  QtWidgetsApplication1_completion.cpp
 //
@@ -3474,7 +3509,8 @@ void MainWindow::buildPages() {
                 m_publicProfilePage = new PublicProfileWidget;
                 connect(m_publicProfilePage, &PublicProfileWidget::backClicked,
                     this, [this]() {
-                        m_pages->setCurrentIndex(m_previousPageIndex);
+                        m_pages->setCurrentIndex(2); // Always go back to Search (index 2)
+                        setActiveSidebarButton(m_btnSearch);
                     });
                 connect(m_publicProfilePage, &PublicProfileWidget::requestOpenComments,
                     this, &MainWindow::onOpenComments);
@@ -3513,13 +3549,19 @@ void MainWindow::buildPages() {
     m_pages->addWidget(m_createPostPage);
 
     // 7 — Comments (hidden until triggered)
-    m_commentsPage = new CommentsPage(
-        m_currentUser ? QString::fromStdString(m_currentUser->getUsername()) : "");
-    connect(m_commentsPage, &CommentsPage::backClicked,
-        this, [this]() {
-            m_pages->setCurrentIndex(m_previousPageIndex);
-            // Refresh the originating page
-            if (m_previousPageIndex == 0) m_feedPage->refresh();
+    m_commentsPage = new CommentsPage(m_currentUser ? QString::fromStdString(m_currentUser->getUsername()) : "");
+
+    connect(m_commentsPage, &CommentsPage::backClicked, this, [this]() {
+        m_pages->setCurrentIndex(m_previousPageIndex);
+
+        // --- FIX: Agar hum Public Profile se aaye thay, toh usay refresh karein ---
+        if (m_pages->currentWidget() == m_publicProfilePage && m_publicProfilePage) {
+            
+            m_publicProfilePage->refresh(); // Agar aapne refresh() function banaya hai
+        }
+
+        if (m_previousPageIndex == 0) m_feedPage->refresh();
+        if (m_previousPageIndex == 4) m_profilePage->refresh();
         });
     m_pages->addWidget(m_commentsPage);
 }
@@ -3697,6 +3739,8 @@ void MainWindow::onSidebarCreatePost() {
 
 void MainWindow::onOpenComments(Posts* post) {
     if (!m_commentsPage || !post) return;
+    // If currently on public profile, we want back-from-comments to 
+    // return to public profile widget index, not overwrite with 2
     m_previousPageIndex = m_pages->currentIndex();
     m_commentsPage->loadPost(post);
     m_pages->setCurrentWidget(m_commentsPage);

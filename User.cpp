@@ -66,7 +66,6 @@ User::User() {
     following = nullptr;
     savedPosts = nullptr;
 }
-
 User::User(string username, string password, string bio) {
     this->following = nullptr;
     this->followers = nullptr;
@@ -89,7 +88,6 @@ User::User(string username, string password, string bio) {
     this->saveToFile();
     this->addToUserList();
 }
-
 User::User(const User& o) {
     username = o.username;
     password = o.password;
@@ -131,7 +129,6 @@ User::User(const User& o) {
             savedPosts[i] = o.savedPosts[i];
     }
 }
-
 User& User::operator=(const User& o) {
     if (this == &o) return *this;
 
@@ -182,7 +179,6 @@ User& User::operator=(const User& o) {
 
     return *this;
 }
-
 User::~User() {
     // posts[i] are owned — deep delete
     if (posts) {
@@ -209,7 +205,6 @@ User::~User() {
     followers = nullptr;
     followersCount = 0;
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
 //  VALIDATION
 // ══════════════════════════════════════════════════════════════════════════════
@@ -222,7 +217,6 @@ string User::validateUsername(const string& username) {
             return "Username cannot contain '|' or spaces";
     return "";
 }
-
 string User::validatePassword(const string& password) {
     if (password.length() < 8)  return "Password must be at least 8 characters";
     if (password.length() > 16) return "Password cannot exceed 16 characters";
@@ -231,14 +225,12 @@ string User::validatePassword(const string& password) {
             return "Password cannot contain '|' or spaces";
     return "";
 }
-
 string User::validateBio(const string& bio) {
     if (bio.length() > 100) return "Bio cannot exceed 100 characters";
     for (int i = 0; i < (int)bio.length(); i++)
         if (bio[i] == '|') return "Bio cannot contain '|'";
     return "";
 }
-
 string User::validatePostContent(const string& content) {
     if (content.empty()) return "Post content cannot be empty.";
     for (int i = 0; i < (int)content.length(); i++)
@@ -258,7 +250,6 @@ bool User::login(string password) {
     }
     return false;
 }
-
 void User::logOut() {
     isLoggedIn = false;
     saveToFile();
@@ -275,7 +266,6 @@ bool User::updatePassword(const string& newPassword) {
     saveToFile();
     return true;
 }
-
 bool User::updateBio(const string& newBio) {
     string err = validateBio(newBio);
     if (!err.empty()) return false;
@@ -722,10 +712,14 @@ void User::deletePost(string postId) {
     if (postCount > 1) {
         newPosts = new Posts * [postCount - 1];
         for (int i = 0; i < postCount; i++) {
-            if (posts[i]->getPostId() != postId)
-                newPosts[idx++] = posts[i];
-            else
+            if (posts[i]->getPostId() != postId) {
+                if (idx < postCount - 1) { 
+                    newPosts[idx++] = posts[i];
+                }
+            }
+            else {
                 delete posts[i];
+            }
         }
     }
     else {
@@ -801,15 +795,19 @@ void User::unsavePost(string postId) {
 }
 
 void User::saveSavedPostsToFile() {
-    mkdirIfNeeded(("data/Posts/" + this->username).c_str());
     string path = "data/Posts/" + this->username + "/saved_posts.txt";
-    ofstream file(path);
-    if (!file.is_open()) { cout << "Cannot open saved posts file." << endl; return; }
-    for (int i = 0; i < savedPostCount; i++)
-        if (savedPosts[i])
-            file << savedPosts[i]->getPostId() << "|"
-            << savedPosts[i]->getCreatorUsername() << "\n";
-    file.close();
+    ofstream outFile(path, ios::out);
+
+    if (!outFile.is_open()) return;
+
+    for (int i = 0; i < savedPostCount; i++) {
+        // CRITICAL FIX: Ensure the post pointer is valid before calling its methods
+        if (savedPosts[i] != nullptr && savedPosts[i]->isValid()) {
+            outFile << savedPosts[i]->getPostId() << "|"
+                << savedPosts[i]->getCreatorUsername() << "\n";
+        }
+    }
+    outFile.close();
 }
 
 void User::loadSavedPosts(User** allUsers, int userCount) {
@@ -865,7 +863,7 @@ void User::clearSavedPostsArray() {
 
 bool User::hasSavedPost(const string& postId) const {
     for (int i = 0; i < savedPostCount; ++i)
-        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) return true;
+        if (savedPosts[i] != nullptr && savedPosts[i]->getPostId() == postId) return true;
     return false;
 }
 
@@ -900,22 +898,23 @@ void User::reportUser() {
 
     ifstream rf("data/Admin/reported_users.txt");
     if (rf.is_open()) {
-        string line, uname;
-        while (getline(rf, line)) {
+        string line;
+        while (getline(rf, line) && rSize < MAX_REPORTED) {
             if (!line.empty() && line.back() == '\r') line.pop_back();
-            size_t sep = line.find('|');
-            if (sep == string::npos) continue;
-            string key = line.substr(0, sep);
-            string val = line.substr(sep + 1);
-            if (key == "username") {
-                uname = val;
-            }
-            else if (key == "reportCount" && !uname.empty() && rSize < MAX_REPORTED) {
-                rNames[rSize] = uname;
-                rCounts[rSize] = stoi(val);
-                rSize++;
-                uname.clear();
-            }
+            // format: username|NAME|reportCount|N
+            // parse all 4 parts
+            size_t p1 = line.find('|');
+            if (p1 == string::npos) continue;
+            size_t p2 = line.find('|', p1 + 1);
+            if (p2 == string::npos) continue;
+            size_t p3 = line.find('|', p2 + 1);
+            if (p3 == string::npos) continue;
+            string name = line.substr(p1 + 1, p2 - p1 - 1);
+            string count = line.substr(p3 + 1);
+            if (name.empty() || count.empty()) continue;
+            rNames[rSize] = name;
+            rCounts[rSize] = stoi(count);
+            rSize++;
         }
         rf.close();
     }
@@ -933,22 +932,27 @@ void User::reportUser() {
     ofstream wf("data/Admin/reported_users.txt", ios::out);
     if (wf.is_open()) {
         for (int i = 0; i < rSize; i++)
-            wf << "username|" << rNames[i] << "\n"
-            << "reportCount|" << rCounts[i] << "\n";
+            wf << "username|" << rNames[i] << "|reportCount|" << rCounts[i] << "\n";
         wf.close();
     }
-
     saveToFile();
 }
 
-bool User::hasReportedUser(const string& reporterUsername) const {
-    string path = "data/Users/" + this->username + "_reporters.txt";
+bool User::hasReportedUser(const string& targetUsername) const {
+    // 1. Target user ki file open karein, kyunke reports uske account par lagti hain
+    string path = "data/Users/" + targetUsername + "_reporters.txt";
     ifstream file(path);
+
     if (!file.is_open()) return false;
+
     string line;
     while (getline(file, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line == reporterUsername) return true;
+
+        // 2. Check karein ke kya MERA naam (this->username) uski file mein hai?
+        if (line == this->username) {
+            return true; // Haan, maine isay report kiya hua hai
+        }
     }
     return false;
 }
@@ -1115,6 +1119,44 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
 
     // ─── PART 4: LOGICAL SYSTEM DELETE ───
     removeFromUser_List(uname);
+
+    // Remove from reported_users.txt
+    {
+        const int MAX_R = 256;
+        string rNames[MAX_R];
+        int rCounts[MAX_R];
+        int rSize = 0;
+        ifstream rIn("data/Admin/reported_users.txt");
+        if (rIn.is_open()) {
+            string line, pendingName;
+            while (getline(rIn, line)) {
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                size_t sep = line.find('|');
+                if (sep == string::npos) continue;
+                string key = line.substr(0, sep);
+                string val = line.substr(sep + 1);
+                if (key == "username") {
+                    pendingName = val;
+                }
+                else if (key == "reportCount" && !pendingName.empty() && rSize < MAX_R) {
+                    if (pendingName != uname) { // skip the deleted user
+                        rNames[rSize] = pendingName;
+                        rCounts[rSize] = stoi(val);
+                        rSize++;
+                    }
+                    pendingName.clear();
+                }
+            }
+            rIn.close();
+        }
+        ofstream rOut("data/Admin/reported_users.txt", ios::out);
+        if (rOut.is_open()) {
+            for (int i = 0; i < rSize; i++)
+                rOut << "username|" << rNames[i] << "\n"
+                << "reportCount|" << rCounts[i] << "\n";
+            rOut.close();
+        }
+    }
 
     int deleteIdx = -1;
     for (int i = 0; i < userCount; i++) {

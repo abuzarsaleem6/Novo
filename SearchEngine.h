@@ -14,7 +14,10 @@ public:
     SearchEngine();
     SearchEngine(User** users, int count);
     void setUsers(User** users, int count);
-    User* searchUser(const std::string& username) const;
+
+    // Exact match ke bajaye substring search:
+    User** searchUsersBySubstring(const string& query, int& outResultsCount) const;
+
 private:
     User** allUsers;
     int    userCount;

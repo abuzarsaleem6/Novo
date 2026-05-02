@@ -41,6 +41,7 @@ public:
 class PostCard : public QFrame {
     Q_OBJECT
 public:
+    void updateSaveStatus(bool isSaved);
     PostCard(Posts* post, const QString& authorUsername, bool isOwner, bool isSaved, const QString& viewerUsername, bool isAuthorReported = false, bool isPostReported = false, QWidget* parent = nullptr);
 signals:
     void likeClicked(Posts* post);
@@ -52,6 +53,7 @@ signals:
     void unsaveClicked(Posts* post);
     void reportClicked(Posts* post, const QString& ownerUsername);
 private:
+   
     Posts* m_post;
     QString m_authorUsername;
     bool    m_isOwner;
@@ -59,6 +61,8 @@ private:
     QString m_viewerUsername;
     bool    m_isAuthorReported; // NEW
     bool    m_isPostReported;   // NEW
+    QPushButton* m_saveBtn = nullptr;
+    QLabel* m_saveLbl = nullptr;
 };
 
 class NotificationItem : public QFrame {
@@ -98,18 +102,25 @@ private:
     int        m_userCount;
 };
 class PublicProfileWidget : public QWidget {
-         Q_OBJECT
-     public:
-         PublicProfileWidget(QWidget* parent = nullptr);
-         void loadProfile(User* targetUser, User* viewer,User** allUsers, int userCount);   
-     signals:
-         void backClicked();
-         void requestOpenComments(Posts* post);
-     private:
-         QVBoxLayout* m_mainLayout;
-         User**  m_allUsers  = nullptr;   
-         int m_userCount = 0;
-     };
+    Q_OBJECT
+public:
+    PublicProfileWidget(QWidget* parent = nullptr);
+    void loadProfile(User* targetUser, User* viewer, User** allUsers, int userCount);
+    void refresh(); // Declaration for the refresh function
+
+signals:
+    void backClicked();
+    void requestOpenComments(Posts* post);
+
+private:
+    QVBoxLayout* m_mainLayout;
+    User** m_allUsers = nullptr;
+    int m_userCount = 0;
+
+    // --- ADD THESE TWO LINES ---
+    User* m_targetUser = nullptr; // For storing the current profile being viewed
+    User* m_viewer = nullptr;     // For storing the current logged-in user
+};
 
 class FeedPage : public QWidget {
     Q_OBJECT
@@ -306,8 +317,7 @@ signals:
     void requestViewProfile(User* user);
 private slots:
     void onSearch();
-    void onFollowUser();
-    void onReportUser();
+  
 private:
     void showUserCard(User* user);
     void clearResults();
@@ -320,9 +330,7 @@ private:
     QScrollArea* m_scrollArea;
     QWidget* m_resultsContent;
     QVBoxLayout* m_resultsLayout;
-    User* m_foundUser;
-    QPushButton* m_followBtn;
-    QPushButton* m_reportBtn;
+    
 };
 class MessagesPage : public QWidget {
     Q_OBJECT
