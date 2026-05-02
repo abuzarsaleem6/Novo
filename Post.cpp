@@ -1,73 +1,79 @@
 #define _CRT_SECURE_NO_WARNINGS
+#include "Post.h"
 #include <iostream>
 #include <fstream>
 #include <ctime>
-#include "Post.h"
-#include <QFile>
-#include <QTextStream>
-#include <QDateTime>
-#include <QDir>
+#include <cstring>
+#include <sys/stat.h>
 
 using namespace std;
 
 // ──────────────────────────────────────────────────────────────────────────────
-//  FILE-LOCAL HELPERS  (liked-posts persistence)
+//  HELPERS
 // ──────────────────────────────────────────────────────────────────────────────
 
-static QString likedFilePath(const string& username) {
-    return QString::fromStdString("data/Posts/" + username + "/" + username + "_liked.txt");
+static void mkdirRecursive(const string& path) {
+#ifdef _WIN32
+    system(("mkdir \"" + path + "\" 2>nul").c_str());
+#else
+    system(("mkdir -p \"" + path + "\"").c_str());
+#endif
+}
+
+static string currentTimeString() {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    char buffer[20];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ltm);
+    return string(buffer);
+}
+
+static string likedFilePath(const string& username) {
+    return "data/Posts/" + username + "/" + username + "_liked.txt";
 }
 
 static bool hasUserLikedPost(const string& username, const string& postId) {
-    QFile file(likedFilePath(username));
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        if (in.readLine().trimmed().toStdString() == postId) {
-            file.close();
-            return true;
-        }
+    ifstream file(likedFilePath(username));
+    if (!file.is_open()) return false;
+    string line;
+    while (getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == postId) { file.close(); return true; }
     }
     file.close();
     return false;
 }
 
 static void addToLikedFile(const string& username, const string& postId) {
-    QDir().mkpath(QString::fromStdString("data/Posts/" + username));
-    QFile file(likedFilePath(username));
-    if (file.open(QIODevice::Append | QIODevice::Text)) {
-        QTextStream out(&file);
-        out << QString::fromStdString(postId) << "\n";
+    mkdirRecursive("data/Posts/" + username);
+    ofstream file(likedFilePath(username), ios::app);
+    if (file.is_open()) {
+        file << postId << "\n";
         file.close();
     }
 }
 
 static void removeFromLikedFile(const string& username, const string& postId) {
-    QFile file(likedFilePath(username));
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-    QStringList remaining;
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
-        if (!line.isEmpty() && line.toStdString() != postId)
-            remaining.append(line);
+    string path = likedFilePath(username);
+    ifstream file(path);
+    if (!file.is_open()) return;
+
+    // Read all lines except the one to remove
+    string* lines = new string[1000];
+    int count = 0;
+    string line;
+    while (getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line != postId)
+            lines[count++] = line;
     }
     file.close();
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&file);
-        for (const QString& l : remaining)
-            out << l << "\n";
-        file.close();
-    }
-}
 
-// Internal helper — not exposed in header.
-static string currentTimeString() {
-    return QDateTime::currentDateTime()
-        .toString("yyyy-MM-dd HH:mm:ss")
-        .toStdString();
+    ofstream out(path);
+    for (int i = 0; i < count; i++)
+        out << lines[i] << "\n";
+    out.close();
+    delete[] lines;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -80,42 +86,49 @@ Posts::Posts(string authorUsername, string content) {
     this->creatorUsername = authorUsername;
     this->timeOfCreation = currentTimeString();
     this->commentsCount = 0;
+    this->commentCapacity = 10;
+    this->commentList = new Comment[commentCapacity];
     this->isReported = false;
     this->reportCount = 0;
     this->likeCount = 0;
 }
 
-// Default constructor: used only by loadPostFromFile(); leave timeOfCreation
-// empty — it will be overwritten immediately by the file load.
 Posts::Posts() {
     this->postId = "";
     this->content = "";
     this->creatorUsername = "";
     this->isReported = false;
     this->reportCount = 0;
-    this->timeOfCreation = "";   // FIX: was incorrectly calling currentTimeString()
+    this->timeOfCreation = "";
     this->commentsCount = 0;
+    this->commentCapacity = 10;
+    this->commentList = new Comment[commentCapacity];
     this->likeCount = 0;
 }
 
-Posts::~Posts() {}
+Posts::~Posts() {
+    delete[] commentList;
+}
+
+void Posts::expandComments() {
+    commentCapacity *= 2;
+    Comment* newList = new Comment[commentCapacity];
+    for (int i = 0; i < commentsCount; i++)
+        newList[i] = commentList[i];
+    delete[] commentList;
+    commentList = newList;
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  ID GENERATION
 // ──────────────────────────────────────────────────────────────────────────────
 
 string Posts::generatePostId() {
-    // FIX: ensure the data/ directory exists before reading/writing the counter
-    QDir().mkpath("data");
-
-    ifstream file("data/post_counter.txt", ios::in);
+    mkdirRecursive("data");
+    ifstream file("data/post_counter.txt");
     int counter = 1000;
-    if (file.is_open()) {
-        file >> counter;
-        file.close();
-    }
+    if (file.is_open()) { file >> counter; file.close(); }
 
-    // Build "P<counter>" without std::to_string for broader compiler compat
     string num;
     int temp = counter;
     while (temp > 0) {
@@ -124,11 +137,8 @@ string Posts::generatePostId() {
     }
     string id = "P" + num;
 
-    ofstream outFile("data/post_counter.txt", ios::out);
-    if (outFile.is_open()) {
-        outFile << counter + 1;
-        outFile.close();
-    }
+    ofstream outFile("data/post_counter.txt");
+    if (outFile.is_open()) { outFile << counter + 1; outFile.close(); }
     return id;
 }
 
@@ -137,20 +147,16 @@ string Posts::generatePostId() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 void Posts::savePostToFile() {
-    QDir().mkpath(QString::fromStdString("data/Posts/" + this->creatorUsername));
-
+    mkdirRecursive("data/Posts/" + this->creatorUsername);
     string path = "data/Posts/" + this->creatorUsername + "/" + this->postId + ".txt";
     ofstream file(path);
-    if (!file.is_open()) {
-        qDebug() << "Error saving post:" << QString::fromStdString(path);
-        return;
-    }
+    if (!file.is_open()) { cerr << "Error saving post: " << path << "\n"; return; }
 
     file << "postId|" << this->postId << "\n";
     file << "content|" << this->content << "\n";
     file << "authorUsername|" << this->creatorUsername << "\n";
     file << "timeOfCreation|" << this->timeOfCreation << "\n";
-    file << "isReported|" << (this->isReported ? "1" : "0") << "\n";  // FIX: was printing bool (0/1 was compiler-dependent)
+    file << "isReported|" << (this->isReported ? "1" : "0") << "\n";
     file << "reportCount|" << this->reportCount << "\n";
     file << "commentCount|" << this->commentsCount << "\n";
     file << "likeCount|" << this->likeCount << "\n";
@@ -158,7 +164,6 @@ void Posts::savePostToFile() {
 }
 
 void Posts::loadPostFromFile(string ownerUsername, string postId) {
-    // Clear everything first
     this->postId = "";
     this->content = "";
     this->creatorUsername = "";
@@ -167,31 +172,24 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
     this->reportCount = 0;
     this->likeCount = 0;
     this->commentsCount = 0;
-    commentList.clear();
+    delete[] commentList;
+    commentList = new Comment[commentCapacity];
 
     string path = "data/Posts/" + ownerUsername + "/" + postId + ".txt";
     ifstream file(path);
-    if (!file.is_open()) {
-        qDebug() << "Post file not found:" << QString::fromStdString(path);
-        return;
-    }
+    if (!file.is_open()) { cerr << "Post file not found: " << path << "\n"; return; }
 
     string line;
     while (getline(file, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) continue;
-
         size_t sep = line.find('|');
         if (sep == string::npos || sep == 0) continue;
-
         string key = line.substr(0, sep);
         string value = line.substr(sep + 1);
-
         while (!value.empty() && (value.back() == '\r' || value.back() == ' '))
             value.pop_back();
-
         if (value.empty()) continue;
-
         try {
             if (key == "postId")         this->postId = value;
             else if (key == "content")         this->content = value;
@@ -202,17 +200,12 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
             else if (key == "isReported")      this->isReported = (value == "1");
             else if (key == "reportCount")     this->reportCount = stoi(value);
         }
-        catch (const std::exception& e) {
-            qDebug() << "Error parsing post field:"
-                << QString::fromStdString(key)
-                << "Value:" << QString::fromStdString(value)
-                << "Error:" << e.what();
+        catch (...) {
+            cerr << "Error parsing post field: " << key << "\n";
         }
     }
     file.close();
-
-    if (isValid())
-        loadCommentsFromFile();
+    if (isValid()) loadCommentsFromFile();
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -220,27 +213,23 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 string Posts::getPostId() const {
-    if (postId.empty() || postId.length() > 10000) {
-        qDebug() << "WARNING: postId is empty or corrupt.";
-        return "";
-    }
+    if (postId.empty() || postId.length() > 10000) return "";
     return postId;
 }
-
-string Posts::getContent()         const { return this->content; }
+string Posts::getContent()         const { return content; }
 string Posts::getCreatorUsername() const { return creatorUsername; }
 string Posts::getTimeOfCreation()  const { return timeOfCreation; }
-int    Posts::getLikeCount()       const { return this->likeCount; }
-int    Posts::getReportCount()     const { return this->reportCount; }
-int    Posts::getCommentsCount()   const { return this->commentsCount; }
-bool   Posts::getIsReported()      const { return this->isReported; }
+int    Posts::getLikeCount()       const { return likeCount; }
+int    Posts::getReportCount()     const { return reportCount; }
+int    Posts::getCommentsCount()   const { return commentsCount; }
+bool   Posts::getIsReported()      const { return isReported; }
 
-void Posts::setContent(const string& newContent) { this->content = newContent; }
+void Posts::setContent(const string& newContent) { content = newContent; }
 void Posts::setTimeOfCreation(const string& time) { timeOfCreation = time; }
 
 bool Posts::isValid() const {
     if (postId.empty() || postId.length() > 20) return false;
-    if (postId[0] != 'P')                        return false;
+    if (postId[0] != 'P') return false;
     if (creatorUsername.empty() || creatorUsername.length() > 50) return false;
     return true;
 }
@@ -250,27 +239,19 @@ bool Posts::isValid() const {
 // ──────────────────────────────────────────────────────────────────────────────
 
 void Posts::likePost(const string& likerUsername) {
-    if (likerUsername == this->creatorUsername) {
-        qDebug() << "You cannot like your own post.";
-        return;
-    }
-
-    if (hasUserLikedPost(likerUsername, this->postId)) {
-        // Toggle: unlike
-        likeCount = max(0, likeCount - 1);
-        removeFromLikedFile(likerUsername, this->postId);
+    if (likerUsername == creatorUsername) { cerr << "Cannot like own post.\n"; return; }
+    if (hasUserLikedPost(likerUsername, postId)) {
+        likeCount = likeCount > 0 ? likeCount - 1 : 0;
+        removeFromLikedFile(likerUsername, postId);
     }
     else {
-        // Like
         likeCount++;
-        addToLikedFile(likerUsername, this->postId);
-
-        QDir().mkpath("data/Notifications");
-        string notifPath = "data/Notifications/" + this->creatorUsername + "_notif.txt";
+        addToLikedFile(likerUsername, postId);
+        mkdirRecursive("data/Notifications");
+        string notifPath = "data/Notifications/" + creatorUsername + "_notif.txt";
         ofstream notifFile(notifPath, ios::app);
         if (notifFile.is_open()) {
-            notifFile << "like|"
-                << likerUsername << " liked your post|"
+            notifFile << "like|" << likerUsername << " liked your post|"
                 << currentTimeString() << "|0\n";
             notifFile.close();
         }
@@ -279,19 +260,16 @@ void Posts::likePost(const string& likerUsername) {
 }
 
 void Posts::unlikePost(const string& likerUsername) {
-    if (likerUsername == this->creatorUsername) {
-        qDebug() << "You cannot unlike your own post.";
-        return;
-    }
-    if (hasUserLikedPost(likerUsername, this->postId)) {
-        likeCount = max(0, likeCount - 1);
-        removeFromLikedFile(likerUsername, this->postId);
+    if (likerUsername == creatorUsername) return;
+    if (hasUserLikedPost(likerUsername, postId)) {
+        likeCount = likeCount > 0 ? likeCount - 1 : 0;
+        removeFromLikedFile(likerUsername, postId);
         savePostToFile();
     }
 }
 
 bool Posts::isLikedBy(const string& username) const {
-    return hasUserLikedPost(username, this->postId);
+    return hasUserLikedPost(username, postId);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -299,70 +277,57 @@ bool Posts::isLikedBy(const string& username) const {
 // ──────────────────────────────────────────────────────────────────────────────
 
 void Posts::reportPost(const string& reporterUsername) {
-    QString reportedFilePath = QString::fromStdString(
-        "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt");
+    string reportedFilePath = "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt";
 
-    // Prevent duplicate reports from same user
-    QFile checkFile(reportedFilePath);
-    if (checkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&checkFile);
-        while (!in.atEnd()) {
-            if (in.readLine().trimmed().toStdString() == reporterUsername) {
-                qDebug() << "User already reported this post.";
-                checkFile.close();
-                return;
-            }
+    // Check for duplicate
+    ifstream checkFile(reportedFilePath);
+    if (checkFile.is_open()) {
+        string line;
+        while (getline(checkFile, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line == reporterUsername) { checkFile.close(); return; }
         }
         checkFile.close();
     }
 
-    QFile outFile(reportedFilePath);
-    if (outFile.open(QIODevice::Append | QIODevice::Text)) {
-        QTextStream out(&outFile);
-        out << QString::fromStdString(reporterUsername) << "\n";
-        outFile.close();
-    }
+    ofstream outFile(reportedFilePath, ios::app);
+    if (outFile.is_open()) { outFile << reporterUsername << "\n"; outFile.close(); }
 
+    // Count reporters
     int actualCount = 0;
-    QFile countFile(reportedFilePath);
-    if (countFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&countFile);
-        while (!in.atEnd()) {
-            if (!in.readLine().trimmed().isEmpty())
-                actualCount++;
+    ifstream countFile(reportedFilePath);
+    if (countFile.is_open()) {
+        string line;
+        while (getline(countFile, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty()) actualCount++;
         }
         countFile.close();
     }
-    this->reportCount = actualCount;
-    if (this->reportCount == 3) {
-        this->isReported = true;
+    reportCount = actualCount;
 
-        QDir().mkpath("data/Admin");
-        QFile notifFile("data/Admin/admin_notifications.txt");
-        if (notifFile.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&notifFile);
-            QString ts = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-            out << ts << "|post_reported|"
-                << "Post '" << QString::fromStdString(this->postId)
-                << "' by @" << QString::fromStdString(this->creatorUsername)
+    if (reportCount == 3) {
+        isReported = true;
+        mkdirRecursive("data/Admin");
+        ofstream notifFile("data/Admin/admin_notifications.txt", ios::app);
+        if (notifFile.is_open()) {
+            notifFile << currentTimeString() << "|post_reported|Post '"
+                << postId << "' by @" << creatorUsername
                 << " has reached 3 reports and is marked for review.|0\n";
             notifFile.close();
         }
     }
     savePostToFile();
 }
+
 bool Posts::hasReportedBy(const string& username) const {
-    QString reportedFilePath = QString::fromStdString(
-        "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt");
-    QFile file(reportedFilePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        if (in.readLine().trimmed().toStdString() == username) {
-            file.close();
-            return true;
-        }
+    string reportedFilePath = "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt";
+    ifstream file(reportedFilePath);
+    if (!file.is_open()) return false;
+    string line;
+    while (getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == username) { file.close(); return true; }
     }
     file.close();
     return false;
@@ -372,57 +337,51 @@ bool Posts::hasReportedBy(const string& username) const {
 //  COMMENTS
 // ──────────────────────────────────────────────────────────────────────────────
 
-void Posts::addComment(const QString& commentContent, const QString& cUsername) {
-    if (commentContent.isEmpty()) {
-        qDebug() << "Comment content cannot be empty.";
-        return;
-    }
+void Posts::addComment(const string& commentContent, const string& cUsername) {
+    if (commentContent.empty()) { cerr << "Comment content cannot be empty.\n"; return; }
 
-    // FIX: use a timestamp-based ID instead of sequential count so IDs stay
-    // unique even after deletions.
-    QString commentId = "C" + QString::number(QDateTime::currentMSecsSinceEpoch());
-    Comment c(commentContent, commentId, cUsername);
-    commentList.append(c);
-    commentsCount++;
+    // Generate timestamp-based ID
+    time_t now = time(0);
+    string id = "C";
+    string num;
+    long long t = (long long)now;
+    while (t > 0) { num = char('0' + (t % 10)) + num; t /= 10; }
+    id += num;
+
+    Comment c(commentContent, id, cUsername);
+    if (commentsCount >= commentCapacity) expandComments();
+    commentList[commentsCount++] = c;
     savePostToFile();
     saveCommentsToFile();
 
-    if (this->creatorUsername != cUsername.toStdString()) {
-        QDir().mkpath("data/Notifications");
-        string notifPath = "data/Notifications/" + this->creatorUsername + "_notif.txt";
+    if (creatorUsername != cUsername) {
+        mkdirRecursive("data/Notifications");
+        string notifPath = "data/Notifications/" + creatorUsername + "_notif.txt";
         ofstream notifFile(notifPath, ios::app);
         if (notifFile.is_open()) {
-            notifFile << "comment|"
-                << cUsername.toStdString() << " commented on your post|"
+            notifFile << "comment|" << cUsername << " commented on your post|"
                 << currentTimeString() << "|0\n";
             notifFile.close();
         }
     }
 }
 
-void Posts::deleteComment(int index, const QString& rUsername) {
-    if (index < 0 || index >= commentList.size()) {
-        qDebug() << "Invalid comment index.";
-        return;
-    }
+void Posts::deleteComment(int index, const string& rUsername) {
+    if (index < 0 || index >= commentsCount) { cerr << "Invalid comment index.\n"; return; }
     if (commentList[index].getCreatorUsername() != rUsername) {
-        qDebug() << "You can only delete your own comments.";
-        return;
+        cerr << "You can only delete your own comments.\n"; return;
     }
-    commentList.removeAt(index);
+    for (int i = index; i < commentsCount - 1; i++)
+        commentList[i] = commentList[i + 1];
     commentsCount--;
     savePostToFile();
     saveCommentsToFile();
 }
 
-void Posts::editComment(int index, const QString& newContent, const QString& rUsername) {
-    if (index < 0 || index >= commentList.size()) {
-        qDebug() << "Invalid comment index.";
-        return;
-    }
+void Posts::editComment(int index, const string& newContent, const string& rUsername) {
+    if (index < 0 || index >= commentsCount) { cerr << "Invalid comment index.\n"; return; }
     if (commentList[index].getCreatorUsername() != rUsername) {
-        qDebug() << "You can only edit your own comments.";
-        return;
+        cerr << "You can only edit your own comments.\n"; return;
     }
     commentList[index].setContent(newContent);
     savePostToFile();
@@ -430,122 +389,90 @@ void Posts::editComment(int index, const QString& newContent, const QString& rUs
 }
 
 void Posts::deleteCommentAsAdmin(int index) {
-    if (index < 0 || index >= commentList.size()) {
-        qDebug() << "Invalid comment index.";
-        return;
-    }
-    commentList.removeAt(index);
+    if (index < 0 || index >= commentsCount) { cerr << "Invalid comment index.\n"; return; }
+    for (int i = index; i < commentsCount - 1; i++)
+        commentList[i] = commentList[i + 1];
     commentsCount--;
     savePostToFile();
     saveCommentsToFile();
 }
 
-QList<Comment> Posts::getComments() const {
+Comment* Posts::getComments() const {
     return commentList;
 }
 
 void Posts::saveCommentsToFile() const {
-    QString path = QString::fromStdString(
-        "data/Posts/" + this->creatorUsername + "/" + this->postId + "_comments.txt");
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        qDebug() << "Error opening comments file for write:" << path;
-        return;
-    }
-
-    QTextStream out(&file);
-    for (const Comment& comment : commentList) {
-        try {
-            out << "commentId|" << comment.getCommentId() << "\n";
-            out << "content|" << comment.getContent() << "\n";
-            out << "creatorUsername|" << comment.getCreatorUsername() << "\n";
-            out << "timeOfCreation|" << comment.getTimeOfCreation() << "\n";
-            out << "isReported|" << (comment.getIsReported() ? "1" : "0") << "\n";
-            out << "likeCount|" << comment.getLikeCount() << "\n";
-            out << "---\n";
-        }
-        catch (const std::exception& e) {
-            qDebug() << "Error saving comment:" << e.what();
-        }
+    string path = "data/Posts/" + creatorUsername + "/" + postId + "_comments.txt";
+    ofstream file(path);
+    if (!file.is_open()) { cerr << "Error opening comments file for write.\n"; return; }
+    for (int i = 0; i < commentsCount; i++) {
+        const Comment& c = commentList[i];
+        file << "commentId|" << c.getCommentId() << "\n";
+        file << "content|" << c.getContent() << "\n";
+        file << "creatorUsername|" << c.getCreatorUsername() << "\n";
+        file << "timeOfCreation|" << c.getTimeOfCreation() << "\n";
+        file << "isReported|" << (c.getIsReported() ? "1" : "0") << "\n";
+        file << "likeCount|" << c.getLikeCount() << "\n";
+        file << "---\n";
     }
     file.close();
 }
 
 void Posts::loadCommentsFromFile() {
-    QString path = QString::fromStdString(
-        "data/Posts/" + this->creatorUsername + "/" + this->postId + "_comments.txt");
-    QFile file(path);
+    string path = "data/Posts/" + creatorUsername + "/" + postId + "_comments.txt";
+    ifstream file(path);
+    delete[] commentList;
+    commentList = new Comment[commentCapacity];
+    commentsCount = 0;
+    if (!file.is_open()) return;
 
-    if (!file.exists()) {
-        commentList.clear();
-        commentsCount = 0;
-        return;
-    }
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        commentList.clear();
-        commentsCount = 0;
-        return;
-    }
-
-    commentList.clear();
-
-    QString commentId, content, creatorUsername, timeOfCreation;
+    string commentId, content, creatorUser, timeOfCreation;
     bool isReported = false;
-    int  likeCount = 0;
-    int  fieldCount = 0;
+    int likeCount = 0;
+    int fieldCount = 0;
 
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
+    string line;
+    while (getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        if (line.isEmpty() || line == "---") {
-            if (fieldCount >= 5 && !commentId.isEmpty()) {
-                try {
-                    Comment c(content, commentId, creatorUsername);
-                    c.setTimeOfCreation(timeOfCreation);
-                    c.setIsReported(isReported);
-                    c.setLikeCount(likeCount);
-                    commentList.append(c);
-                }
-                catch (const std::exception& e) {
-                    qDebug() << "Error creating comment:" << e.what();
-                }
+        if (line.empty() || line == "---") {
+            if (fieldCount >= 5 && !commentId.empty()) {
+                Comment c(content, commentId, creatorUser);
+                c.setTimeOfCreation(timeOfCreation);
+                c.setIsReported(isReported);
+                c.setLikeCount(likeCount);
+                if (commentsCount >= commentCapacity) expandComments();
+                commentList[commentsCount++] = c;
                 commentId.clear(); content.clear();
-                creatorUsername.clear(); timeOfCreation.clear();
+                creatorUser.clear(); timeOfCreation.clear();
                 isReported = false; likeCount = 0; fieldCount = 0;
             }
             continue;
         }
 
-        int pipeIdx = line.indexOf('|');
-        if (pipeIdx < 0) continue;
-
-        QString key = line.left(pipeIdx).trimmed();
-        QString value = line.mid(pipeIdx + 1).trimmed();
-        if (value.isEmpty()) continue;
+        size_t pipeIdx = line.find('|');
+        if (pipeIdx == string::npos) continue;
+        string key = line.substr(0, pipeIdx);
+        string value = line.substr(pipeIdx + 1);
+        if (value.empty()) continue;
 
         if (key == "commentId") { commentId = value; fieldCount++; }
         else if (key == "content") { content = value; fieldCount++; }
-        else if (key == "creatorUsername") { creatorUsername = value; fieldCount++; }
+        else if (key == "creatorUsername") { creatorUser = value; fieldCount++; }
         else if (key == "timeOfCreation") { timeOfCreation = value; fieldCount++; }
-        else if (key == "isReported") { isReported = (value == "1" || value == "true"); fieldCount++; }
-        else if (key == "likeCount") {
-            bool ok = false;
-            likeCount = value.toInt(&ok);
-            if (!ok) likeCount = 0;
-            fieldCount++;
-        }
+        else if (key == "isReported") { isReported = (value == "1"); fieldCount++; }
+        else if (key == "likeCount") { try { likeCount = stoi(value); } catch (...) { likeCount = 0; } fieldCount++; }
     }
 
-    // Flush last record if file didn't end with "---"
-    if (fieldCount >= 5 && !commentId.isEmpty()) {
-        Comment c(content, commentId, creatorUsername);
+    // Flush last record
+    if (fieldCount >= 5 && !commentId.empty()) {
+        Comment c(content, commentId, creatorUser);
         c.setTimeOfCreation(timeOfCreation);
         c.setIsReported(isReported);
         c.setLikeCount(likeCount);
-        commentList.append(c);
+        if (commentsCount >= commentCapacity) expandComments();
+        commentList[commentsCount++] = c;
     }
 
     file.close();
-    commentsCount = commentList.size();
 }

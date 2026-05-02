@@ -13,7 +13,7 @@ using namespace std;
 
 PasswordChecker::PasswordChecker(int min) {
     this->minLength = min;
-    qDebug() << "PasswordChecker initialized with minimum length:" << min;
+    cout << "PasswordChecker initialized with minimum length: " << min << endl;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -75,52 +75,48 @@ bool PasswordChecker::hasNoPipe(const string& password) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  PUBLIC VALIDATION METHODS - USED BY Qt GUI
+//  PUBLIC VALIDATION METHODS
 // ══════════════════════════════════════════════════════════════════════════════
 
 bool PasswordChecker::checkAll(const string& password) {
-    qDebug() << "Checking password strength...";
+    cout << "Checking password strength..." << endl;
 
-    // Check length
     if (password.length() < minLength) {
-        qDebug() << "FAIL: Password too short. Required:" << minLength
-            << "Got:" << password.length();
+        cout << "FAIL: Password too short. Required: " << minLength
+            << " Got: " << password.length() << endl;
         return false;
     }
 
-    // Check for spaces
     if (!hasNoSpaces(password)) {
-        qDebug() << "FAIL: Password contains spaces";
+        cout << "FAIL: Password contains spaces" << endl;
         return false;
     }
 
-    // Check for pipe character
     if (!hasNoPipe(password)) {
-        qDebug() << "FAIL: Password contains '|' character";
+        cout << "FAIL: Password contains '|' character" << endl;
         return false;
     }
 
-    // Check for required characters
     bool hasSpecial = hasSpecialChar(password);
     bool hasNum = hasDigit(password);
     bool hasUpper = hasUppercase(password);
 
-    qDebug() << "Special char:" << hasSpecial << "Digit:" << hasNum << "Uppercase:" << hasUpper;
+    cout << "Special char: " << hasSpecial
+        << " Digit: " << hasNum
+        << " Uppercase: " << hasUpper << endl;
 
-    // ALL MUST BE TRUE
     if (!hasSpecial || !hasNum || !hasUpper) {
-        qDebug() << "FAIL: Missing required character types";
+        cout << "FAIL: Missing required character types" << endl;
         return false;
     }
 
-    qDebug() << "PASS: Password is strong!";
+    cout << "PASS: Password is strong!" << endl;
     return true;
 }
 
 int PasswordChecker::calculateStrength(const string& password) {
     int score = 0;
 
-    // Length score (40 points max)
     if (password.length() >= minLength) {
         score += 40;
     }
@@ -128,31 +124,25 @@ int PasswordChecker::calculateStrength(const string& password) {
         score += 20;
     }
 
-    // Variety score (20 points each)
     if (hasSpecialChar(password)) score += 20;
-    if (hasDigit(password)) score += 20;
-    if (hasUppercase(password)) score += 20;
+    if (hasDigit(password))       score += 20;
+    if (hasUppercase(password))   score += 20;
+    if (hasLowercase(password))   score += 5;
 
-    // Bonus for lowercase
-    if (hasLowercase(password)) score += 5;
-
-    // Cap at 100
     score = (score > 100) ? 100 : score;
 
-    qDebug() << "Password strength calculated:" << score << "/ 100";
+    cout << "Password strength calculated: " << score << "/ 100" << endl;
     return score;
 }
 
-QString PasswordChecker::validatePassword(const string& password) {
-    // Returns empty string if VALID, or error message if INVALID
-
+string PasswordChecker::validatePassword(const string& password) {
     if (password.empty()) {
         return "Password cannot be empty.";
     }
 
     if (password.length() < minLength) {
-        return QString("Password must be at least %1 characters. Current: %2")
-            .arg(minLength).arg(password.length());
+        return "Password must be at least " + to_string(minLength)
+            + " characters. Current: " + to_string(password.length());
     }
 
     if (password.length() > 50) {
@@ -179,26 +169,21 @@ QString PasswordChecker::validatePassword(const string& password) {
         return "Password must contain at least one special character (!@#$%^&*).";
     }
 
-    // All validations passed
-    qDebug() << "Password validation PASSED";
+    cout << "Password validation PASSED" << endl;
     return "";  // Empty string = valid
 }
 
-QString PasswordChecker::getValidationFeedback(const string& password) {
-    // Returns detailed feedback about what's missing/good
+string PasswordChecker::getValidationFeedback(const string& password) {
+    string feedback = "Password Requirements:\n\n";
 
-    QString feedback = "Password Requirements:\n\n";
-
-    // Length
     if (password.length() >= minLength) {
-        feedback += "✓ At least " + QString::number(minLength) + " characters\n";
+        feedback += "✓ At least " + to_string(minLength) + " characters\n";
     }
     else {
-        feedback += "✗ At least " + QString::number(minLength) + " characters (Current: "
-            + QString::number(password.length()) + ")\n";
+        feedback += "✗ At least " + to_string(minLength) + " characters (Current: "
+            + to_string(password.length()) + ")\n";
     }
 
-    // Uppercase
     if (hasUppercase(password)) {
         feedback += "✓ Contains UPPERCASE letter\n";
     }
@@ -206,7 +191,6 @@ QString PasswordChecker::getValidationFeedback(const string& password) {
         feedback += "✗ Contains UPPERCASE letter\n";
     }
 
-    // Digit
     if (hasDigit(password)) {
         feedback += "✓ Contains digit (0-9)\n";
     }
@@ -214,7 +198,6 @@ QString PasswordChecker::getValidationFeedback(const string& password) {
         feedback += "✗ Contains digit (0-9)\n";
     }
 
-    // Special character
     if (hasSpecialChar(password)) {
         feedback += "✓ Contains special character (!@#$%^&*)\n";
     }
@@ -222,7 +205,6 @@ QString PasswordChecker::getValidationFeedback(const string& password) {
         feedback += "✗ Contains special character (!@#$%^&*)\n";
     }
 
-    // No spaces
     if (hasNoSpaces(password)) {
         feedback += "✓ No spaces\n";
     }
@@ -230,7 +212,6 @@ QString PasswordChecker::getValidationFeedback(const string& password) {
         feedback += "✗ No spaces\n";
     }
 
-    // No pipe
     if (hasNoPipe(password)) {
         feedback += "✓ No pipe character (|)\n";
     }
@@ -238,9 +219,8 @@ QString PasswordChecker::getValidationFeedback(const string& password) {
         feedback += "✗ No pipe character (|)\n";
     }
 
-    // Strength
     int strength = calculateStrength(password);
-    feedback += "\nStrength: " + QString::number(strength) + "/100\n";
+    feedback += "\nStrength: " + to_string(strength) + "/100\n";
 
     return feedback;
 }

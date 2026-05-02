@@ -1,8 +1,7 @@
 // PasswordChecker.h
 #pragma once
 #include <string>
-#include <QString>
-#include <QDebug>
+#include <iostream>
 
 using namespace std;
 
@@ -23,16 +22,13 @@ public:
     PasswordChecker(int min = 8);
 
     // ─── VALIDATION METHODS ───
-    // Returns true if password meets ALL requirements
     bool checkAll(const string& password);
+    int  calculateStrength(const string& password);
 
-    // Returns strength score (0-100)
-    int calculateStrength(const string& password);
+    // ─── DETAILED VALIDATION ───
+    // Returns error message if invalid, empty string if valid
+    string validatePassword(const string& password);
 
-    // ─── DETAILED VALIDATION FOR Qt GUI ───
-    // Returns detailed error message if validation fails, empty string if valid
-    QString validatePassword(const string& password);
-
-    // Get human-readable feedback for each requirement
-    QString getValidationFeedback(const string& password);
+    // Returns human-readable feedback for each requirement
+    string getValidationFeedback(const string& password);
 };

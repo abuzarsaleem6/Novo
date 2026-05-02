@@ -2,11 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <QString>
-#include <QFile>
-#include <QTextStream>
-#include <QDebug>
-#include <QList>
 using namespace std;
 
 class Posts;
@@ -37,19 +32,19 @@ public:
     User& operator=(const User& o);
     ~User();
 
-    // ─── VALIDATION 
-    static QString validateUsername(const string& username);
-    static QString validatePassword(const string& password);
-    static QString validateBio(const string& bio);
-    static QString validatePostContent(const string& content);
+    // ─── VALIDATION ───
+    static string validateUsername(const string& username);
+    static string validatePassword(const string& password);
+    static string validateBio(const string& bio);
+    static string validatePostContent(const string& content);
 
     // ─── AUTH ───
     bool login(string password);
     void logOut();
 
     // ─── PROFILE ───
-    bool updatePassword(const string& newPassword, QString& errorOut);
-    bool updateBio(const string& newBio, QString& errorOut);
+    bool updateBio(const string& newBio);
+    bool updatePassword(const string& newPassword);
 
     // ─── FILE I/O ───
     void saveToFile();
@@ -59,15 +54,15 @@ public:
     void addToReviewList();
 
     // ─── GETTERS ───
-    string getUsername() const;
-    string getBio() const;
-    string getPassword() const;
-    bool getIsReported() const;
-    bool getIsBanned() const;
-    int getFollowingCount() const;
-    int getFollowersCount() const;
-    int getPostCount() const;
-    int getSavedPostCount() const;
+    string getUsername()      const;
+    string getBio()           const;
+    string getPassword()      const;
+    bool   getIsReported()    const;
+    bool   getIsBanned()      const;
+    int    getFollowingCount()const;
+    int    getFollowersCount()const;
+    int    getPostCount()     const;
+    int    getSavedPostCount()const;
 
     // ─── SETTERS ───
     void setBio(string bio);
@@ -84,22 +79,22 @@ public:
     void loadFollowers(User** allUsers, int userCount);
 
     // ─── POSTS ───
-    void createPost(string content);
-    void loadAllPosts();
+    void   createPost(string content);
+    void   loadAllPosts();
     Posts* getPostById(string postId);
     Posts* getPostByIndex(int index);
-    bool editPost(const string& postId, const string& newContent, QString& errorOut);
-    void deletePost(string postId);
-    void reportPost(string postId, User* postOwner);
+    bool   editPost(const string& postId, const string& newContent, string& errorOut);
+    void   deletePost(string postId);
+    void   reportPost(string postId, User* postOwner);
 
     // ─── SAVED POSTS ───
-    void savePost(string postId, User* postOwner);
-    void unsavePost(string postId);
-    void loadSavedPosts(User** allUsers, int userCount);
-    void saveSavedPostsToFile();
-    void clearSavedPostsArray();
+    void   savePost(string postId, User* postOwner);
+    void   unsavePost(string postId);
+    void   loadSavedPosts(User** allUsers, int userCount);
+    void   saveSavedPostsToFile();
+    void   clearSavedPostsArray();
     Posts* getSavedPostByIndex(int index);
-    bool hasSavedPost(const string& postId) const;
+    bool   hasSavedPost(const string& postId) const;
 
     // ─── REPORTING ───
     void reportUser();
@@ -109,20 +104,16 @@ public:
     // ─── ACCOUNT ───
     void deleteAccount(User**& allUsers, int& userCount);
 
-    // ─── Qt HELPERS ───
-    QString getDisplayUsername() const;
-    QString getDisplayBio() const;
-    QList<Posts*> getPostsAsQList() const;
-    QList<Posts*> getSavedPostsAsQList() const;
+    // ─── HELPERS ───
     bool hasPost(const string& postId) const;
 
     // ─── CONVERSATION HISTORY (Messages) ───
-    static QList<QString> getConversationHistory(const string& username);
+    static string* getConversationHistory(const string& username, int& outCount);
     static void addConversationToHistory(const string& username, const string& peerUsername);
     static void removeConversationFromHistory(const string& username, const string& peerUsername);
 };
 
 // ─── FREE FUNCTIONS ───
-void loadAllUsers(User** allUsers, int& userCount);
+void  loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount, string username, string password, string bio);
 User* findAndLogin(User**& allUsers, int userCount, string username, string password);

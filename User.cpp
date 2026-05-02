@@ -1,16 +1,54 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <QDateTime>
-#include <QDir>
-#include <QFile>
-#include <QTextStream>
+#include <ctime>
 #include "User.h"
 #include "Post.h"
 #include "Notification.h"
+
 using namespace std;
 
-//Constructors
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+#ifdef _WIN32
+#include <direct.h>
+static void mkdirIfNeeded(const char* path) { _mkdir(path); }
+// file delete on Windows
+#include <cstdio>
+static void removeFile(const string& path) { remove(path.c_str()); }
+// recursive dir remove (best-effort, only removes known files)
+static void removeDirRecursive(const string&) { /* handled per-file above */ }
+#else
+#include <sys/stat.h>
+#include <cstdio>
+#include <dirent.h>
+static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
+static void removeFile(const string& path) { remove(path.c_str()); }
+static void removeDirRecursive(const string& path) {
+    DIR* d = opendir(path.c_str());
+    if (!d) return;
+    struct dirent* e;
+    while ((e = readdir(d))) {
+        string name(e->d_name);
+        if (name == "." || name == "..") continue;
+        remove((path + "/" + name).c_str());
+    }
+    closedir(d);
+    rmdir(path.c_str());
+}
+#endif
+
+static string currentTimestamp() {
+    time_t now = time(nullptr);
+    char buf[32];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    return string(buf);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CONSTRUCTORS & DESTRUCTOR
+// ══════════════════════════════════════════════════════════════════════════════
 
 User::User() {
     username = "";
@@ -45,8 +83,9 @@ User::User(string username, string password, string bio) {
     this->password = password;
     this->bio = bio;
 
-    QDir().mkpath("data/Users");
-    QDir().mkpath("data/Posts/" + QString::fromStdString(username));
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Users");
+    mkdirIfNeeded(("data/Posts/" + username).c_str());
     this->saveToFile();
     this->addToUserList();
 }
@@ -96,12 +135,11 @@ User::User(const User& o) {
 User& User::operator=(const User& o) {
     if (this == &o) return *this;
 
-    // Delete only owned data (posts are owned, savedPosts are NOT)
     for (int i = 0; i < postCount; i++) delete posts[i];
     delete[] posts;
     delete[] following;
     delete[] followers;
-    delete[] savedPosts; // array only, not the Posts objects inside
+    delete[] savedPosts;
 
     username = o.username;
     password = o.password;
@@ -153,7 +191,6 @@ User::~User() {
     delete[] posts;
     posts = nullptr;
 
-    // savedPosts: free the array only — the Posts objects are owned by their author
     delete[] savedPosts;
     savedPosts = nullptr;
 
@@ -168,42 +205,35 @@ User::~User() {
 //  VALIDATION
 // ══════════════════════════════════════════════════════════════════════════════
 
-QString User::validateUsername(const string& username) {
-    if (username.length() < 6)  return 
-        "Username must be at least 6 characters";
-    if (username.length() > 16) return 
-        "Username cannot exceed 16 characters ";
-    for (int i=0;i<username.length();i++)
-        if (username[i] == '|' || username[i] == ' ') 
-           return  "Username cannot contain '|' or spaces ";
-
+string User::validateUsername(const string& username) {
+    if (username.length() < 6)  return "Username must be at least 6 characters";
+    if (username.length() > 16) return "Username cannot exceed 16 characters";
+    for (int i = 0; i < (int)username.length(); i++)
+        if (username[i] == '|' || username[i] == ' ')
+            return "Username cannot contain '|' or spaces";
     return "";
 }
 
-QString User::validatePassword(const string& password) {
-    if (password.length() < 8)  
-        return "Password must be at least 8 characters ";
-    if (password.length() > 16)
-        return "Password cannot exceed 16 characters ";
-    for (int i = 0; i < password.length(); i++)
+string User::validatePassword(const string& password) {
+    if (password.length() < 8)  return "Password must be at least 8 characters";
+    if (password.length() > 16) return "Password cannot exceed 16 characters";
+    for (int i = 0; i < (int)password.length(); i++)
         if (password[i] == '|' || password[i] == ' ')
-            return "Password cannot contain '|' or spaces ";
+            return "Password cannot contain '|' or spaces";
     return "";
 }
 
-QString User::validateBio(const string& bio) {
-    if (bio.length() > 100) return "Bio cannot exceed 100 characters ";
-    for (int i = 0; i < bio.length(); i++) {
-        if (bio[i] == '|') return "Bio cannot contain '|' ";
-    }
+string User::validateBio(const string& bio) {
+    if (bio.length() > 100) return "Bio cannot exceed 100 characters";
+    for (int i = 0; i < (int)bio.length(); i++)
+        if (bio[i] == '|') return "Bio cannot contain '|'";
     return "";
 }
 
-QString User::validatePostContent(const string& content) {
+string User::validatePostContent(const string& content) {
     if (content.empty()) return "Post content cannot be empty.";
-    for (int i = 0; i < content.length(); i++)
-        if (content[i] == '|') 
-            return "Post content cannot contain '|'.";
+    for (int i = 0; i < (int)content.length(); i++)
+        if (content[i] == '|') return "Post content cannot contain '|'.";
     return "";
 }
 
@@ -217,22 +247,22 @@ bool User::login(string password) {
 
 void User::logOut() {
     for (int i = 0; i < postCount; i++) {
-        delete posts[i]; 
+        delete posts[i];
         posts[i] = nullptr;
     }
-
-    delete[] posts;  
-    posts = nullptr;  
+    delete[] posts;
+    posts = nullptr;
     postCount = 0;
 
-    delete[] following;  
-    following = nullptr; 
+    delete[] following;
+    following = nullptr;
     followingCount = 0;
-    delete[] followers; 
-    followers = nullptr;  
+
+    delete[] followers;
+    followers = nullptr;
     followersCount = 0;
 
-    delete[] savedPosts; 
+    delete[] savedPosts;
     savedPosts = nullptr;
     savedPostCount = 0;
 }
@@ -241,17 +271,17 @@ void User::logOut() {
 //  PROFILE UPDATES
 // ══════════════════════════════════════════════════════════════════════════════
 
-bool User::updatePassword(const string& newPassword, QString& errorOut) {
-    errorOut = validatePassword(newPassword);
-    if (!errorOut.isEmpty()) return false;
+bool User::updatePassword(const string& newPassword) {
+    string err = validatePassword(newPassword);
+    if (!err.empty()) return false;
     password = newPassword;
     saveToFile();
     return true;
 }
 
-bool User::updateBio(const string& newBio, QString& errorOut) {
-    errorOut = validateBio(newBio);
-    if (!errorOut.isEmpty()) return false;
+bool User::updateBio(const string& newBio) {
+    string err = validateBio(newBio);
+    if (!err.empty()) return false;
     bio = newBio;
     saveToFile();
     return true;
@@ -262,11 +292,12 @@ bool User::updateBio(const string& newBio, QString& errorOut) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 void User::saveToFile() {
-    QDir().mkpath("data/Users");
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Users");
     string path = "data/Users/" + this->username + ".txt";
     ofstream file(path);
     if (!file.is_open()) {
-        qDebug() << "Cannot save user file:" << QString::fromStdString(path);
+        cout << "Cannot save user file: " << path << endl;
         return;
     }
     file << "username|" << this->username << "\n";
@@ -286,7 +317,7 @@ void User::loadFromFile(string username) {
     string path = "data/Users/" + username + ".txt";
     ifstream file(path);
     if (!file.is_open()) {
-        qDebug() << "User not found:" << QString::fromStdString(username);
+        cout << "User not found: " << username << endl;
         return;
     }
 
@@ -315,26 +346,21 @@ void User::loadFromFile(string username) {
             else if (key == "savedPostCount")  this->savedPostCount = stoi(value);
         }
         catch (...) {
-            qDebug() << "Error parsing user field:" << QString::fromStdString(key);
+            cout << "Error parsing user field: " << key << endl;
         }
     }
     file.close();
 }
 
 void User::addToUserList() {
-    // ← CHECK FIRST if already exists
     ifstream checkFile("data/users_list.txt");
     string line;
     while (getline(checkFile, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line == this->username) {
-            checkFile.close();
-            return;  // already in list, don't add again
-        }
+        if (line == this->username) { checkFile.close(); return; }
     }
     checkFile.close();
 
-    // Only append if not already there
     ofstream file("data/users_list.txt", ios::app);
     if (file.is_open()) {
         file << this->username << "\n";
@@ -348,8 +374,7 @@ void User::removeFromUser_List(string username) {
     ifstream file("data/users_list.txt");
     while (getline(file, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line != username)
-            updatedContent += line + "\n";
+        if (line != username) updatedContent += line + "\n";
     }
     file.close();
     ofstream out("data/users_list.txt", ios::out);
@@ -358,7 +383,7 @@ void User::removeFromUser_List(string username) {
 }
 
 void User::addToReviewList() {
-    QDir().mkpath("data");
+    mkdirIfNeeded("data");
     ofstream file("data/users_to_review.txt", ios::app);
     if (file.is_open()) {
         file << this->username << "\n";
@@ -370,15 +395,15 @@ void User::addToReviewList() {
 //  GETTERS / SETTERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-string User::getUsername()      const { return this->username; }
-string User::getBio()           const { return this->bio; }
-string User::getPassword()      const { return this->password; }
-bool   User::getIsReported()    const { return this->isReported; }
-bool   User::getIsBanned()      const { return this->isBanned; }
-int    User::getFollowingCount()const { return this->followingCount; }
-int    User::getFollowersCount()const { return this->followersCount; }
-int    User::getPostCount()     const { return this->postCount; }
-int    User::getSavedPostCount()const { return this->savedPostCount; }
+string User::getUsername()       const { return this->username; }
+string User::getBio()            const { return this->bio; }
+string User::getPassword()       const { return this->password; }
+bool   User::getIsReported()     const { return this->isReported; }
+bool   User::getIsBanned()       const { return this->isBanned; }
+int    User::getFollowingCount() const { return this->followingCount; }
+int    User::getFollowersCount() const { return this->followersCount; }
+int    User::getPostCount()      const { return this->postCount; }
+int    User::getSavedPostCount() const { return this->savedPostCount; }
 
 void User::setBio(string bio) { this->bio = bio; }
 void User::setPassword(string password) { this->password = password; }
@@ -392,7 +417,6 @@ void User::followUser(User* target, User** allUsers, int userCount) {
     if (!target) return;
     if (isFollowing(target->getUsername())) return;
 
-    // Grow following array
     User** newFollowing = new User * [followingCount + 1];
     for (int i = 0; i < followingCount; i++)
         newFollowing[i] = following[i];
@@ -403,7 +427,8 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 
     target->addFollower(this);
 
-    QDir().mkpath("data/Following");
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Following");
     string path = "data/Following/" + this->username + "_following.txt";
     ofstream file(path, ios::app);
     if (file.is_open()) {
@@ -412,14 +437,13 @@ void User::followUser(User* target, User** allUsers, int userCount) {
     }
 
     // Notify target
-    QDir().mkpath("data/Notifications");
+    mkdirIfNeeded("data/Notifications");
     string notifPath = "data/Notifications/" + target->getUsername() + "_notif.txt";
     ofstream notifFile(notifPath, ios::app);
     if (notifFile.is_open()) {
         notifFile << "follow|"
             << this->username << " followed you|"
-            << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss").toStdString()
-            << "|0\n";
+            << currentTimestamp() << "\n";
         notifFile.close();
     }
 
@@ -428,28 +452,22 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 
 bool User::isFollowing(string username) {
     if (!following || followingCount == 0) return false;
-    for (int i = 0; i < followingCount; i++) {
-        if (following[i] && following[i]->getUsername() == username)
-            return true;
-    }
+    for (int i = 0; i < followingCount; i++)
+        if (following[i] && following[i]->getUsername() == username) return true;
     return false;
 }
 
 void User::addFollower(User* ptr) {
     if (!ptr) return;
     User** newFollowers = new User * [followersCount + 1];
-    for (int i = 0; i < followersCount; i++) {
-        if (followers[i] != nullptr)
-            newFollowers[i] = followers[i];
-        else
-            newFollowers[i] = nullptr;
-    }
+    for (int i = 0; i < followersCount; i++)
+        newFollowers[i] = followers[i] ? followers[i] : nullptr;
     newFollowers[followersCount] = ptr;
     delete[] followers;
     followers = newFollowers;
     followersCount++;
 
-    QDir().mkpath("data/Following");
+    mkdirIfNeeded("data/Following");
     string path = "data/Following/" + this->username + "_followers.txt";
     ofstream file(path, ios::app);
     if (file.is_open()) {
@@ -489,7 +507,6 @@ void User::unfollowUser(string username) {
         followingCount--;
     }
 
-    // Rewrite _following.txt
     string path = "data/Following/" + this->username + "_following.txt";
     ofstream file(path, ios::out);
     if (file.is_open()) {
@@ -505,36 +522,37 @@ void User::unfollowUser(string username) {
 void User::removeFollower(const string& usernameToRemove) {
     if (usernameToRemove.empty()) return;
 
-    // Rewrite file without the removed follower
     string path = "data/Following/" + this->username + "_followers.txt";
-    QStringList remaining;
-    QFile f(QString::fromStdString(path));
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&f);
-        while (!in.atEnd()) {
-            QString l = in.readLine().trimmed();
-            if (!l.isEmpty() && l.toStdString() != usernameToRemove)
-                remaining.append(l);
+
+    // Read file, skip the removed follower
+    string updatedContent;
+    int    newCount = 0;
+    ifstream rf(path);
+    if (rf.is_open()) {
+        string line;
+        while (getline(rf, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty() && line != usernameToRemove) {
+                updatedContent += line + "\n";
+                newCount++;
+            }
         }
-        f.close();
-    }
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&f);
-        for (const QString& l : remaining) out << l << "\n";
-        f.close();
+        rf.close();
     }
 
-    // Rebuild in-memory array from file (no stale pointers)
+    ofstream wf(path, ios::out);
+    if (wf.is_open()) { wf << updatedContent; wf.close(); }
+
+    // Rebuild in-memory array
     delete[] followers;
     followers = nullptr;
-    followersCount = remaining.size();
+    followersCount = newCount;
     saveToFile();
 }
 
 void User::loadFollowing(User** allUsers, int userCount) {
     delete[] following;
     following = nullptr;
-
     if (followingCount == 0) return;
 
     string path = "data/Following/" + this->username + "_following.txt";
@@ -561,7 +579,6 @@ void User::loadFollowing(User** allUsers, int userCount) {
 void User::loadFollowers(User** allUsers, int userCount) {
     delete[] followers;
     followers = nullptr;
-
     if (followersCount == 0) return;
 
     string path = "data/Following/" + this->username + "_followers.txt";
@@ -601,7 +618,7 @@ void User::createPost(string content) {
 
     posts[postCount - 1]->savePostToFile();
 
-    QDir().mkpath(QString::fromStdString("data/Posts/" + this->username));
+    mkdirIfNeeded(("data/Posts/" + this->username).c_str());
     string listPath = "data/Posts/" + this->username + "/posts_list.txt";
     ofstream listFile(listPath, ios::app);
     if (listFile.is_open()) {
@@ -613,7 +630,7 @@ void User::createPost(string content) {
 
 void User::loadAllPosts() {
     if (posts != nullptr) {
-        for (int i = 0; i < postCount; i++) { delete posts[i]; }
+        for (int i = 0; i < postCount; i++) delete posts[i];
         delete[] posts;
         posts = nullptr;
     }
@@ -623,12 +640,10 @@ void User::loadAllPosts() {
     ifstream listFile(listPath);
     if (!listFile.is_open()) return;
 
-    
     int count = 0;
     string temp;
-    while (getline(listFile, temp)) {
+    while (getline(listFile, temp))
         if (!temp.empty() && temp != "\r") count++;
-    }
     listFile.close();
     if (count == 0) return;
 
@@ -643,14 +658,12 @@ void User::loadAllPosts() {
         Posts* p = new Posts();
         p->loadPostFromFile(this->username, postId);
 
-        // Only keep the post if it loaded successfully
         if (p->isValid()) {
             posts[postCount++] = p;
         }
         else {
             delete p;
-            // Remove corrupt entry from posts_list.txt
-            qDebug() << "Skipping invalid post:" << QString::fromStdString(postId);
+            cout << "Skipping invalid post: " << postId << endl;
         }
     }
     listFile2.close();
@@ -658,10 +671,8 @@ void User::loadAllPosts() {
 
 Posts* User::getPostById(string postId) {
     if (!posts) return nullptr;
-    for (int i = 0; i < postCount; i++) {
-        if (posts[i] && posts[i]->getPostId() == postId)
-            return posts[i];
-    }
+    for (int i = 0; i < postCount; i++)
+        if (posts[i] && posts[i]->getPostId() == postId) return posts[i];
     return nullptr;
 }
 
@@ -670,9 +681,9 @@ Posts* User::getPostByIndex(int index) {
     return posts[index];
 }
 
-bool User::editPost(const string& postId, const string& newContent, QString& errorOut) {
+bool User::editPost(const string& postId, const string& newContent, string& errorOut) {
     errorOut = validatePostContent(newContent);
-    if (!errorOut.isEmpty()) return false;
+    if (!errorOut.empty()) return false;
 
     Posts* p = getPostById(postId);
     if (!p) { errorOut = "Post not found."; return false; }
@@ -684,31 +695,28 @@ bool User::editPost(const string& postId, const string& newContent, QString& err
 
 void User::deletePost(string postId) {
     Posts* p = getPostById(postId);
-    if (!p) { qDebug() << "Post not found."; return; }
+    if (!p) { cout << "Post not found." << endl; return; }
 
-    QString base = QString::fromStdString("data/Posts/" + this->username + "/" + postId);
-    QFile::remove(base + ".txt");
-    QFile::remove(base + "_comments.txt");
-    QFile::remove(base + "_reported.txt");
+    string base = "data/Posts/" + this->username + "/" + postId;
+    removeFile(base + ".txt");
+    removeFile(base + "_comments.txt");
+    removeFile(base + "_reported.txt");
 
     // Update posts_list.txt
-    QString listPath = QString::fromStdString("data/Posts/" + this->username + "/posts_list.txt");
-    QFile listFile(listPath);
-    QString updatedList;
-    if (listFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&listFile);
-        while (!in.atEnd()) {
-            QString line = in.readLine().trimmed();
-            if (!line.isEmpty() && line.toStdString() != postId)
+    string listPath = "data/Posts/" + this->username + "/posts_list.txt";
+    string updatedList;
+    ifstream listIn(listPath);
+    if (listIn.is_open()) {
+        string line;
+        while (getline(listIn, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty() && line != postId)
                 updatedList += line + "\n";
         }
-        listFile.close();
+        listIn.close();
     }
-    if (listFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&listFile);
-        out << updatedList;
-        listFile.close();
-    }
+    ofstream listOut(listPath, ios::out);
+    if (listOut.is_open()) { listOut << updatedList; listOut.close(); }
 
     // Rebuild posts array
     Posts** newPosts = postCount > 1 ? new Posts * [postCount - 1] : nullptr;
@@ -745,16 +753,14 @@ void User::reportPost(string postId, User* postOwner) {
 void User::savePost(string postId, User* postOwner) {
     if (!postOwner || postOwner->getUsername() == this->username) return;
 
-    // Check already saved
-    for (int i = 0; i < savedPostCount; i++) {
+    for (int i = 0; i < savedPostCount; i++)
         if (savedPosts[i] && savedPosts[i]->getPostId() == postId) return;
-    }
 
     if (!postOwner->posts && postOwner->postCount > 0)
         postOwner->loadAllPosts();
 
     Posts* p = postOwner->getPostById(postId);
-    if (!p) { qDebug() << "Post not found."; return; }
+    if (!p) { cout << "Post not found." << endl; return; }
 
     Posts** newSaved = new Posts * [savedPostCount + 1];
     for (int i = 0; i < savedPostCount; i++)
@@ -772,19 +778,15 @@ void User::unsavePost(string postId) {
     if (!savedPosts || savedPostCount == 0) return;
 
     int foundIdx = -1;
-    for (int i = 0; i < savedPostCount; i++) {
-        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) {
-            foundIdx = i;
-            break;
-        }
-    }
-    if (foundIdx == -1) { qDebug() << "Post not in saved list."; return; }
+    for (int i = 0; i < savedPostCount; i++)
+        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) { foundIdx = i; break; }
+
+    if (foundIdx == -1) { cout << "Post not in saved list." << endl; return; }
 
     Posts** newSaved = savedPostCount > 1 ? new Posts * [savedPostCount - 1] : nullptr;
     int idx = 0;
-    for (int i = 0; i < savedPostCount; i++) {
+    for (int i = 0; i < savedPostCount; i++)
         if (i != foundIdx) newSaved[idx++] = savedPosts[i];
-    }
     delete[] savedPosts;
     savedPosts = newSaved;
     savedPostCount--;
@@ -794,15 +796,14 @@ void User::unsavePost(string postId) {
 }
 
 void User::saveSavedPostsToFile() {
-    QDir().mkpath(QString::fromStdString("data/Posts/" + this->username));
+    mkdirIfNeeded(("data/Posts/" + this->username).c_str());
     string path = "data/Posts/" + this->username + "/saved_posts.txt";
     ofstream file(path);
-    if (!file.is_open()) { qDebug() << "Cannot open saved posts file."; return; }
-    for (int i = 0; i < savedPostCount; i++) {
+    if (!file.is_open()) { cout << "Cannot open saved posts file." << endl; return; }
+    for (int i = 0; i < savedPostCount; i++)
         if (savedPosts[i])
             file << savedPosts[i]->getPostId() << "|"
             << savedPosts[i]->getCreatorUsername() << "\n";
-    }
     file.close();
 }
 
@@ -815,7 +816,6 @@ void User::loadSavedPosts(User** allUsers, int userCount) {
     ifstream file(path);
     if (!file.is_open()) return;
 
-    // Count lines
     int count = 0;
     string line;
     while (getline(file, line))
@@ -836,14 +836,12 @@ void User::loadSavedPosts(User** allUsers, int userCount) {
         string pid = line.substr(0, sep);
         string owner = line.substr(sep + 1);
 
-        // Trim both
         while (!pid.empty() && (pid.back() == ' ' || pid.back() == '\r')) pid.pop_back();
         while (!owner.empty() && (owner.back() == ' ' || owner.back() == '\r')) owner.pop_back();
         if (pid.empty() || owner.empty()) continue;
 
         for (int i = 0; i < userCount; i++) {
             if (!allUsers[i] || allUsers[i]->getUsername() != owner) continue;
-            // Ensure owner's posts are loaded
             if (!allUsers[i]->posts && allUsers[i]->postCount > 0)
                 allUsers[i]->loadAllPosts();
             Posts* p = allUsers[i]->getPostById(pid);
@@ -859,14 +857,13 @@ void User::clearSavedPostsArray() {
     savedPosts = nullptr;
     savedPostCount = 0;
 }
+
 bool User::hasSavedPost(const string& postId) const {
-    for (int i = 0; i < savedPostCount; ++i) {
-        Posts* sp = savedPosts[i];
-        if (sp && sp->getPostId() == postId)
-            return true;
-    }
+    for (int i = 0; i < savedPostCount; ++i)
+        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) return true;
     return false;
 }
+
 Posts* User::getSavedPostByIndex(int index) {
     if (index < 0 || index >= savedPostCount || !savedPosts) return nullptr;
     return savedPosts[index];
@@ -880,57 +877,62 @@ void User::reportUser() {
     isReportedCount++;
     if (isReportedCount >= 3 && !isReported) {
         isReported = true;
-        // admin_notifications.txt — already exists
-        QDir().mkpath("data/Admin");
-        QFile notifFile("data/Admin/admin_notifications.txt");
-        if (notifFile.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&notifFile);
-            QString ts = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-            out << ts << "|user_reported|User '@"
-                << QString::fromStdString(username)
-                << "' has reached 3 reports and is marked for review.|0\n";
+
+        mkdirIfNeeded("data/Admin");
+        ofstream notifFile("data/Admin/admin_notifications.txt", ios::app);
+        if (notifFile.is_open()) {
+            notifFile << currentTimestamp() << "|user_reported|User '@"
+                << username << "' has reached 3 reports and is marked for review.\n";
             notifFile.close();
         }
     }
 
-    // ← ADD THIS: always update reported_users.txt
-    QDir().mkpath("data/Admin");
-    QFile usersFile("data/Admin/reported_users.txt");
-    if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        // Read existing entries first
-        QMap<QString, int> reportMap;
-        QFile readFile("data/Admin/reported_users.txt");
-        // reopen for reading by using a separate read
-    }
+    // Read current reported_users.txt into parallel arrays
+    mkdirIfNeeded("data/Admin");
+    const int MAX_REPORTED = 256;
+    string    rNames[MAX_REPORTED];
+    int       rCounts[MAX_REPORTED];
+    int       rSize = 0;
 
-    // Simpler approach — just append/rewrite:
-    // Read current file into map
-    QMap<QString, int> reportMap;
-    QFile rf("data/Admin/reported_users.txt");
-    if (rf.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&rf);
-        QString uname;
-        while (!in.atEnd()) {
-            QString line = in.readLine().trimmed();
-            QStringList parts = line.split("|");
-            if (parts.size() < 2) continue;
-            if (parts[0] == "username") uname = parts[1];
-            else if (parts[0] == "reportCount") reportMap[uname] = parts[1].toInt();
+    ifstream rf("data/Admin/reported_users.txt");
+    if (rf.is_open()) {
+        string line, uname;
+        while (getline(rf, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            size_t sep = line.find('|');
+            if (sep == string::npos) continue;
+            string key = line.substr(0, sep);
+            string val = line.substr(sep + 1);
+            if (key == "username") {
+                uname = val;
+            }
+            else if (key == "reportCount" && !uname.empty() && rSize < MAX_REPORTED) {
+                rNames[rSize] = uname;
+                rCounts[rSize] = stoi(val);
+                rSize++;
+                uname.clear();
+            }
         }
         rf.close();
     }
 
-    // Update count for this user
-    reportMap[QString::fromStdString(username)] = isReportedCount;
+    // Update or insert count for this user
+    bool found = false;
+    for (int i = 0; i < rSize; i++) {
+        if (rNames[i] == username) { rCounts[i] = isReportedCount; found = true; break; }
+    }
+    if (!found && rSize < MAX_REPORTED) {
+        rNames[rSize] = username;
+        rCounts[rSize] = isReportedCount;
+        rSize++;
+    }
 
     // Rewrite file
-    QFile wf("data/Admin/reported_users.txt");
-    if (wf.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&wf);
-        for (auto it = reportMap.begin(); it != reportMap.end(); ++it) {
-            out << "username|" << it.key() << "\n"
-                << "reportCount|" << it.value() << "\n";
-        }
+    ofstream wf("data/Admin/reported_users.txt", ios::out);
+    if (wf.is_open()) {
+        for (int i = 0; i < rSize; i++)
+            wf << "username|" << rNames[i] << "\n"
+            << "reportCount|" << rCounts[i] << "\n";
         wf.close();
     }
 
@@ -953,10 +955,7 @@ void User::reportUserBy(const string& reporterUsername) {
     if (hasReportedUser(reporterUsername)) return;
     string path = "data/Users/" + this->username + "_reporters.txt";
     ofstream file(path, ios::app);
-    if (file.is_open()) {
-        file << reporterUsername << "\n";
-        file.close();
-    }
+    if (file.is_open()) { file << reporterUsername << "\n"; file.close(); }
     reportUser();
 }
 
@@ -1040,17 +1039,17 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     for (int i = 0; i < postCount; i++) {
         if (!posts[i]) continue;
         string pid = posts[i]->getPostId();
-        QString base = QString::fromStdString("data/Posts/" + uname + "/" + pid);
-        QFile::remove(base + ".txt");
-        QFile::remove(base + "_comments.txt");
-        QFile::remove(base + "_reported.txt");
+        string base = "data/Posts/" + uname + "/" + pid;
+        removeFile(base + ".txt");
+        removeFile(base + "_comments.txt");
+        removeFile(base + "_reported.txt");
     }
 
-    // Delete misc files for this user
-    QFile::remove(QString::fromStdString("data/Posts/" + uname + "/" + uname + "_liked.txt"));
-    QFile::remove(QString::fromStdString("data/Posts/" + uname + "/posts_list.txt"));
-    QFile::remove(QString::fromStdString("data/Posts/" + uname + "/saved_posts.txt"));
-    QDir(QString::fromStdString("data/Posts/" + uname)).removeRecursively();
+    // Delete misc files
+    removeFile("data/Posts/" + uname + "/" + uname + "_liked.txt");
+    removeFile("data/Posts/" + uname + "/posts_list.txt");
+    removeFile("data/Posts/" + uname + "/saved_posts.txt");
+    removeDirRecursive("data/Posts/" + uname);
 
     // Remove this user's comments from other users' posts
     for (int u = 0; u < userCount; u++) {
@@ -1059,9 +1058,10 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         for (int p = 0; p < allUsers[u]->getPostCount(); p++) {
             Posts* post = allUsers[u]->getPostByIndex(p);
             if (!post || !post->isValid()) continue;
-            QList<Comment> comments = post->getComments();
-            for (int c = comments.size() - 1; c >= 0; c--) {
-                if (comments[c].getCreatorUsername().toStdString() == uname)
+            Comment* comments = post->getComments();
+            int      cCount = post->getCommentsCount();
+            for (int c = cCount - 1; c >= 0; c--) {
+                if (comments[c].getCreatorUsername() == uname)
                     post->deleteCommentAsAdmin(c);
             }
         }
@@ -1070,99 +1070,77 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     // Remove this user's saved posts from other users' saved_posts.txt
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
-        QString savedPath = QString::fromStdString(
-            "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt");
-        QFile f(savedPath);
-        QStringList remaining;
-        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QTextStream in(&f);
-            while (!in.atEnd()) {
-                QString line = in.readLine().trimmed();
-                if (!line.isEmpty() && !line.endsWith("|" + QString::fromStdString(uname)))
-                    remaining << line;
+        string savedPath = "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt";
+        string remaining;
+        ifstream sf(savedPath);
+        if (sf.is_open()) {
+            string line;
+            while (getline(sf, line)) {
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                // line format: postId|ownerUsername  — skip lines owned by uname
+                size_t sep = line.find('|');
+                if (sep != string::npos) {
+                    string owner = line.substr(sep + 1);
+                    while (!owner.empty() && (owner.back() == ' ' || owner.back() == '\r'))
+                        owner.pop_back();
+                    if (owner == uname) continue;
+                }
+                if (!line.empty()) remaining += line + "\n";
             }
-            f.close();
+            sf.close();
         }
-        if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QTextStream out(&f);
-            for (const QString& l : remaining) out << l << "\n";
-            f.close();
-        }
+        ofstream swf(savedPath, ios::out);
+        if (swf.is_open()) { swf << remaining; swf.close(); }
     }
 
     // Delete following/followers/notifications files
-    QFile::remove(QString::fromStdString("data/Following/" + uname + "_following.txt"));
-    QFile::remove(QString::fromStdString("data/Following/" + uname + "_followers.txt"));
-    QFile::remove(QString::fromStdString("data/Notifications/" + uname + "_notif.txt"));
-    QFile::remove(QString::fromStdString("data/Users/" + uname + "_reporters.txt"));
+    removeFile("data/Following/" + uname + "_following.txt");
+    removeFile("data/Following/" + uname + "_followers.txt");
+    removeFile("data/Notifications/" + uname + "_notif.txt");
+    removeFile("data/Users/" + uname + "_reporters.txt");
 
-    // Clean up messages
-    QString quname = QString::fromStdString(uname);
-    QDir msgDir("data/Messages");
-    QStringList msgFiles = msgDir.entryList(QStringList() << "*.txt", QDir::Files);
-    for (const QString& fname : msgFiles) {
-        if (fname.contains(quname))
-            QFile::remove("data/Messages/" + fname);
-    }
+    // Clean up messages — remove any chat file containing uname
+    // (best-effort: remove files named *uname* in data/Messages/)
+    removeFile("data/Messages/" + uname + "_index.txt");
+
+    // Remove uname from every other user's message index
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
-        QString indexPath = "data/Messages/" + QString::fromStdString(allUsers[u]->getUsername()) + "_index.txt";
-        QFile f(indexPath);
-        QStringList remaining;
-        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QTextStream in(&f);
-            while (!in.atEnd()) {
-                QString l = in.readLine().trimmed();
-                if (!l.isEmpty() && l != quname) remaining << l;
+        string indexPath = "data/Messages/" + allUsers[u]->getUsername() + "_index.txt";
+        string remaining;
+        ifstream mf(indexPath);
+        if (mf.is_open()) {
+            string line;
+            while (getline(mf, line)) {
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (!line.empty() && line != uname) remaining += line + "\n";
             }
-            f.close();
+            mf.close();
         }
-        if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QTextStream out(&f);
-            for (const QString& l : remaining) out << l << "\n";
-            f.close();
-        }
+        ofstream mwf(indexPath, ios::out);
+        if (mwf.is_open()) { mwf << remaining; mwf.close(); }
     }
 
     // Delete user file and remove from users_list.txt
-    QFile::remove(QString::fromStdString("data/Users/" + uname + ".txt"));
+    removeFile("data/Users/" + uname + ".txt");
     removeFromUser_List(uname);
 
-    // Remove from allUsers array — null the slot first, then rebuild
+    // Remove from allUsers array
     User** newArray = (userCount - 1 > 0) ? new User * [userCount - 1] : nullptr;
     int idx = 0;
-    for (int i = 0; i < userCount; i++) {
+    for (int i = 0; i < userCount; i++)
         if (allUsers[i] && allUsers[i]->getUsername() != uname)
             newArray[idx++] = allUsers[i];
-        // Do NOT delete this — caller owns allUsers[i] for the deleted user
-    }
     delete[] allUsers;
     allUsers = newArray;
     userCount--;
 
-    qDebug() << "Account fully deleted:" << QString::fromStdString(uname);
+    cout << "Account fully deleted: " << uname << endl;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  Qt HELPERS
+//  HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
-
-QString User::getDisplayUsername() const { return QString::fromStdString(this->username); }
-QString User::getDisplayBio()      const { return QString::fromStdString(this->bio); }
-
-QList<Posts*> User::getPostsAsQList() const {
-    QList<Posts*> result;
-    for (int i = 0; i < postCount; i++)
-        if (posts[i]) result.append(posts[i]);
-    return result;
-}
-
-QList<Posts*> User::getSavedPostsAsQList() const {
-    QList<Posts*> result;
-    for (int i = 0; i < savedPostCount; i++)
-        if (savedPosts[i]) result.append(savedPosts[i]);
-    return result;
-}
 
 bool User::hasPost(const string& postId) const {
     for (int i = 0; i < postCount; i++)
@@ -1174,65 +1152,73 @@ bool User::hasPost(const string& postId) const {
 //  CONVERSATION HISTORY (Messages)
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<QString> User::getConversationHistory(const string& username) {
-    QList<QString> peers;
-    QString path = QString::fromStdString("data/Messages/" + username + "_index.txt");
-    QFile f(path);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&f);
-        while (!in.atEnd()) {
-            QString peer = in.readLine().trimmed();
-            if (!peer.isEmpty() && !peers.contains(peer))
-                peers.append(peer);
+string* User::getConversationHistory(const string& username, int& outCount) {
+    outCount = 0;
+    int      capacity = 16;
+    string* peers = new string[capacity];
+
+    string path = "data/Messages/" + username + "_index.txt";
+    ifstream f(path);
+    if (!f.is_open()) return peers;
+
+    string line;
+    while (getline(f, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty()) continue;
+
+        // check duplicate
+        bool already = false;
+        for (int i = 0; i < outCount; i++)
+            if (peers[i] == line) { already = true; break; }
+        if (already) continue;
+
+        if (outCount >= capacity) {
+            capacity *= 2;
+            string* tmp = new string[capacity];
+            for (int i = 0; i < outCount; i++) tmp[i] = peers[i];
+            delete[] peers;
+            peers = tmp;
         }
-        f.close();
+        peers[outCount++] = line;
     }
+    f.close();
     return peers;
 }
 
 void User::addConversationToHistory(const string& username, const string& peerUsername) {
-    QDir().mkpath("data/Messages");
-    QString path = QString::fromStdString("data/Messages/" + username + "_index.txt");
-    QString peerStr = QString::fromStdString(peerUsername);
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Messages");
+    string path = "data/Messages/" + username + "_index.txt";
 
-    QList<QString> existing;
-    QFile rf(path);
-    if (rf.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&rf);
-        while (!in.atEnd()) {
-            QString l = in.readLine().trimmed();
-            if (!l.isEmpty()) existing.append(l);
+    // Check if already exists
+    ifstream rf(path);
+    if (rf.is_open()) {
+        string line;
+        while (getline(rf, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line == peerUsername) { rf.close(); return; }
         }
         rf.close();
     }
-    if (existing.contains(peerStr)) return;
 
-    QFile wf(path);
-    if (wf.open(QIODevice::Append | QIODevice::Text)) {
-        QTextStream out(&wf);
-        out << peerStr << "\n";
-        wf.close();
-    }
+    ofstream wf(path, ios::app);
+    if (wf.is_open()) { wf << peerUsername << "\n"; wf.close(); }
 }
 
 void User::removeConversationFromHistory(const string& username, const string& peerUsername) {
-    QString path = QString::fromStdString("data/Messages/" + username + "_index.txt");
-    QFile f(path);
-    QStringList remaining;
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&f);
-        while (!in.atEnd()) {
-            QString l = in.readLine().trimmed();
-            if (!l.isEmpty() && l.toStdString() != peerUsername)
-                remaining.append(l);
+    string path = "data/Messages/" + username + "_index.txt";
+    string remaining;
+    ifstream f(path);
+    if (f.is_open()) {
+        string line;
+        while (getline(f, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty() && line != peerUsername) remaining += line + "\n";
         }
         f.close();
     }
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&f);
-        for (const QString& l : remaining) out << l << "\n";
-        f.close();
-    }
+    ofstream wf(path, ios::out);
+    if (wf.is_open()) { wf << remaining; wf.close(); }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1257,14 +1243,12 @@ void loadAllUsers(User** allUsers, int& userCount) {
 }
 
 User* signUp(User**& allUsers, int& userCount, string username, string password, string bio) {
-    for (int i = 0; i < userCount; i++) {
-        if (allUsers[i] && allUsers[i]->getUsername() == username)
-            return nullptr; // username taken
-    }
+    for (int i = 0; i < userCount; i++)
+        if (allUsers[i] && allUsers[i]->getUsername() == username) return nullptr;
+
     User* newUser = new User(username, password, bio);
     User** newArray = new User * [userCount + 1];
-    for (int i = 0; i < userCount; i++)
-        newArray[i] = allUsers[i];
+    for (int i = 0; i < userCount; i++) newArray[i] = allUsers[i];
     newArray[userCount] = newUser;
     delete[] allUsers;
     allUsers = newArray;

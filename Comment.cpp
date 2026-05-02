@@ -1,94 +1,68 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Comment.h"
-#include <QString>
-#include <QDateTime>
+#include <ctime>
 
-Comment::Comment(QString content, QString commentId, QString creatorUsername)
-	: content(content), commentId(commentId), creatorUsername(creatorUsername), isReported(false), likeCount(0) {
-	timeOfCreation = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+static string getCurrentTimeString() {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    char buffer[20];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ltm);
+    return string(buffer);
 }
 
-Comment::Comment() : content(""), commentId(""), creatorUsername(""), isReported(false), likeCount(0) {
-	timeOfCreation = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+Comment::Comment(string content, string commentId, string creatorUsername)
+    : content(content), commentId(commentId), creatorUsername(creatorUsername),
+    isReported(false), likeCount(0) {
+    timeOfCreation = getCurrentTimeString();
+}
+
+Comment::Comment() : content(""), commentId(""), creatorUsername(""),
+isReported(false), likeCount(0) {
+    timeOfCreation = getCurrentTimeString();
 }
 
 Comment::Comment(const Comment& other)
-	: content(other.content),
-	commentId(other.commentId),
-	timeOfCreation(other.timeOfCreation),
-	creatorUsername(other.creatorUsername),
-	isReported(other.isReported),
-	likeCount(other.likeCount) {
+    : content(other.content),
+    commentId(other.commentId),
+    timeOfCreation(other.timeOfCreation),
+    creatorUsername(other.creatorUsername),
+    isReported(other.isReported),
+    likeCount(other.likeCount) {
 }
 
 Comment& Comment::operator=(const Comment& other) {
-	if (this != &other) {
-		content = other.content;
-		commentId = other.commentId;
-		timeOfCreation = other.timeOfCreation;
-		creatorUsername = other.creatorUsername;
-		isReported = other.isReported;
-		likeCount = other.likeCount;
-	}
-	return *this;
+    if (this != &other) {
+        content = other.content;
+        commentId = other.commentId;
+        timeOfCreation = other.timeOfCreation;
+        creatorUsername = other.creatorUsername;
+        isReported = other.isReported;
+        likeCount = other.likeCount;
+    }
+    return *this;
 }
 
-void Comment::editText(const QString& newContent) {
-	content = newContent;
+void Comment::editText(const string& newContent) {
+    content = newContent;
 }
 
-QString Comment::getContent() const {
-	return content;
-}
+string Comment::getContent() const { return content; }
+string Comment::getCommentId() const { return commentId; }
+string Comment::getTimeOfCreation() const { return timeOfCreation; }
+string Comment::getCreatorUsername() const { return creatorUsername; }
+bool Comment::getIsReported() const { return isReported; }
+int Comment::getLikeCount() const { return likeCount; }
 
-QString Comment::getCommentId() const {
-	return commentId;
-}
+void Comment::setContent(const string& newContent) { content = newContent; }
+void Comment::setIsReported(bool reported) { isReported = reported; }
 
-QString Comment::getTimeOfCreation() const {
-	return timeOfCreation;
-}
+void Comment::like() { likeCount++; }
+void Comment::unlike() { if (likeCount > 0) likeCount--; }
 
-QString Comment::getCreatorUsername() const {
-	return creatorUsername;
-}
+void Comment::setTimeOfCreation(const string& time) { timeOfCreation = time; }
+void Comment::setLikeCount(int count) { likeCount = count; }
 
-bool Comment::getIsReported() const {
-	return isReported;
-}
-
-int Comment::getLikeCount() const {
-	return likeCount;
-}
-
-void Comment::setContent(const QString& newContent) {
-	content = newContent;
-}
-
-void Comment::setIsReported(bool reported) {
-	isReported = reported;
-}
-
-void Comment::like() {
-	likeCount++;
-}
-
-void Comment::unlike() {
-	if (likeCount > 0) {
-		likeCount--;
-	}
-}
-
-void Comment::setTimeOfCreation(const QString& time) {
-	timeOfCreation = time;
-}
-
-void Comment::setLikeCount(int count) {
-	likeCount = count;
-}
-
-QString Comment::getDisplayName() const {
-	if(creatorUsername.isEmpty()) {
-		return "Unknown User";
-	}
-	return creatorUsername;
+string Comment::getDisplayName() const {
+    if (creatorUsername.empty()) return "Unknown User";
+    return creatorUsername;
 }

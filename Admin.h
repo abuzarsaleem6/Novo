@@ -5,25 +5,36 @@
 
 #include "User.h"
 #include "Post.h"
-#include <QList>
-#include <QString>
-#include <QDir>
-#include <QDebug>
-#include"Notification.h"
+#include "Notification.h"
+#include <string>
+#include <fstream>
+
+using namespace std;
 
 class Admin : public User {
 private:
-    QString adminLevel;
-    QList<User*> reportedUsers;
-    QList<Posts*> reportedPosts;
-    int reportedUserCount;
-    int reportedPostCount;
-    QList<Notification> adminNotifications;
+    string adminLevel;
+
+    User** reportedUsers;
+    int           reportedUserCount;
+    int           reportedUserCapacity;
+
+    Posts** reportedPosts;
+    int           reportedPostCount;
+    int           reportedPostCapacity;
+
+    Notification* adminNotifications;
+    int           adminNotifCount;
+    int           adminNotifCapacity;
+
+    void expandReportedUsers();
+    void expandReportedPosts();
+    void expandNotifications();
 
 public:
     // ─── CONSTRUCTORS & DESTRUCTORS ───
     Admin();
-    Admin(QString username, QString password, QString bio = "Admin");
+    Admin(string username, string password, string bio = "Admin");
     Admin(const Admin& other);
     Admin& operator=(const Admin& other);
     ~Admin();
@@ -33,33 +44,32 @@ public:
     void receivePostReport(Posts* post);
 
     // ─── ACTION METHODS (DELETE/BAN) ───
-    void deleteUser(User**& allUsers, int& userCount, const QString& username);
-    void deletePost(User** allUsers, int userCount, const QString& postId);
+    void deleteUser(User**& allUsers, int& userCount, const string& username);
+    void deletePost(User** allUsers, int userCount, const string& postId);
     void deleteComment(Posts* post, int commentIndex);
-    
 
     // ─── REPORT REVIEW ───
     void reviewReports(User**& allUsers, int& userCount);
-    void checkReportThresholds(User* user, const QString& username);
+    void checkReportThresholds(User* user, const string& username);
 
-    // ─── GETTERS FOR Qt GUI ───
-    QList<User*> getReportedUsers() const;
-    QList<Posts*> getReportedPosts() const;
-    int getReportedUserCount() const;
-    int getReportedPostCount() const;
+    // ─── GETTERS ───
+    User** getReportedUsers()     const;
+    Posts** getReportedPosts()     const;
+    int           getReportedUserCount() const;
+    int           getReportedPostCount() const;
 
     // ─── NOTIFICATION MANAGEMENT ───
-    void addNotification(const QString& message);
-    QList<Notification> getAllNotifications() const;
-    void clearNotifications();
-	void viewAllNotifications() const;
+    void          addNotification(const string& message);
+    Notification* getAllNotifications()  const;
+    int           getAdminNotifCount()   const;
+    void          clearNotifications();
+    void          viewAllNotifications() const;
 
     // ─── FILE I/O ───
     void saveReportsToFile();
     void loadReportsFromFile(User**& allUsers, int& userCount);
     void saveAdminToFile();
     void loadAdminFromFile();
-   
 
     // ─── DISPLAY ───
     void displayAdminDashboard();

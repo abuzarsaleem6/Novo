@@ -1,6 +1,14 @@
-// Notification.cpp
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "Notification.h"
+
+#ifdef _WIN32
+#include <direct.h>
+static void mkdirIfNeeded(const char* path) { _mkdir(path); }
+#else
+#include <sys/stat.h>
+static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
+#endif
 
 using namespace std;
 
@@ -12,33 +20,25 @@ Notification::Notification() {
     this->message = "";
     this->type = "";
     this->timestamp = "";
-    this->isRead = false;
 }
 
 Notification::Notification(string msg, string t, string time) {
     this->message = msg;
     this->type = t;
     this->timestamp = time;
-    this->isRead = false;
-}
-
-void Notification::markAsRead() {
-    this->isRead = true;
-}
-
-void Notification::markAsUnread() {
-    this->isRead = false;
 }
 
 void Notification::saveNotificationToFile(string username) {
-    QDir().mkpath("data/Notifications");
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Notifications");
+
     string path = "data/Notifications/" + username + "_notif.txt";
     ofstream outFile(path, ios::app);
 
     if (outFile.is_open()) {
-       
-        outFile << type << "|\n" << message << "|\n"  << timestamp << "|\n" <<
-            (isRead ? "1|" : "0|") << "\n---\n"; 
+        outFile << type << "|\n"
+            << message << "|\n"
+            << timestamp << "|\n---\n";
         outFile.close();
     }
 }
@@ -56,102 +56,96 @@ string Notification::getTimestamp() const {
     return this->timestamp;
 }
 
-bool Notification::getStatus() const {
-    return this->isRead;
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 //  NOTIFICATION MANAGER - STATIC HELPER CLASS
-//  Used by Qt GUI to batch load/save notifications
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<Notification> NotificationManager::loadAllNotifications(const string& username) {
-    QList<Notification> notifications;
+Notification* NotificationManager::loadAllNotifications(const string& username, int& outCount) {
+    outCount = 0;
 
-    QString path = "data/Notifications/" + QString::fromStdString(username) + "_notif.txt";
-    QFile file(path);
+    string path = "data/Notifications/" + username + "_notif.txt";
+    ifstream file(path);
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "No notifications file found for" << QString::fromStdString(username);
-        return notifications;
+    if (!file.is_open()) {
+        cout << "No notifications file found for " << username << endl;
+        return nullptr;
     }
 
-    QTextStream in(&file);
+    // first pass: count lines to allocate
+    int capacity = 16;
+    Notification* notifications = new Notification[capacity];
 
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
-        if (line.isEmpty()) continue;
+    string line;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
 
         // Format: type|message|timestamp|isRead
-        // Use indexOf to split on FIRST 3 pipes only — protects against | in message
-        int p1 = line.indexOf('|');
-        if (p1 == -1) { qDebug() << "WARNING: bad notif line (no sep):" << line; continue; }
+        // split on first 3 pipes only — protects against | in message
+        size_t p1 = line.find('|');
+        if (p1 == string::npos) { cout << "WARNING: bad notif line (no sep): " << line << endl; continue; }
 
-        int p2 = line.indexOf('|', p1 + 1);
-        if (p2 == -1) { qDebug() << "WARNING: bad notif line (1 sep):" << line; continue; }
+        size_t p2 = line.find('|', p1 + 1);
+        if (p2 == string::npos) { cout << "WARNING: bad notif line (1 sep): " << line << endl; continue; }
 
-        int p3 = line.lastIndexOf('|');  // last pipe = isRead field
-        if (p3 == p2) { qDebug() << "WARNING: bad notif line (2 sep):" << line; continue; }
+        size_t p3 = line.rfind('|');
+        if (p3 == p2) { cout << "WARNING: bad notif line (2 sep): " << line << endl; continue; }
 
-        QString typeStr = line.mid(0, p1).trimmed();
-        QString msgStr = line.mid(p1 + 1, p2 - p1 - 1).trimmed();
-        QString timeStr = line.mid(p2 + 1, p3 - p2 - 1).trimmed();
-        QString isReadStr = line.mid(p3 + 1).trimmed();
+        string typeStr = line.substr(0, p1);
+        string msgStr = line.substr(p1 + 1, p2 - p1 - 1);
+        string timeStr = line.substr(p2 + 1, p3 - p2 - 1);
 
-        if (typeStr.isEmpty() || msgStr.isEmpty() || timeStr.isEmpty()) continue;
+        // trim whitespace
+        while (!typeStr.empty() && (typeStr.back() == ' ' || typeStr.back() == '\r')) typeStr.pop_back();
+        while (!msgStr.empty() && (msgStr.back() == ' ' || msgStr.back() == '\r')) msgStr.pop_back();
+        while (!timeStr.empty() && (timeStr.back() == ' ' || timeStr.back() == '\r')) timeStr.pop_back();
 
-        Notification notif(msgStr.toStdString(), typeStr.toStdString(), timeStr.toStdString());
-        if (isReadStr == "1") notif.markAsRead();
+        if (typeStr.empty() || msgStr.empty() || timeStr.empty()) continue;
 
-        notifications.append(notif);
+        // expand if needed
+        if (outCount >= capacity) {
+            capacity *= 2;
+            Notification* tmp = new Notification[capacity];
+            for (int i = 0; i < outCount; i++) tmp[i] = notifications[i];
+            delete[] notifications;
+            notifications = tmp;
+        }
+
+        Notification notif(msgStr, typeStr, timeStr);
+        notifications[outCount++] = notif;
     }
 
     file.close();
-    qDebug() << "Successfully loaded" << notifications.size() << "notifications.";
+    cout << "Successfully loaded " << outCount << " notifications." << endl;
     return notifications;
 }
 
-void NotificationManager::saveAllNotifications(const string& username, const QList<Notification>& notifications) {
-    QDir().mkpath("data/Notifications");
+void NotificationManager::saveAllNotifications(const string& username, Notification* notifications, int count) {
+    mkdirIfNeeded("data");
+    mkdirIfNeeded("data/Notifications");
 
-    QString path = "data/Notifications/" + QString::fromStdString(username) + "_notif.txt";
-    QFile file(path);
+    string path = "data/Notifications/" + username + "_notif.txt";
+    ofstream file(path);   // truncate mode (default)
 
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-        qDebug() << "ERROR: Could not open notification file for writing:" << path;
+    if (!file.is_open()) {
+        cout << "ERROR: Could not open notification file for writing: " << path << endl;
         return;
     }
 
-    QTextStream out(&file);
     int savedCount = 0;
-
-    // Write each notification to file
-    for (const auto& notif : notifications) {
-        out << QString::fromStdString(notif.getType()) << "|"
-            << QString::fromStdString(notif.getMessage()) << "|"
-            << QString::fromStdString(notif.getTimestamp()) << "|"
-            << (notif.getStatus() ? "1" : "0") << "\n";
+    for (int i = 0; i < count; i++) {
+        file << notifications[i].getType() << "|"
+            << notifications[i].getMessage() << "|"
+            << notifications[i].getTimestamp() << "\n";
         savedCount++;
     }
 
     file.close();
-    qDebug() << "Saved" << savedCount << "notifications for" << QString::fromStdString(username);
+    cout << "Saved " << savedCount << " notifications for " << username << endl;
 }
+
 void NotificationManager::clearAllNotifications(const string& username) {
-    QString path = "data/Notifications/" + QString::fromStdString(username) + "_notif.txt";
-    QFile::remove(path); 
-}
-void NotificationManager::markAllAsRead(const string& username) {
-    // Load all notifications
-    QList<Notification> notifications = loadAllNotifications(username);
-
-    // Mark each as read
-    for (auto& notif : notifications) {
-        notif.markAsRead();
-    }
-
-    // Save back to file
-    saveAllNotifications(username, notifications);
-
-    qDebug() << "All notifications marked as read for" << QString::fromStdString(username);
+    string path = "data/Notifications/" + username + "_notif.txt";
+    // open in truncate mode to wipe the file (same effect as QFile::remove then recreate)
+    ofstream file(path, ios::trunc);
+    file.close();
 }

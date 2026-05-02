@@ -391,6 +391,7 @@ private:
 
     QWidget* m_sidebar;
     SidebarButton* m_btnFeed;
+    SidebarButton* m_btnCreatePost = nullptr;
     SidebarButton* m_btnNotifications;
     SidebarButton* m_btnSearch;
     SidebarButton* m_btnMessages;

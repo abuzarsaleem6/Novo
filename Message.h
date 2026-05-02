@@ -3,49 +3,34 @@
 #define MESSAGE_H
 
 #include <iostream>
-#include <cstring>
+#include <string>
 #include <fstream>
 
 class Message {
 private:
-    char* content;
-    char* senderUsername;
-    char* receiverUsername;
-    char* timestamp;
-    bool isRead;
-
-
-    void allocateAndCopy(char*& dest, const char* source);
+    std::string content;
+    std::string senderUsername;
+    std::string receiverUsername;
+    std::string timestamp;
 
 public:
-
     Message();
-    Message(const char* text, const char* sender, const char* receiver);
-    Message(const Message& source);
-    Message& operator=(const Message& source);
-    ~Message();
+    Message(const std::string& text, const std::string& sender, const std::string& receiver);
+    Message(const Message& source) = default;
+    Message& operator=(const Message& source) = default;
+    ~Message() = default;
 
-
-    const char* getContent() const;
-    const char* getSenderUsername() const;
-    const char* getReceiverUsername() const;
-    const char* getTimestamp() const;
-    bool getIsRead() const;
-
-
-    void setContent(const char* text);
-    void setSenderUsername(const char* sender);
-    void setReceiverUsername(const char* receiver);
-    void markAsRead();
-
+    const std::string& getContent() const;
+    const std::string& getSenderUsername() const;
+    const std::string& getReceiverUsername() const;
+    const std::string& getTimestamp() const;
+    void setContent(const std::string& text);
+    void setSenderUsername(const std::string& sender);
+    void setReceiverUsername(const std::string& receiver);
 
     void generateTimestamp();
 
-
     void saveToFile(std::ofstream& out) const;
-
-
-
 };
 
 #endif

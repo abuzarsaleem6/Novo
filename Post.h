@@ -1,12 +1,10 @@
 #pragma once
-#include <QString>
-#include <QList>
-#include <ctime>
-#include <QFile>
-#include <QTextStream>
-#include <QDebug>
+#ifndef POST_H
+#define POST_H
+
 #include <string>
 #include <iostream>
+#include <fstream>
 #include "Comment.h"
 
 using namespace std;
@@ -20,9 +18,11 @@ private:
     bool isReported;
     int reportCount;
     int likeCount;
-    QList<QString> likedByUsers;
-    QList<Comment> commentList;
+    Comment* commentList;
     int commentsCount;
+    int commentCapacity;
+
+    void expandComments();
 
 public:
     Posts();
@@ -52,11 +52,11 @@ public:
     void loadPostFromFile(string ownerUsername, string postId);
 
     // ─── COMMENTS ───
-    void addComment(const QString& commentContent, const QString& cUsername);
-    void deleteComment(int index, const QString& rUsername);
-    void editComment(int index, const QString& newContent, const QString& rUsername);
+    void addComment(const string& commentContent, const string& cUsername);
+    void deleteComment(int index, const string& rUsername);
+    void editComment(int index, const string& newContent, const string& rUsername);
     void deleteCommentAsAdmin(int index);
-    QList<Comment> getComments() const;
+    Comment* getComments() const;
     void saveCommentsToFile() const;
     void loadCommentsFromFile();
 
@@ -69,3 +69,5 @@ public:
     void reportPost(const string& reporterUsername);
     bool hasReportedBy(const string& username) const;
 };
+
+#endif

@@ -1,46 +1,42 @@
 #pragma once
-#pragma once
 #ifndef COMMENT_H
 #define COMMENT_H
 
-#include<QString>
-#include<QDateTime>
+#include <string>
+#include <ctime>
+
+using namespace std;
 
 class Comment {
 private:
-	QString content;
-	QString commentId;
-	QString timeOfCreation;
-	QString creatorUsername;
-	bool isReported;
-	int likeCount;
+    string content;
+    string commentId;
+    string timeOfCreation;
+    string creatorUsername;
+    bool isReported;
+    int likeCount;
 
 public:
-	Comment(QString content, QString commentId, QString creatorUsername);
-	Comment();
+    Comment(string content, string commentId, string creatorUsername);
+    Comment();
+    Comment(const Comment& other);
+    Comment& operator=(const Comment& other);
 
-	Comment(const Comment& other);
+    void editText(const string& newContent);
+    string getContent() const;
+    string getCommentId() const;
+    string getTimeOfCreation() const;
+    string getCreatorUsername() const;
+    bool getIsReported() const;
+    int getLikeCount() const;
 
-	Comment& operator=(const Comment& other);
-
-	void editText(const QString& newContent);
-	QString getContent() const;
-	QString getCommentId() const;
-	QString getTimeOfCreation() const;
-	QString getCreatorUsername() const;
-	bool getIsReported() const;
-	int getLikeCount() const;
-
-	void setContent(const QString& newContent);
-
-	void setIsReported(bool reported);
-
-	void like();
-	void unlike();
-
-	void setTimeOfCreation(const QString& time);
-	void setLikeCount(int count);
-	QString getDisplayName() const;
+    void setContent(const string& newContent);
+    void setIsReported(bool reported);
+    void like();
+    void unlike();
+    void setTimeOfCreation(const string& time);
+    void setLikeCount(int count);
+    string getDisplayName() const;
 };
 
 #endif
