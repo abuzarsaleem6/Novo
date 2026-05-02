@@ -438,8 +438,12 @@ bool User::isFollowing(string username) {
 void User::addFollower(User* ptr) {
     if (!ptr) return;
     User** newFollowers = new User * [followersCount + 1];
-    for (int i = 0; i < followersCount; i++)
-        newFollowers[i] = followers[i];
+    for (int i = 0; i < followersCount; i++) {
+        if (followers[i] != nullptr)
+            newFollowers[i] = followers[i];
+        else
+            newFollowers[i] = nullptr;
+    }
     newFollowers[followersCount] = ptr;
     delete[] followers;
     followers = newFollowers;
