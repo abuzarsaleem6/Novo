@@ -10,16 +10,14 @@
 using namespace std;
 
 class SearchEngine {
+public:
+    SearchEngine();
+    SearchEngine(User** users, int count);
+    void setUsers(User** users, int count);
+    User* searchUser(const std::string& username) const;
 private:
     User** allUsers;
     int    userCount;
-
-public:
-    SearchEngine();
-    SearchEngine(User** allUsers, int userCount);
-
-    void   setUsers(User** allUsers, int userCount);
-    User* searchUser(const string& username) const;
 };
 
 #endif

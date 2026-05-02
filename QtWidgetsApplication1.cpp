@@ -1528,6 +1528,114 @@ void FeedPage::onSubmitPost() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  CreatePostPage  — standalone page for composing a new post
+// ══════════════════════════════════════════════════════════════════════════════
+CreatePostPage::CreatePostPage(User* currentUser, QWidget* parent)
+    : QWidget(parent), m_user(currentUser)
+{
+    auto* outer = new QVBoxLayout(this);
+    outer->setContentsMargins(28, 24, 28, 16);
+    outer->setSpacing(20);
+
+    // Header
+    auto* hRow = new QHBoxLayout;
+    hRow->setContentsMargins(0, 0, 0, 0);
+    hRow->addWidget(makeLabel("Create Post", "pageTitle"));
+    hRow->addStretch(1);
+    outer->addLayout(hRow);
+
+    // Composer card
+    auto* card = new QFrame;
+    card->setObjectName("postCard");
+    auto* cl = new QVBoxLayout(card);
+    cl->setContentsMargins(20, 18, 20, 18);
+    cl->setSpacing(14);
+
+    // Avatar + prompt row
+    auto* topRow = new QHBoxLayout;
+    topRow->setSpacing(12);
+    QString ini = currentUser
+        ? QString::fromStdString(currentUser->getUsername()).left(1).toUpper()
+        : "?";
+    topRow->addWidget(avatar(ini, 36), 0, Qt::AlignVCenter);
+    auto* prompt = new QLabel("What's on your mind?");
+    prompt->setStyleSheet("font-size:14px;color:#8080CC;");
+    topRow->addWidget(prompt, 1);
+    cl->addLayout(topRow);
+
+    m_postInput = new QTextEdit;
+    m_postInput->setPlaceholderText("Share something with your followers...");
+    m_postInput->setMinimumHeight(140);
+    m_postInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    cl->addWidget(m_postInput);
+
+    // Character count
+    m_charCount = new QLabel("0 / 500");
+    m_charCount->setStyleSheet("color:#44446A;font-size:11px;");
+    m_charCount->setAlignment(Qt::AlignRight);
+    cl->addWidget(m_charCount);
+
+    connect(m_postInput, &QTextEdit::textChanged, this, [this]() {
+        int len = m_postInput->toPlainText().length();
+        m_charCount->setText(QString::number(len) + " / 500");
+        m_charCount->setStyleSheet(len > 500
+            ? "color:#CC4444;font-size:11px;"
+            : "color:#44446A;font-size:11px;");
+        });
+
+    auto* btnRow = new QHBoxLayout;
+    btnRow->addStretch(1);
+
+    auto* clearBtn = makeSecondary("Clear");
+    clearBtn->setFixedWidth(90);
+    clearBtn->setFixedHeight(38);
+    connect(clearBtn, &QPushButton::clicked, this, [this]() {
+        m_postInput->clear();
+        });
+
+    auto* postBtn = makePrimary("Post ✓");
+    postBtn->setFixedWidth(110);
+    postBtn->setFixedHeight(38);
+    connect(postBtn, &QPushButton::clicked, this, &CreatePostPage::onSubmit);
+
+    btnRow->addWidget(clearBtn);
+    btnRow->addSpacing(8);
+    btnRow->addWidget(postBtn);
+    cl->addLayout(btnRow);
+
+    outer->addWidget(card);
+    outer->addStretch(1);
+}
+
+void CreatePostPage::onSubmit() {
+    if (!m_user) return;
+    QString text = m_postInput->toPlainText().trimmed();
+    if (text.isEmpty()) {
+        QMessageBox::warning(this, APP_NAME, "Post cannot be empty.");
+        return;
+    }
+    if (text.length() > 500) {
+        QMessageBox::warning(this, APP_NAME, "Post cannot exceed 500 characters.");
+        return;
+    }
+    if (text.contains('|')) {
+        QMessageBox::warning(this, APP_NAME, "Posts cannot contain '|'.");
+        return;
+    }
+    m_user->createPost(text.toStdString());
+    m_postInput->clear();
+    QMessageBox::information(this, APP_NAME, "Post published!");
+    emit postPublished();
+}
+
+void CreatePostPage::focusInput() {
+    if (m_postInput) {
+        m_postInput->setFocus();
+        m_postInput->clear();
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  MyPostsPage
 // ══════════════════════════════════════════════════════════════════════════════
 MyPostsPage::MyPostsPage(User* currentUser, QWidget* parent)
@@ -2255,7 +2363,7 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
     QDir().mkpath("data/Messages");
     QString markerPath = "data/Messages/" + receiver + "_unread_" + sender + ".flag";
     QFile f(markerPath);
-    f.open(QIODevice::WriteOnly);
+    (void)f.open(QIODevice::WriteOnly);
     f.close();
 }
 
@@ -2403,7 +2511,9 @@ void MessagesPage::addConversationButton(const QString& peer) {
     btn->setCursor(Qt::PointingHandCursor);
     btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    QString ini = peer.isEmpty() ? "?" : peer.left(1).toUpper();
+    // Use first letter of username; fall back to '#' if username starts with digit
+    QChar firstChar = peer.isEmpty() ? QChar('?') : peer.at(0).toUpper();
+    QString ini = firstChar.isLetter() ? QString(firstChar) : QString("#");
     btn->setText("  " + ini + "  @" + peer);
     btn->setStyleSheet(
         "QPushButton{background:transparent;border:none;border-bottom:1px solid #14141E;"
@@ -2892,9 +3002,10 @@ void ProfilePage::onUpdatePassword() {
 void ProfilePage::onDeleteAccount() {
     if (!m_user) return;
     auto r = QMessageBox::question(this, "Delete Account",
-        "This will permanently delete your account and all your posts.\n"
-        "This action cannot be undone. Are you sure?",
-        QMessageBox::Yes | QMessageBox::No);
+        "⚠️ This will PERMANENTLY delete your account, all your posts, and all your data.\n\n"
+        "This action CANNOT be undone. Are you absolutely sure?",
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);   // default to No for safety
     if (r != QMessageBox::Yes) return;
 
     m_user->deleteAccount(m_allUsers, *m_userCountPtr);
@@ -3249,6 +3360,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_searchPage(nullptr),
     m_profilePage(nullptr),
     m_timeSpentPage(nullptr),
+    m_createPostPage(nullptr),
     m_adminPage(nullptr),
     m_commentsPage(nullptr),
     m_publicProfilePage(nullptr)
@@ -3400,7 +3512,15 @@ void MainWindow::buildPages() {
     m_timeSpentPage->startSession();
     m_pages->addWidget(m_timeSpentPage);
 
-    // 6 — Comments (hidden until triggered)
+    // 6 — Create Post (standalone page)
+    m_createPostPage = new CreatePostPage(m_currentUser);
+    connect(m_createPostPage, &CreatePostPage::postPublished, this, [this]() {
+        // After posting, switch to Feed so user sees the result
+        onNavFeed();
+        });
+    m_pages->addWidget(m_createPostPage);
+
+    // 7 — Comments (hidden until triggered)
     m_commentsPage = new CommentsPage(
         m_currentUser ? QString::fromStdString(m_currentUser->getUsername()) : "");
     connect(m_commentsPage, &CommentsPage::backClicked,
@@ -3426,6 +3546,7 @@ void MainWindow::tearDownShell() {
     m_messagesPage = nullptr;
     m_profilePage = nullptr;
     m_timeSpentPage = nullptr;
+    m_createPostPage = nullptr;
     m_adminPage = nullptr;
     m_commentsPage = nullptr;
     m_publicProfilePage = nullptr;
@@ -3571,13 +3692,11 @@ void MainWindow::onNavTimeSpent() {
 }
 
 void MainWindow::onSidebarCreatePost() {
-    if (!m_feedPage) return;
-    // Go to feed page and reveal the composer card
-    setActiveSidebarButton(m_btnFeed);
-    m_previousPageIndex = 0;
-    m_pages->setCurrentIndex(0);
-    m_feedPage->m_composerCard->show();
-    if (m_feedPage->m_postInput) m_feedPage->m_postInput->setFocus();
+    if (!m_pages || !m_createPostPage) return;
+    setActiveSidebarButton(m_btnCreatePost);
+    m_previousPageIndex = m_pages->currentIndex();
+    m_createPostPage->focusInput();
+    m_pages->setCurrentWidget(m_createPostPage);
 }
 
 void MainWindow::onOpenComments(Posts* post) {
@@ -3589,6 +3708,11 @@ void MainWindow::onOpenComments(Posts* post) {
 }
 
 void MainWindow::onLogout() {
+    auto r = QMessageBox::question(this, "Logout",
+        "Are you sure you want to logout?",
+        QMessageBox::Yes | QMessageBox::No);
+    if (r != QMessageBox::Yes) return;
+
     tearDownShell();
 
     // Remove the shell widget from the root stack

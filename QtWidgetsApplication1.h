@@ -194,8 +194,20 @@ private:
 
 };
 
-
-
+class CreatePostPage : public QWidget {
+    Q_OBJECT
+public:
+    explicit CreatePostPage(User* currentUser, QWidget* parent = nullptr);
+    void focusInput();
+signals:
+    void postPublished();
+private slots:
+    void onSubmit();
+private:
+    User* m_user = nullptr;
+    QTextEdit* m_postInput = nullptr;
+    QLabel* m_charCount = nullptr;
+};
 class ProfilePage : public QWidget {
     Q_OBJECT
 public:
@@ -409,6 +421,7 @@ private:
     TimeSpentPage* m_timeSpentPage;
     AdminPage* m_adminPage;
     CommentsPage* m_commentsPage = nullptr; 
+    CreatePostPage* m_createPostPage = nullptr;
     PublicProfileWidget* m_publicProfilePage = nullptr;
     int m_previousPageIndex = 0; 
 

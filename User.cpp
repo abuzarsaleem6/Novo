@@ -419,7 +419,7 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 
     User** newFollowing = new User * [followingCount + 1];
     for (int i = 0; i < followingCount; i++)
-        newFollowing[i] = following[i];
+        newFollowing[i] = (following && following[i]) ? following[i] : nullptr;
     newFollowing[followingCount] = target;
     delete[] following;
     following = newFollowing;
@@ -459,9 +459,16 @@ bool User::isFollowing(string username) {
 
 void User::addFollower(User* ptr) {
     if (!ptr) return;
+
+    // Guard: don't double-add if already a follower
+    for (int i = 0; i < followersCount; i++) {
+        if (followers && followers[i] &&
+            followers[i]->getUsername() == ptr->getUsername()) return;
+    }
+
     User** newFollowers = new User * [followersCount + 1];
     for (int i = 0; i < followersCount; i++)
-        newFollowers[i] = followers[i] ? followers[i] : nullptr;
+        newFollowers[i] = (followers && followers[i]) ? followers[i] : nullptr;
     newFollowers[followersCount] = ptr;
     delete[] followers;
     followers = newFollowers;
