@@ -32,18 +32,14 @@ void Notification::markAsUnread() {
 
 void Notification::saveNotificationToFile(string username) {
     QDir().mkpath("data/Notifications");
-
     string path = "data/Notifications/" + username + "_notif.txt";
     ofstream outFile(path, ios::app);
 
     if (outFile.is_open()) {
-        // Format: type|message|timestamp|isRead
-        outFile << type << "|" << message << "|" << timestamp << "|" << (isRead ? 1 : 0) << "\n";
+       
+        outFile << type << "|\n" << message << "|\n"  << timestamp << "|\n" <<
+            (isRead ? "1|" : "0|") << "\n---\n"; 
         outFile.close();
-        qDebug() << "Notification saved for user:" << QString::fromStdString(username);
-    }
-    else {
-        qDebug() << "ERROR: Could not open notification file for" << QString::fromStdString(username);
     }
 }
 
@@ -77,63 +73,41 @@ QList<Notification> NotificationManager::loadAllNotifications(const string& user
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "No notifications file found for" << QString::fromStdString(username);
-        return notifications;  // Return empty list
+        return notifications;
     }
 
     QTextStream in(&file);
-    int loadedCount = 0;
 
     while (!in.atEnd()) {
         QString line = in.readLine().trimmed();
-
-        // Skip empty lines
         if (line.isEmpty()) continue;
 
-        // Parse line: type|message|timestamp|isRead
-        QStringList parts = line.split("|");
+        // Format: type|message|timestamp|isRead
+        // Use indexOf to split on FIRST 3 pipes only — protects against | in message
+        int p1 = line.indexOf('|');
+        if (p1 == -1) { qDebug() << "WARNING: bad notif line (no sep):" << line; continue; }
 
-        // Validate format (must have 4 parts)
-        if (parts.size() < 4) {
-            qDebug() << "WARNING: Invalid notification format:" << line;
-            continue;
-        }
+        int p2 = line.indexOf('|', p1 + 1);
+        if (p2 == -1) { qDebug() << "WARNING: bad notif line (1 sep):" << line; continue; }
 
-        try {
-            QString typeStr = parts[0].trimmed();
-            QString msgStr = parts[1].trimmed();
-            QString timeStr = parts[2].trimmed();
-            QString isReadStr = parts[3].trimmed();
+        int p3 = line.lastIndexOf('|');  // last pipe = isRead field
+        if (p3 == p2) { qDebug() << "WARNING: bad notif line (2 sep):" << line; continue; }
 
-            // Skip if any field is empty
-            if (typeStr.isEmpty() || msgStr.isEmpty() || timeStr.isEmpty()) {
-                qDebug() << "WARNING: Empty notification fields:" << line;
-                continue;
-            }
+        QString typeStr = line.mid(0, p1).trimmed();
+        QString msgStr = line.mid(p1 + 1, p2 - p1 - 1).trimmed();
+        QString timeStr = line.mid(p2 + 1, p3 - p2 - 1).trimmed();
+        QString isReadStr = line.mid(p3 + 1).trimmed();
 
-            // ✅ CREATE NOTIFICATION OBJECT FROM FILE DATA
-            Notification notif(
-                msgStr.toStdString(),
-                typeStr.toStdString(),
-                timeStr.toStdString()
-            );
+        if (typeStr.isEmpty() || msgStr.isEmpty() || timeStr.isEmpty()) continue;
 
-            // Mark as read if saved as read
-            if (isReadStr == "1") {
-                notif.markAsRead();
-            }
+        Notification notif(msgStr.toStdString(), typeStr.toStdString(), timeStr.toStdString());
+        if (isReadStr == "1") notif.markAsRead();
 
-            // Add to list
-            notifications.append(notif);
-            loadedCount++;
-
-        }
-        catch (const exception& e) {
-            qDebug() << "ERROR parsing notification:" << e.what();
-        }
+        notifications.append(notif);
     }
 
     file.close();
-    qDebug() << "Loaded" << loadedCount << "notifications for" << QString::fromStdString(username);
+    qDebug() << "Successfully loaded" << notifications.size() << "notifications.";
     return notifications;
 }
 

@@ -391,15 +391,15 @@ void SidebarButton::setActive(bool active) {
 // ══════════════════════════════════════════════════════════════════════════════
 PostCard::PostCard(Posts* post, const QString& authorUsername,
     bool isOwner, bool isSaved,
-    const QString& viewerUsername, bool isAuthorReported, QWidget* parent)
+    const QString& viewerUsername, bool isAuthorReported, bool isPostReported, QWidget* parent)
     : QFrame(parent)
     , m_post(post)
     , m_authorUsername(authorUsername)
     , m_isOwner(isOwner)
     , m_isSaved(isSaved)
     , m_viewerUsername(viewerUsername)
-    , m_isAuthorReported(isAuthorReported)          
-    , m_isPostReported(post->getIsReported())
+    , m_isAuthorReported(isAuthorReported)
+    , m_isPostReported(isPostReported)
 {
     setObjectName("postCard");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -482,9 +482,9 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     actRow->setContentsMargins(0, 10, 0, 0);
     actRow->setSpacing(20);
 
-    
+
     // ── Like button ─────────────────────────────────────────
-        bool alreadyLiked = !m_isOwner && m_post->isLikedBy(m_viewerUsername.toStdString());
+    bool alreadyLiked = !m_isOwner && m_post->isLikedBy(m_viewerUsername.toStdString());
 
     auto* likeBtn = new QPushButton(alreadyLiked ? "♥" : "♡");
     likeBtn->setFixedSize(36, 36);
@@ -519,6 +519,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         emit likeClicked(m_post);
         });
 
+   
     auto* likeLayout = new QHBoxLayout;
     likeLayout->setSpacing(4);
     likeLayout->addWidget(likeBtn);
@@ -540,7 +541,6 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     commentLayout->addWidget(commentBtn);
     commentLayout->addWidget(commentCountLbl);
     actRow->addLayout(commentLayout);
-
     // Declare saveBtn pointer here so it is accessible outside the IF block
     QPushButton* saveBtn = nullptr;
 
@@ -550,7 +550,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         saveCol->setAlignment(Qt::AlignCenter);
 
         // 1. Create the button and label
-         saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
+        saveBtn = new QPushButton(m_isSaved ? "★" : "☆");
         saveBtn->setCursor(Qt::PointingHandCursor);
         saveBtn->setFixedSize(24, 24);
 
@@ -675,22 +675,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
         actRow->addLayout(reportUserCol);
     }
 
-    // ── Share button (right-aligned) ─────────────────────────────────────────
-    actRow->addStretch(1);
-    auto* shareCol = new QVBoxLayout;
-    shareCol->setSpacing(2);
-    shareCol->setAlignment(Qt::AlignCenter);
-    auto* shareBtn = makeIcon("↗", nullptr, 24, 24);
-    auto* shareLbl = new QLabel("Share");
-    shareLbl->setStyleSheet("color: #F5A623; font-size: 11px;");
-    shareLbl->setAlignment(Qt::AlignCenter);
-    shareCol->addWidget(shareBtn, 0, Qt::AlignCenter);
-    shareCol->addWidget(shareLbl, 0, Qt::AlignCenter);
-    actRow->addLayout(shareCol);
-
     root->addLayout(actRow);
-
-    // Final check: Apply "green" style if saved on creation
     if (saveBtn && m_isSaved) {
         saveBtn->style()->unpolish(saveBtn);
         saveBtn->style()->polish(saveBtn);
@@ -1031,13 +1016,15 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
 
             // FIX: use domain method instead of inline loop (from loadPosts_patch)
             bool isSaved = viewer->hasSavedPost(p->getPostId());
-            bool reportedByMe = targetUser->hasReportedUser(viewer->getUsername());
+            bool isUserReportedByMe = targetUser->hasReportedUser(viewer->getUsername());
+            bool isPostReportedByMe = p->hasReportedBy(viewer->getUsername()); // ← ADD THIS
 
             auto* card = new PostCard(p,
                 QString::fromStdString(targetUser->getUsername()),
                 false, isSaved,
                 QString::fromStdString(viewer->getUsername()),
-                reportedByMe);
+                isUserReportedByMe,
+                isPostReportedByMe); // ← PASS IT HERE
 
             connect(card, &PostCard::commentClicked, this, [p, this]() {
                 emit requestOpenComments(p);
@@ -1063,7 +1050,17 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer,
                     targetUser->reportUserBy(viewer->getUsername());
                     QMessageBox::information(this, "Reported", "User has been reported.");
                 });
-
+            connect(card, &PostCard::reportClicked, this,
+                [this, viewer](Posts* post, const QString&) {
+                    if (!post || !viewer) return;
+                    if (post->hasReportedBy(viewer->getUsername())) {
+                        QMessageBox::information(this, "Already Reported",
+                            "You have already reported this post.");
+                        return;
+                    }
+                    post->reportPost(viewer->getUsername());
+                    QMessageBox::information(this, "Reported", "Post has been reported to admins.");
+                });
             layout->addWidget(card);
         }
     }
@@ -1079,13 +1076,13 @@ NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
     : QFrame(parent)
 {
     setObjectName("notifItem");
-    setProperty("unread", !notif.getStatus());
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    setFixedHeight(64);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     auto* row = new QHBoxLayout(this);
-    row->setContentsMargins(16, 12, 16, 12);
+    row->setContentsMargins(16, 0, 16, 0);
     row->setSpacing(12);
-
+    row->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     QString typeIcon = "●";
     QString t = QString::fromStdString(notif.getType()).toLower();
     if (t.contains("follow"))  typeIcon = "👤";
@@ -1108,12 +1105,7 @@ NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
     row->addWidget(ic, 0, Qt::AlignVCenter);
     row->addLayout(col, 1);
 
-    if (!notif.getStatus()) {
-        auto* dot = new QLabel("●");
-        dot->setStyleSheet("color: #5050F0; font-size: 9px;");
-        dot->setFixedWidth(12);
-        row->addWidget(dot, 0, Qt::AlignVCenter);
-    }
+
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1189,10 +1181,9 @@ void AuthPage::resetToLogin() {
     while (getline(f, line))
         if (!line.empty() && line != "\r") count++;
     f.close();
-    // FIX — add before the new allocation:
-    delete[] m_allUsers;
-    m_allUsers = nullptr;
 
+    // ✅ Don't delete m_allUsers — it's owned by MainWindow, not AuthPage
+    // Just allocate a fresh array for the next login session
     m_allUsers = new User * [max(count, 1)]();
     m_userCount = 0;
     loadAllUsers(m_allUsers, m_userCount);
@@ -1630,7 +1621,7 @@ void FeedPage::onSubmitPost() {
 
 
 void FeedPage::onLikePost(Posts* post) {
-    
+
     (void)post;
 }
 
@@ -1902,10 +1893,6 @@ NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
     hRow->setContentsMargins(0, 0, 0, 0);
     hRow->addWidget(makeLabel("Notifications", "pageTitle"), 1);
 
-    auto* markReadBtn = makeSecondary("✓ Mark All Read");
-    markReadBtn->setFixedWidth(130);
-    markReadBtn->setFixedHeight(34);
-    connect(markReadBtn, &QPushButton::clicked, this, &NotificationsPage::onMarkAllRead);
 
     auto* refBtn = makeSecondary("↻ Refresh");
     refBtn->setFixedWidth(100);
@@ -1925,13 +1912,16 @@ NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
         }
         });
 
-    hRow->addWidget(markReadBtn);
+
     hRow->addWidget(clearBtn); // Insert clear button
     hRow->addWidget(refBtn);
     outer->addLayout(hRow);
 
     // ── SCROLL AREA FOR NOTIFICATIONS ──
     m_scrollArea = makeScrollArea(m_listContent, m_listLayout);
+    m_scrollArea->setWidgetResizable(true);          // ← ADD
+    m_listLayout->setAlignment(Qt::AlignTop);        // ← ADD
+    m_listLayout->setContentsMargins(0, 0, 0, 0);   // ← ADD
     outer->addWidget(m_scrollArea, 1);
 
     loadNotifications();
@@ -1943,7 +1933,7 @@ void NotificationsPage::refresh() {
 
 void NotificationsPage::loadNotifications() {
     // Clear old UI
-    while (m_listLayout->count() > 1) {
+    while (m_listLayout->count() > 0) {
         QLayoutItem* item = m_listLayout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
         delete item;
@@ -1971,19 +1961,9 @@ void NotificationsPage::loadNotifications() {
         return;
     }
 
-    // Mark as read after viewing
-    NotificationManager::markAllAsRead(m_user->getUsername());
+
 }
 
-void NotificationsPage::onMarkAllRead() {
-    if (!m_user) return;
-
-    // ✅ USE BACKEND - Mark all notifications as read
-    NotificationManager::markAllAsRead(m_user->getUsername());
-
-    QMessageBox::information(this, "Novo", "All notifications marked as read.");
-    refresh();
-}
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║                    FIND AND REPLACE THIS SECTION                             ║
 // ║                                                                               ║
@@ -2000,7 +1980,7 @@ void NotificationsPage::onMarkAllRead() {
 
 // ── IMPLEMENTATION ──
 
-SearchPage::SearchPage(User** allUsers, int userCount, User* currentUser, QWidget* parent)
+SearchPage::SearchPage(User**& allUsers, int& userCount, User* currentUser, QWidget* parent)
     : QWidget(parent), m_currentUser(currentUser),
     m_allUsers(allUsers), m_userCount(userCount),
     m_foundUser(nullptr), m_followBtn(nullptr), m_reportBtn(nullptr)
@@ -2199,12 +2179,15 @@ void SearchPage::showUserCard(User* user) {
         btnRow->addWidget(m_followBtn);
         btnRow->addSpacing(10);
 
-        // ✅ REPORT BUTTON (using backend data)
-        bool isReported = user->getIsReported();
-        m_reportBtn = makeDanger(isReported ? "⚑ Reported" : "⚑ Report");
+        bool alreadyReportedByMe = user->hasReportedUser(m_currentUser->getUsername());
+        bool globallyReported = user->getIsReported();
+        bool btnDisabled = alreadyReportedByMe || globallyReported;
+
+        m_reportBtn = makeDanger(btnDisabled ? "⚑ Reported" : "⚑ Report");
         m_reportBtn->setFixedWidth(100);
         m_reportBtn->setFixedHeight(36);
-        if (isReported) {
+        m_reportBtn->setEnabled(!btnDisabled);
+        if (btnDisabled) {
             m_reportBtn->setStyleSheet("background: #1C0808; border: 1px solid #4A2020; color: #CC4444; border-radius: 9px; font-size: 13px;");
         }
         connect(m_reportBtn, &QPushButton::clicked, this, &SearchPage::onReportUser);
@@ -2257,20 +2240,18 @@ void SearchPage::onReportUser() {
         return;
     }
 
-    // ✅ CHECK BACKEND STATUS
-    if (m_foundUser->getIsReported()) {
+    if (m_foundUser->hasReportedUser(m_currentUser->getUsername())) {
         QMessageBox::information(this, "Already Reported",
             "You have already reported this user.");
         return;
     }
-
     auto r = QMessageBox::question(this, "Report User",
         "Report @" + QString::fromStdString(m_foundUser->getUsername()) + "?",
         QMessageBox::Yes | QMessageBox::No);
 
     if (r == QMessageBox::Yes) {
-        // ✅ USE BACKEND TO REPORT
-        m_foundUser->reportUser();
+
+        m_foundUser->reportUserBy(m_currentUser->getUsername());
         m_reportBtn->setText("⚑ Reported");
         m_reportBtn->setStyleSheet("background: #1C0808; border: 1px solid #4A2020; color: #CC4444; border-radius: 9px; font-size: 13px;");
         QMessageBox::information(this, "Novo", "User has been reported to admins.");
@@ -2372,12 +2353,8 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername, QWid
 
     // ── SMART DELETE BUTTON ──
     // Dynamically check if this is a group or a direct message
-    QString groupPath = "data/Groups/" + peerUsername + ".txt";
-    bool isGroup = QFile::exists(groupPath);
-
-    auto* delBtn = makeDanger(isGroup ? "🗑  Delete Group" : "🗑  Delete Chat");
-    delBtn->setFixedHeight(30);
-    delBtn->setFixedWidth(isGroup ? 130 : 110);
+    auto* delBtn = makeDanger("🗑  Delete Chat");
+    delBtn->setFixedWidth(110);
     connect(delBtn, &QPushButton::clicked, this, &ChatView::onDeleteChat);
     hRow->addWidget(delBtn, 0, Qt::AlignVCenter);
 
@@ -2495,13 +2472,11 @@ void ChatView::loadMessages() {
         QString line = in.readLine();
         if (line.trimmed().isEmpty()) continue;
         // Format: sender|timestamp|text
-        int firstPipe = line.indexOf('|');
-        if (firstPipe < 0) continue;
-        int secondPipe = line.indexOf('|', firstPipe + 1);
-        if (secondPipe < 0) continue;
-        QString sender = line.left(firstPipe);
-        // timestamp skipped for display
-        QString text = line.mid(secondPipe + 1);
+        QStringList parts = line.split('|');
+        if (parts.size() < 4) continue;
+        QString sender = parts[0];
+        // parts[1] = receiver, parts[2] = timestamp — both skipped
+        QString text = parts.mid(3).join('|'); // rejoin in case content had '|'
         if (!text.isEmpty()) appendBubble(sender, text);
     }
     f.close();
@@ -2539,86 +2514,47 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
         }
     }
 }
+
 void ChatView::onSend() {
     QString text = m_input->text().trimmed();
     if (text.isEmpty()) return;
 
-    // Prevent delimiter issues from breaking your text files
     if (text.contains('|')) {
         QMessageBox::warning(this, "Novo", "Messages cannot contain '|'.");
         return;
     }
 
-    QString ts = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    QString groupPath = "data/Groups/" + m_peer + ".txt";
 
-    // ─── DYNAMIC ROUTING: Is this a Group or a Direct Message? ───
+    Message newMsg(text.toStdString().c_str(), m_currentUser.toStdString().c_str(), m_peer.toStdString().c_str());
 
-    if (QFile::exists(groupPath)) {
-        // ✅ IT IS A GROUP: Use your vector-free Backend Classes!
-        Group grp;
-        grp.loadFromFile(groupPath.toStdString());
 
-        // Format the message as a single string: "sender|timestamp|content"
-        QString formattedMsg = m_currentUser + "|" + ts + "|" + text;
-
-        // Add the string directly to the group's dynamic array and save
-        grp.addMessage(formattedMsg.toStdString());
-        grp.saveToFile(groupPath.toStdString());
-
-    }
-    else {
-        // ✅ IT IS A DIRECT MESSAGE: Append to the normal text file
-        QDir().mkpath("data/Messages");
-        QFile f(chatFilePath());
-        if (f.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&f);
-            out << m_currentUser << "|" << ts << "|" << text << "\n";
-            f.close();
-        }
-
-        // Ensure both sides have each other in their sidebar index
-        User::addConversationToHistory(m_currentUser.toStdString(), m_peer.toStdString());
-        User::addConversationToHistory(m_peer.toStdString(), m_currentUser.toStdString());
-
-        // Create a notification for the recipient
-        QDir().mkpath("data/Notifications");
-        QString notifPath = "data/Notifications/" + m_peer + "_notif.txt";
-        QFile notifFile(notifPath);
-        if (notifFile.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream notifOut(&notifFile);
-            notifOut << "message|" << m_currentUser << " sent you a message|" << ts << "|0\n";
-            notifFile.close();
-        }
-
-        // Mark conversation as unread for the recipient
-        markConversationUnread(m_peer, m_currentUser);
+    QDir().mkpath("data/Messages");
+    std::string path = chatFilePath().toStdString();
+    std::ofstream outFile(path, std::ios::app);
+    if (outFile.is_open()) {
+        newMsg.saveToFile(outFile);
+        outFile.close();
     }
 
-    // Clear the input field and draw the new bubble on the screen
+
+    User::addConversationToHistory(m_currentUser.toStdString(), m_peer.toStdString());
+    User::addConversationToHistory(m_peer.toStdString(), m_currentUser.toStdString());
+    markConversationUnread(m_peer, m_currentUser);
+
     m_input->clear();
     appendBubble(m_currentUser, text);
 }
 void ChatView::onDeleteChat() {
-    QString groupPath = "data/Groups/" + m_peer + ".txt";
-    bool isGroup = QFile::exists(groupPath);
-
-    auto r = QMessageBox::question(this, isGroup ? "Delete Group" : "Delete Chat",
-        isGroup ? "Delete the entire group '" + m_peer + "'?" : "Delete the entire conversation with @" + m_peer + "?",
+    auto r = QMessageBox::question(this, "Delete Chat",
+        "Delete the entire conversation with @" + m_peer + "?",
         QMessageBox::Yes | QMessageBox::No);
 
     if (r != QMessageBox::Yes) return;
 
-    if (isGroup) {
-        // ✅ FIX: Delete the actual group file
-        QFile::remove(groupPath);
-    }
-    else {
-        // ✅ FIX: Delete the DM file and update the backend index
-        QFile::remove(chatFilePath());
-        User::removeConversationFromHistory(m_currentUser.toStdString(), m_peer.toStdString());
-        User::removeConversationFromHistory(m_peer.toStdString(), m_currentUser.toStdString());
-    }
+
+    QFile::remove(chatFilePath());
+    User::removeConversationFromHistory(m_currentUser.toStdString(), m_peer.toStdString());
+    User::removeConversationFromHistory(m_peer.toStdString(), m_currentUser.toStdString());
 
     emit chatDeleted(m_peer);
 }
@@ -2631,7 +2567,7 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
     m_chatView(nullptr)
 {
     QDir().mkpath("data/Messages");
-    QDir().mkpath("data/Groups");
+
 
     auto* root = new QHBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
@@ -2652,23 +2588,7 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount, QW
     titleLbl->setStyleSheet("font-size: 17px; font-weight: 700; color: #E0E0FF; padding-bottom: 4px;");
     ll->addWidget(titleLbl);
 
-    // ✅ GROUP BUTTONS
-    auto* groupBtnRow = new QHBoxLayout;
-    groupBtnRow->setSpacing(6);
 
-    auto* createGroupBtn = makeSecondary("+ Group");
-    createGroupBtn->setFixedHeight(32);
-    createGroupBtn->setFixedWidth(110);
-    connect(createGroupBtn, &QPushButton::clicked, this, &MessagesPage::onCreateGroup);
-
-    auto* joinGroupBtn = makeSecondary("Join");
-    joinGroupBtn->setFixedHeight(32);
-    joinGroupBtn->setFixedWidth(50);
-    connect(joinGroupBtn, &QPushButton::clicked, this, &MessagesPage::onJoinGroup);
-
-    groupBtnRow->addWidget(createGroupBtn);
-    groupBtnRow->addWidget(joinGroupBtn);
-    ll->addLayout(groupBtnRow);
 
     // Search input
     auto* searchRow = new QHBoxLayout;
@@ -2796,10 +2716,6 @@ void MessagesPage::onChatDeleted(const QString& peer) {
     m_activePeer.clear();
 
     // ✅ FIX: Wipe the group from active memory so the sidebar doesn't redraw it!
-    if (m_userGroups.contains(peer)) {
-        delete m_userGroups[peer]; // Free the memory
-        m_userGroups.remove(peer); // Remove from dictionary
-    }
 
     if (m_chatView) {
         m_rightStack->removeWidget(m_chatView);
@@ -2811,147 +2727,6 @@ void MessagesPage::onChatDeleted(const QString& peer) {
     loadConversationList();
 }
 
-void MessagesPage::onCreateGroup() {
-    QDialog dialog(this);
-    dialog.setWindowTitle("Create New Group");
-    dialog.setStyleSheet("background: #0F0F16; color: #E2E2EC;");
-    dialog.setMinimumWidth(350);
-
-    auto* layout = new QVBoxLayout(&dialog);
-
-    // Group Name Input
-    auto* nameInput = new QLineEdit(&dialog);
-    nameInput->setPlaceholderText("Enter Group Name...");
-    nameInput->setStyleSheet("background: #141420; border: 1px solid #222235; border-radius: 6px; padding: 10px; color: white;");
-    layout->addWidget(nameInput);
-
-    auto* subtitle = new QLabel("Select members to add from your Following:");
-    subtitle->setStyleSheet("color: #A0A0C0; font-size: 12px; margin-top: 10px;");
-    layout->addWidget(subtitle);
-
-    // Followers List (Scrollable Area)
-    auto* scroll = new QScrollArea(&dialog);
-    scroll->setWidgetResizable(true);
-    scroll->setStyleSheet("background: #111119; border: 1px solid #1C1C2A; border-radius: 6px;");
-
-    auto* listWidget = new QWidget;
-    listWidget->setStyleSheet("background: transparent;");
-    auto* listLayout = new QVBoxLayout(listWidget);
-
-    QList<QCheckBox*> checkboxes;
-    int followingFound = 0;
-
-    // Loop through all users to find who we are following
-    for (int i = 0; i < m_userCount; i++) {
-        if (m_allUsers[i] && m_allUsers[i] != m_currentUser) {
-            QString uname = QString::fromStdString(m_allUsers[i]->getUsername());
-
-            // Only show users that we are currently following
-            if (m_currentUser->isFollowing(uname.toStdString())) {
-                auto* cb = new QCheckBox(uname, &dialog);
-                cb->setStyleSheet("QCheckBox { color: #E2E2EC; font-size: 14px; padding: 5px; }"
-                    "QCheckBox::indicator { width: 18px; height: 18px; }");
-                checkboxes.append(cb);
-                listLayout->addWidget(cb);
-                followingFound++;
-            }
-        }
-    }
-
-    if (followingFound == 0) {
-        auto* empty = new QLabel("You aren't following anyone.");
-        empty->setStyleSheet("color: #707070; font-style: italic; padding: 10px;");
-        listLayout->addWidget(empty);
-    }
-
-    listLayout->addStretch();
-    scroll->setWidget(listWidget);
-    layout->addWidget(scroll);
-
-    // Dialog Buttons
-    auto* btnRow = new QHBoxLayout;
-    auto* cancelBtn = new QPushButton("Cancel");
-    cancelBtn->setStyleSheet("background: transparent; border: 1px solid #4040E0; color: #4040E0; border-radius: 6px; padding: 8px;");
-    auto* createBtn = new QPushButton("Create Group");
-    createBtn->setStyleSheet("background: #4040E0; border: none; color: white; border-radius: 6px; padding: 8px; font-weight: bold;");
-
-    btnRow->addWidget(cancelBtn);
-    btnRow->addWidget(createBtn);
-    layout->addLayout(btnRow);
-
-    // ── SMART VALIDATION FIX ──
-    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    connect(createBtn, &QPushButton::clicked, &dialog, [&]() {
-        QString groupName = nameInput->text().trimmed();
-
-        // Block the dialog from closing if there are errors!
-        if (groupName.isEmpty()) {
-            QMessageBox::warning(&dialog, "Novo", "Group name cannot be empty.");
-            return;
-        }
-        if (groupName.contains("|")) {
-            QMessageBox::warning(&dialog, "Novo", "Group name cannot contain '|'.");
-            return;
-        }
-        if (m_userGroups.contains(groupName)) {
-            QMessageBox::warning(&dialog, "Novo", "You are already in a group with this name.");
-            return;
-        }
-
-        // If all checks pass, allow the dialog to close successfully
-        dialog.accept();
-        });
-
-    // ── CREATE THE GROUP ──
-    if (dialog.exec() == QDialog::Accepted) {
-        QString groupName = nameInput->text().trimmed();
-
-        // 1. Create Group object (Using your vector-free Backend!)
-        Group* newGroup = new Group(groupName.toStdString(), m_currentUser->getUsername());
-
-        // 2. Add checked members
-        int membersAdded = 0;
-        for (auto* cb : checkboxes) {
-            if (cb->isChecked()) {
-                newGroup->addMember(cb->text().toStdString());
-                membersAdded++;
-            }
-        }
-
-        // 3. Save to file and inject into memory
-        newGroup->saveToFile("data/Groups/" + groupName.toStdString() + ".txt");
-        m_userGroups[groupName] = newGroup;
-
-        QMessageBox::information(this, "Novo", "Group '" + groupName + "' created with " + QString::number(membersAdded) + " members!");
-        loadConversationList(); // Refresh sidebar to show the new group!
-    }
-}
-
-void MessagesPage::onJoinGroup() {
-    bool ok;
-    QString groupName = QInputDialog::getText(this, "Join Group",
-        "Group name:", QLineEdit::Normal, "", &ok);
-
-    if (ok && !groupName.isEmpty()) {
-        // ✅ LOAD EXISTING GROUP
-        Group* group = new Group();
-        group->loadFromFile("data/Groups/" + groupName.toStdString() + ".txt");
-
-        if (group->getGroupName() == groupName.toStdString()) {
-            group->addMember(m_currentUser->getUsername());
-            group->saveToFile("data/Groups/" + groupName.toStdString() + ".txt");
-
-            m_userGroups[groupName] = group;
-            QMessageBox::information(this, "Novo", "Joined group: " + groupName);
-            qDebug() << "Joined group:" << groupName;
-        }
-        else {
-            QMessageBox::warning(this, "Novo", "Group not found.");
-            delete group;
-        }
-    }
-}
 
 void MessagesPage::addConversationButton(const QString& peer) {
     auto* btn = new QPushButton;
@@ -2994,140 +2769,13 @@ void MessagesPage::loadConversationList() {
     clearConversationList();
     if (!m_currentUser) return;
 
-    QString me = QString::fromStdString(m_currentUser->getUsername());
 
-    // ── 1. Load Groups ──
-    for (const QString& groupName : m_userGroups.keys()) {
-        Group* group = m_userGroups[groupName];
-        if (group && group->hasMember(m_currentUser->getUsername())) {
-
-            auto* groupRow = new QWidget;
-            auto* gLayout = new QHBoxLayout(groupRow);
-            gLayout->setContentsMargins(0, 0, 0, 0);
-            gLayout->setSpacing(4);
-
-            auto* btn = new QPushButton;
-            btn->setObjectName("sidebarBtn");
-            btn->setCursor(Qt::PointingHandCursor);
-            btn->setFixedHeight(46);
-            btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-            QString displayText = "  👥 " + QString::fromStdString(group->getGroupName());
-            btn->setText(displayText);
-            btn->setStyleSheet(
-                "QPushButton { background: transparent; border: none; border-radius: 8px;"
-                " text-align: left; padding-left: 10px; color: #70AA70; font-size: 13px; font-weight: 500; }"
-                "QPushButton:hover { background: #17171F; color: #AAAAEE; }"
-                "QPushButton:checked { background: #1B1B2A; color: #7CFF7C; border-left: 3px solid #50F050; }");
-
-            gLayout->addWidget(btn, 1);
-
-            // Wire up the main button to open the group chat
-            connect(btn, &QPushButton::clicked, this, [this, groupName]() {
-                openChatWith(groupName); // Assuming true is your 'isGroup' flag
-                });
-
-            // ✅ OWNER EXCLUSIVE: Add Members Gear Icon
-            if (group->getOwnerUsername() == m_currentUser->getUsername()) {
-                auto* addBtn = new QPushButton("⚙");
-                addBtn->setFixedSize(32, 46);
-                addBtn->setCursor(Qt::PointingHandCursor);
-                addBtn->setStyleSheet("QPushButton { background: transparent; border: none; color: #50507A; font-size: 16px; } QPushButton:hover { color: #A0A0D0; }");
-
-                // Clicking the gear opens the Add Members dialog
-                connect(addBtn, &QPushButton::clicked, this, [this, group, groupName]() {
-                    QDialog dialog(this);
-                    dialog.setWindowTitle("Manage Group: " + groupName);
-                    dialog.setStyleSheet("background: #0F0F16; color: #E2E2EC;");
-                    dialog.setMinimumWidth(300);
-
-                    auto* layout = new QVBoxLayout(&dialog);
-                    layout->addWidget(new QLabel("Select followers to add:"));
-
-                    auto* scroll = new QScrollArea(&dialog);
-                    scroll->setWidgetResizable(true);
-                    scroll->setStyleSheet("background: #111119; border: 1px solid #1C1C2A; border-radius: 6px;");
-
-                    auto* listWidget = new QWidget;
-                    listWidget->setStyleSheet("background: transparent;");
-                    auto* listLayout = new QVBoxLayout(listWidget);
-
-                    QList<QCheckBox*> checkboxes;
-                    int availableToAdd = 0;
-
-                    // Generate list of followers who are not yet in the group
-                    for (int i = 0; i < m_userCount; i++) {
-                        if (m_allUsers[i] && m_allUsers[i] != m_currentUser) {
-                            QString uname = QString::fromStdString(m_allUsers[i]->getUsername());
-
-                            // Only show if we follow them AND they aren't already in the group
-                            if (m_currentUser->isFollowing(uname.toStdString()) &&
-                                !group->hasMember(uname.toStdString())) {
-
-                                auto* cb = new QCheckBox(uname, &dialog);
-                                cb->setStyleSheet("QCheckBox { color: #E2E2EC; font-size: 14px; padding: 5px; }");
-                                checkboxes.append(cb);
-                                listLayout->addWidget(cb);
-                                availableToAdd++;
-                            }
-                        }
-                    }
-
-                    if (availableToAdd == 0) {
-                        auto* empty = new QLabel("All your followers are already in this group.");
-                        empty->setStyleSheet("color: #707070; font-style: italic; padding: 10px;");
-                        listLayout->addWidget(empty);
-                    }
-
-                    listLayout->addStretch();
-                    scroll->setWidget(listWidget);
-                    layout->addWidget(scroll);
-
-                    // Dialog Buttons
-                    auto* btnRow = new QHBoxLayout;
-                    auto* cancelBtn = new QPushButton("Cancel");
-                    cancelBtn->setStyleSheet("background: transparent; border: 1px solid #4040E0; color: #4040E0; border-radius: 6px; padding: 8px;");
-                    auto* addSubmitBtn = new QPushButton("Add Members");
-                    addSubmitBtn->setStyleSheet("background: #4040E0; border: none; color: white; border-radius: 6px; padding: 8px; font-weight: bold;");
-
-                    btnRow->addWidget(cancelBtn);
-                    btnRow->addWidget(addSubmitBtn);
-                    layout->addLayout(btnRow);
-
-                    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-                    connect(addSubmitBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
-
-                    // Process members added when "Add Members" is clicked
-                    if (dialog.exec() == QDialog::Accepted) {
-                        int added = 0;
-                        for (auto* cb : checkboxes) {
-                            if (cb->isChecked()) {
-                                group->addMember(cb->text().toStdString());
-                                added++;
-                            }
-                        }
-                        if (added > 0) {
-                            group->saveToFile("data/Groups/" + groupName.toStdString() + ".txt");
-                            QMessageBox::information(this, "Novo", QString::number(added) + " members added to the group!");
-                        }
-                    }
-                    });
-                gLayout->addWidget(addBtn, 0); // Put gear on the right side
-            }
-
-            m_convListLayout->insertWidget(m_convListLayout->count() - 1, groupRow);
-        }
-    }
-
-    // ── 2. Load Direct Messages via Backend ──
     QList<QString> peers = User::getConversationHistory(m_currentUser->getUsername());
 
-    // If we just searched for someone but haven't messaged them yet, guarantee they appear in the UI list
-    if (!m_activePeer.isEmpty() && !peers.contains(m_activePeer) && !m_userGroups.contains(m_activePeer)) {
+    if (!m_activePeer.isEmpty() && !peers.contains(m_activePeer)) {
         peers.insert(0, m_activePeer);
     }
 
-    // Build the UI buttons for everyone
     for (const QString& peer : peers) {
         addConversationButton(peer);
     }
@@ -3150,7 +2798,7 @@ void MessagesPage::loadConversationList() {
 
 // ── IMPLEMENTATION ──
 
-AdminPage::AdminPage(Admin* admin, User** allUsers, int userCount, QWidget* parent)
+AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* parent)
     : QWidget(parent), m_admin(admin), m_allUsers(allUsers), m_userCount(userCount)
 {
     auto* outer = new QVBoxLayout(this);
@@ -3217,18 +2865,16 @@ void AdminPage::onReviewReportedPosts() {
 }
 
 void AdminPage::loadReportedUsers() {
-    // ✅ CLEAR OLD UI
     while (m_layout->count() > 1) {
         QLayoutItem* item = m_layout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
-
     if (!m_admin) return;
 
-    // ✅ GET REPORTED USERS FROM BACKEND
-    QList<User*> reportedUsers = m_admin->getReportedUsers();
+    m_admin->loadReportsFromFile(m_allUsers, m_userCount);
 
+    QList<User*> reportedUsers = m_admin->getReportedUsers();
     if (reportedUsers.isEmpty()) {
         auto* empty = new QLabel("No reported users at the moment.");
         empty->setAlignment(Qt::AlignCenter);
@@ -3237,16 +2883,13 @@ void AdminPage::loadReportedUsers() {
         return;
     }
 
-    // ✅ DEDUPLICATE AND DISPLAY
     QSet<User*> uniqueUsers;
-    for (User* user : reportedUsers) {
+    for (User* user : reportedUsers)
         uniqueUsers.insert(user);
-    }
 
     for (User* user : uniqueUsers) {
         if (!user) continue;
 
-        int reportCount = reportedUsers.count(user);
         QString username = QString::fromStdString(user->getUsername());
 
         auto* card = new QFrame;
@@ -3257,25 +2900,20 @@ void AdminPage::loadReportedUsers() {
         row->setContentsMargins(16, 12, 16, 12);
         row->setSpacing(10);
 
-        // User info
         auto* infoCol = new QVBoxLayout;
         auto* label = makeLabel("⚠ User: @" + username);
         label->setStyleSheet("font-size: 14px; font-weight: 600; color: #EE7777;");
-        auto* reportLbl = makeLabel("Reports: " + QString::number(reportCount));
-        reportLbl->setStyleSheet("font-size: 11px; color: #664444;");
-        infoCol->addWidget(label);
-        infoCol->addWidget(reportLbl);
 
-        // Action buttons
+        infoCol->addWidget(label);
+
+
         auto* deleteBtn = makeDanger("🗑 Delete User");
         deleteBtn->setFixedWidth(120);
         deleteBtn->setFixedHeight(32);
-
-        connect(deleteBtn, &QPushButton::clicked, this, [this, username, user]() {
+        connect(deleteBtn, &QPushButton::clicked, this, [this, username]() {
             auto r = QMessageBox::question(this, "Admin",
                 "Permanently delete user @" + username + "?",
                 QMessageBox::Yes | QMessageBox::No);
-
             if (r == QMessageBox::Yes) {
                 m_admin->deleteUser(m_allUsers, m_userCount, username);
                 QMessageBox::information(this, "Admin", "User deleted successfully.");
@@ -3283,24 +2921,10 @@ void AdminPage::loadReportedUsers() {
             }
             });
 
-        auto* banBtn = makeDanger("🚫 Ban User");
-        banBtn->setFixedWidth(100);
-        banBtn->setFixedHeight(32);
-
-        connect(banBtn, &QPushButton::clicked, this, [this, user, username]() {
-            m_admin->banUser(user);
-            user->saveToFile();
-            QMessageBox::information(this, "Admin", "User @" + username + " has been banned.");
-            refresh();
-            });
-
         row->addLayout(infoCol, 1);
         row->addWidget(deleteBtn);
-        row->addWidget(banBtn);
-
         m_layout->insertWidget(m_layout->count() - 1, card);
     }
-
     qDebug() << "Loaded" << uniqueUsers.size() << "unique reported users";
 }
 
@@ -3359,10 +2983,7 @@ void AdminPage::loadReportedPosts() {
         content->setWordWrap(true);
         cl->addWidget(content);
 
-        // Reports count
-        auto* reportLbl = makeLabel("Reports: " + QString::number(reportCount));
-        reportLbl->setStyleSheet("font-size: 10px; color: #666688;");
-        cl->addWidget(reportLbl);
+        
 
         // Action buttons
         auto* btnRow = new QHBoxLayout;
@@ -3394,7 +3015,7 @@ void AdminPage::loadReportedPosts() {
 }
 
 void AdminPage::loadAdminNotifications() {
-    // ✅ CLEAR OLD UI
+
     while (m_layout->count() > 1) {
         QLayoutItem* item = m_layout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
@@ -3402,9 +3023,9 @@ void AdminPage::loadAdminNotifications() {
     }
 
     if (!m_admin) return;
+    m_admin->loadAdminFromFile();
 
-    // ✅ GET NOTIFICATIONS FROM BACKEND
-    QList<Notification> notifications = m_admin->getAllNotifications();
+    QList<QString> notifications = m_admin->getAllNotifications();
 
     if (notifications.isEmpty()) {
         auto* empty = new QLabel("No admin notifications yet.");
@@ -3415,7 +3036,7 @@ void AdminPage::loadAdminNotifications() {
     }
 
     // ✅ DISPLAY NOTIFICATIONS
-    for (const Notification& notif : notifications) {
+    for (const QString& notif : notifications) {
         auto* card = new QFrame;
         card->setObjectName("notifItem");
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -3429,7 +3050,7 @@ void AdminPage::loadAdminNotifications() {
         icon->setAlignment(Qt::AlignCenter);
         icon->setStyleSheet("font-size: 16px;");
 
-        auto* msg = makeLabel(QString::fromStdString(notif.getMessage()));
+        auto* msg = makeLabel(notif);
         msg->setStyleSheet("font-size: 13px; color: #EE7777;");
 
         row->addWidget(icon, 0, Qt::AlignVCenter);
@@ -3615,8 +3236,8 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount, QW
     layout->addStretch(1);
     scroll->setWidget(inner);
     connect(m_myPostsPage, &MyPostsPage::requestOpenComments, this, &ProfilePage::requestOpenComments);
-    connect(m_savedPage, &SavedPostsPage::requestOpenComments, this, &ProfilePage::requestOpenComments); 
-    
+    connect(m_savedPage, &SavedPostsPage::requestOpenComments, this, &ProfilePage::requestOpenComments);
+
 }
 
 void ProfilePage::refresh() {
@@ -3750,15 +3371,28 @@ TimeSpentPage::TimeSpentPage(QWidget* parent) : QWidget(parent), m_elapsed(0) {
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &TimeSpentPage::onTick);
 }
+
 void TimeSpentPage::startSession() {
-    m_elapsed = 0;
+
     m_sessionStart = QDateTime::currentDateTime();
     m_sessionLabel->setText("Session started: " + m_sessionStart.toString("hh:mm AP"));
+
+
     m_timer->start(1000);
 }
-void TimeSpentPage::stopSession() { m_timer->stop(); }
-void TimeSpentPage::onTick() { ++m_elapsed; updateDisplay(); }
+
+void TimeSpentPage::stopSession() {
+    m_timer->stop();
+}
+
+void TimeSpentPage::onTick() {
+
+    ++m_elapsed;
+    updateDisplay();
+}
+
 void TimeSpentPage::updateDisplay() {
+
     int h = m_elapsed / 3600, m = (m_elapsed % 3600) / 60, s = m_elapsed % 60;
     m_timerLabel->setText(QString("%1:%2:%3")
         .arg(h, 2, 10, QChar('0'))
@@ -3786,7 +3420,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_sidebar(nullptr),
     m_btnFeed(nullptr), m_btnNotifications(nullptr), m_btnSearch(nullptr),
     m_btnMessages(nullptr), m_btnProfile(nullptr), m_btnTimeSpent(nullptr),
-     m_btnLogout(nullptr),
+    m_btnLogout(nullptr),
     m_pages(nullptr), m_feedPage(nullptr), m_notifPage(nullptr),
     m_searchPage(nullptr), m_messagesPage(nullptr), m_profilePage(nullptr),
     m_timeSpentPage(nullptr), m_adminPage(nullptr),
@@ -3860,7 +3494,7 @@ void MainWindow::onLoginAdminSuccess() {
     // ✅ CREATE ADMIN OBJECT FROM BACKEND
     Admin* admin = new Admin("admin123", "Admin#123", "Platform Administrator");
     admin->loadReportsFromFile(m_allUsers, m_userCount);
-    admin->loadProcessedReports();
+
 
     m_shellLayout = new QHBoxLayout(m_appShell);
     m_shellLayout->setContentsMargins(0, 0, 0, 0);
@@ -3977,7 +3611,7 @@ void MainWindow::buildSidebar() {
     sl->addLayout(userRow);
     sl->addSpacing(6);
 
-    
+
 
     m_btnLogout = new SidebarButton("←", "Log Out");
     m_btnLogout->setObjectName("sidebarBtnDanger");
@@ -4049,10 +3683,10 @@ void MainWindow::buildPages() {
     connect(m_searchPage, &SearchPage::requestOpenComments, this, &MainWindow::onOpenComments);
     connect(m_profilePage, &ProfilePage::requestOpenComments, this, &MainWindow::onOpenComments);
     connect(m_searchPage, &SearchPage::requestViewProfile, this, [this](User* user) {
-                 m_publicProfilePage->loadProfile(user, m_currentUser,
-                                                  m_allUsers, m_userCount); 
-                 m_pages->setCurrentWidget(m_publicProfilePage);
-             });
+        m_publicProfilePage->loadProfile(user, m_currentUser,
+            m_allUsers, m_userCount);
+        m_pages->setCurrentWidget(m_publicProfilePage);
+        });
 
     connect(m_publicProfilePage, &PublicProfileWidget::backClicked, this, [this]() {
         m_pages->setCurrentWidget(m_searchPage);
@@ -4099,13 +3733,13 @@ void MainWindow::onNavNotifications() {
     m_pages->setCurrentIndex(1);
     m_notifPage->refresh();
     setActiveSidebarButton(m_btnNotifications);
-    // DELETE: animateFade(m_notifPage);
+
 }
 void MainWindow::onNavSearch() {
     if (!m_pages) return;
     m_pages->setCurrentIndex(2);
     setActiveSidebarButton(m_btnSearch);
-    // DELETE: animateFade(m_searchPage);
+
 }
 void MainWindow::onNavMessages() {
     if (!m_pages || !m_messagesPage) return;
@@ -4171,7 +3805,7 @@ void MainWindow::tearDownShell() {
     m_btnFeed = nullptr; m_btnNotifications = nullptr;
     m_btnSearch = nullptr; m_btnMessages = nullptr;
     m_btnProfile = nullptr; m_btnTimeSpent = nullptr;
-     m_btnLogout = nullptr;
+    m_btnLogout = nullptr;
     m_pages = nullptr; m_feedPage = nullptr;
     m_notifPage = nullptr; m_searchPage = nullptr;
     m_messagesPage = nullptr; m_profilePage = nullptr;

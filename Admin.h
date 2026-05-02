@@ -9,7 +9,6 @@
 #include <QString>
 #include <QDir>
 #include <QDebug>
-#include"Notification.h"
 
 class Admin : public User {
 private:
@@ -18,9 +17,7 @@ private:
     QList<Posts*> reportedPosts;
     int reportedUserCount;
     int reportedPostCount;
-    QList<Notification> adminNotifications;
-    QSet<QString> processedUserReports;
-    QSet<QString> processedPostReports;
+    QList<QString> adminNotifications;
 
 public:
     // ─── CONSTRUCTORS & DESTRUCTORS ───
@@ -38,8 +35,7 @@ public:
     void deleteUser(User**& allUsers, int& userCount, const QString& username);
     void deletePost(User** allUsers, int userCount, const QString& postId);
     void deleteComment(Posts* post, int commentIndex);
-    void banUser(User* user);
-    void unbanUser(User* user);
+    
 
     // ─── REPORT REVIEW ───
     void reviewReports(User**& allUsers, int& userCount);
@@ -53,18 +49,15 @@ public:
 
     // ─── NOTIFICATION MANAGEMENT ───
     void addNotification(const QString& message);
-    QList<Notification> getAllNotifications() const;
+    QList<QString> getAllNotifications() const;
     void clearNotifications();
-	void viewAllNotifications() const;
-
 
     // ─── FILE I/O ───
     void saveReportsToFile();
     void loadReportsFromFile(User**& allUsers, int& userCount);
     void saveAdminToFile();
     void loadAdminFromFile();
-    void saveProcessedReports();
-    void loadProcessedReports();
+   
 
     // ─── DISPLAY ───
     void displayAdminDashboard();

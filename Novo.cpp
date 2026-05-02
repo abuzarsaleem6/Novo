@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
         if (adminFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&adminFile);
             out << "admin123|Admin#123|Platform Administrator\n";
-            out << "moderator|mod#A123|Content Moderator\n";
+           
             adminFile.close();
             qDebug() << "Admin credentials file created";
         }

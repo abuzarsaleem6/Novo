@@ -323,8 +323,18 @@ void Posts::reportPost(const string& reporterUsername) {
         outFile.close();
     }
 
-    this->reportCount++;
-    if (this->reportCount >= 3) {
+    int actualCount = 0;
+    QFile countFile(reportedFilePath);
+    if (countFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&countFile);
+        while (!in.atEnd()) {
+            if (!in.readLine().trimmed().isEmpty())
+                actualCount++;
+        }
+        countFile.close();
+    }
+    this->reportCount = actualCount;
+    if (this->reportCount == 3) {
         this->isReported = true;
 
         QDir().mkpath("data/Admin");
@@ -340,6 +350,22 @@ void Posts::reportPost(const string& reporterUsername) {
         }
     }
     savePostToFile();
+}
+bool Posts::hasReportedBy(const string& username) const {
+    QString reportedFilePath = QString::fromStdString(
+        "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt");
+    QFile file(reportedFilePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        if (in.readLine().trimmed().toStdString() == username) {
+            file.close();
+            return true;
+        }
+    }
+    file.close();
+    return false;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

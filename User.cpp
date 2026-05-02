@@ -322,11 +322,23 @@ void User::loadFromFile(string username) {
 }
 
 void User::addToUserList() {
-    QDir().mkpath("data");
-    ofstream usersList("data/users_list.txt", ios::app);
-    if (usersList.is_open()) {
-        usersList << this->username << "\n";
-        usersList.close();
+    // ← CHECK FIRST if already exists
+    ifstream checkFile("data/users_list.txt");
+    string line;
+    while (getline(checkFile, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == this->username) {
+            checkFile.close();
+            return;  // already in list, don't add again
+        }
+    }
+    checkFile.close();
+
+    // Only append if not already there
+    ofstream file("data/users_list.txt", ios::app);
+    if (file.is_open()) {
+        file << this->username << "\n";
+        file.close();
     }
 }
 
@@ -864,6 +876,7 @@ void User::reportUser() {
     isReportedCount++;
     if (isReportedCount >= 3 && !isReported) {
         isReported = true;
+        // admin_notifications.txt — already exists
         QDir().mkpath("data/Admin");
         QFile notifFile("data/Admin/admin_notifications.txt");
         if (notifFile.open(QIODevice::Append | QIODevice::Text)) {
@@ -875,6 +888,48 @@ void User::reportUser() {
             notifFile.close();
         }
     }
+
+    // ← ADD THIS: always update reported_users.txt
+    QDir().mkpath("data/Admin");
+    QFile usersFile("data/Admin/reported_users.txt");
+    if (usersFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        // Read existing entries first
+        QMap<QString, int> reportMap;
+        QFile readFile("data/Admin/reported_users.txt");
+        // reopen for reading by using a separate read
+    }
+
+    // Simpler approach — just append/rewrite:
+    // Read current file into map
+    QMap<QString, int> reportMap;
+    QFile rf("data/Admin/reported_users.txt");
+    if (rf.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&rf);
+        QString uname;
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            QStringList parts = line.split("|");
+            if (parts.size() < 2) continue;
+            if (parts[0] == "username") uname = parts[1];
+            else if (parts[0] == "reportCount") reportMap[uname] = parts[1].toInt();
+        }
+        rf.close();
+    }
+
+    // Update count for this user
+    reportMap[QString::fromStdString(username)] = isReportedCount;
+
+    // Rewrite file
+    QFile wf("data/Admin/reported_users.txt");
+    if (wf.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&wf);
+        for (auto it = reportMap.begin(); it != reportMap.end(); ++it) {
+            out << "username|" << it.key() << "\n"
+                << "reportCount|" << it.value() << "\n";
+        }
+        wf.close();
+    }
+
     saveToFile();
 }
 
