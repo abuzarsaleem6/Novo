@@ -419,7 +419,12 @@ void Admin::loadAdminFromFile() {
 
             QString time = line.mid(0, p1).trimmed();
             QString msg = line.mid(p2 + 1, p3 - p2 - 1).trimmed();
-            adminNotifications.append(time + " | " + msg);
+            Notification n(
+                msg.toStdString(),
+                "admin",
+                time.toStdString()
+            );
+            adminNotifications.append(n);
         }
         nf.close();
     }
