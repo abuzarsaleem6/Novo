@@ -456,9 +456,13 @@ void Posts::loadCommentsFromFile() {
                 c.setLikeCount(likeCount);
                 if (commentsCount >= commentCapacity) expandComments();
                 commentList[commentsCount++] = c;
-                commentId.clear(); content.clear();
-                creatorUser.clear(); timeOfCreation.clear();
-                isReported = false; likeCount = 0; fieldCount = 0;
+                commentId.clear();
+                content.clear();
+                creatorUser.clear();
+                timeOfCreation.clear();
+                isReported = false; 
+                    likeCount = 0;
+                fieldCount = 0;
             }
             continue;
         }
@@ -469,12 +473,30 @@ void Posts::loadCommentsFromFile() {
         string value = line.substr(pipeIdx + 1);
         if (value.empty()) continue;
 
-        if (key == "commentId") { commentId = value; fieldCount++; }
-        else if (key == "content") { content = value; fieldCount++; }
-        else if (key == "creatorUsername") { creatorUser = value; fieldCount++; }
-        else if (key == "timeOfCreation") { timeOfCreation = value; fieldCount++; }
-        else if (key == "isReported") { isReported = (value == "1"); fieldCount++; }
-        else if (key == "likeCount") { try { likeCount = stoi(value); } catch (...) { likeCount = 0; } fieldCount++; }
+        if (key == "commentId") { 
+            commentId = value;
+            fieldCount++;
+        }
+        else if (key == "content") {
+            content = value; 
+            fieldCount++;
+        }
+        else if (key == "creatorUsername") {
+            creatorUser = value; fieldCount++;
+        }
+        else if (key == "timeOfCreation") {
+            timeOfCreation = value; fieldCount++; 
+        }
+        else if (key == "isReported") { 
+            isReported = (value == "1"); fieldCount++; 
+        }
+        else if (key == "likeCount") { 
+            try { likeCount = stoi(value);
+            } catch (...) {
+                likeCount = 0;
+            }
+            fieldCount++;
+        }
     }
 
     // Flush last record

@@ -51,7 +51,7 @@ public:
     void updateSaveStatus(bool isSaved);
     PostCard(Posts* post, const QString& authorUsername, bool isOwner, bool isSaved, const QString& viewerUsername, bool isAuthorReported = false, bool isPostReported = false, QWidget* parent = nullptr);
 signals:
-   
+
     void likeClicked(Posts* post);
     void commentClicked(Posts* post);
     void editClicked(Posts* post);
@@ -62,14 +62,14 @@ signals:
     void reportClicked(Posts* post, const QString& ownerUsername);
 
 private:
-   
+
     Posts* m_post;
     QString m_authorUsername;
     bool    m_isOwner;
     bool    m_isSaved;
     QString m_viewerUsername;
-    bool    m_isAuthorReported; 
-    bool    m_isPostReported;   
+    bool    m_isAuthorReported;
+    bool    m_isPostReported;
     QPushButton* m_saveBtn = nullptr;
     QLabel* m_saveLbl = nullptr;
 
@@ -95,11 +95,11 @@ public:
     ~AuthPage();
     void resetToLogin();
 
-    User** getAllUsers() const { 
-        return m_allUsers; 
+    User** getAllUsers() const {
+        return m_allUsers;
     }
 
-    int getUserCount() const { 
+    int getUserCount() const {
         return m_userCount;
     }
 
@@ -139,7 +139,7 @@ public:
 
     PublicProfileWidget(QWidget* parent = nullptr);
     void loadProfile(User* targetUser, User* viewer, User** allUsers, int userCount);
-    void refresh(); 
+    void refresh();
 
 signals:
     void backClicked();
@@ -150,9 +150,9 @@ private:
     User** m_allUsers = nullptr;
     int m_userCount = 0;
 
-    
-    User* m_targetUser = nullptr; 
-    User* m_viewer = nullptr;    
+
+    User* m_targetUser = nullptr;
+    User* m_viewer = nullptr;
 
 };
 
@@ -168,7 +168,7 @@ public:
     QTextEdit* m_postInput;
 
 signals:
-    void requestOpenComments(Posts* post); 
+    void requestOpenComments(Posts* post);
 private slots:
     void onLikePost(Posts* post);
     void onCommentPost(Posts* post);
@@ -202,7 +202,7 @@ public:
     void refresh();
 
 signals:
-    void requestOpenComments(Posts* post); 
+    void requestOpenComments(Posts* post);
 
 private slots:
 
@@ -231,7 +231,7 @@ public:
     void refresh();
 
 signals:
-    void requestOpenComments(Posts* post); 
+    void requestOpenComments(Posts* post);
 
 private slots:
 
@@ -306,7 +306,7 @@ public:
 signals:
 
     void accountDeleted();
-    void requestOpenComments(Posts* post); 
+    void requestOpenComments(Posts* post);
 
 private slots:
 
@@ -348,7 +348,7 @@ signals:
 private slots:
 
     void onAddComment();
-    void onEditComment(const QString& commentId);   
+    void onEditComment(const QString& commentId);
     void onDeleteComment(const QString& commentId);
 
 private:
@@ -427,7 +427,7 @@ class SearchPage : public QWidget {
 
 public:
     SearchPage(User**& allUsers, int& userCount, User* currentUser, QWidget* parent = nullptr);
-    
+
 signals:
 
     void requestOpenComments(Posts* post);
@@ -436,7 +436,7 @@ signals:
 private slots:
 
     void onSearch();
-  
+
 private:
 
     void showUserCard(User* user);
@@ -444,13 +444,13 @@ private:
 
     SearchEngine m_engine;
     User* m_currentUser;
-    User** &m_allUsers;
-    int & m_userCount;
+    User**& m_allUsers;
+    int& m_userCount;
     QLineEdit* m_searchInput;
     QScrollArea* m_scrollArea;
     QWidget* m_resultsContent;
     QVBoxLayout* m_resultsLayout;
-    
+
 };
 class MessagesPage : public QWidget {
 
@@ -466,7 +466,7 @@ private slots:
     void onSearchUser();
     void onConversationSelected(const QString& peer);
     void onChatDeleted(const QString& peer);
-   
+
 private:
     void loadConversationList();
     void clearConversationList();
@@ -483,7 +483,7 @@ private:
     ChatView* m_chatView;
     QString m_activePeer;
 
-   
+
 };
 
 class AdminPage : public QWidget {
@@ -491,7 +491,7 @@ class AdminPage : public QWidget {
     Q_OBJECT
 
 public:
-    AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* parent = nullptr);  // ← & on both
+    AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* parent = nullptr);
     void refresh();
 
 private slots:
@@ -500,11 +500,12 @@ private slots:
     void loadAdminNotifications();
 
 private:
+    void rebuildReportedUsersFile();
     void loadReportedUsers();
     void loadReportedPosts();
     Admin* m_admin;
-    User**& m_allUsers;  
-    int& m_userCount;    
+    User**& m_allUsers;
+    int& m_userCount;
     QScrollArea* m_scrollArea;
     QLabel* m_reportedUsersStatLbl = nullptr;
     QLabel* m_reportedPostsStatLbl = nullptr;
@@ -531,9 +532,9 @@ private slots:
     void onNavProfile();
     void onNavTimeSpent();
     void onLogout();
-    
+
     void onSidebarCreatePost();
-    void onOpenComments(Posts* post); 
+    void onOpenComments(Posts* post);
 
 private:
     void buildSidebar();
@@ -554,7 +555,7 @@ private:
     SidebarButton* m_btnMessages;
     SidebarButton* m_btnProfile;
     SidebarButton* m_btnTimeSpent;
-    
+
     SidebarButton* m_btnLogout;
 
     QStackedWidget* m_pages;
@@ -565,10 +566,10 @@ private:
     ProfilePage* m_profilePage;
     TimeSpentPage* m_timeSpentPage;
     AdminPage* m_adminPage;
-    CommentsPage* m_commentsPage = nullptr; 
+    CommentsPage* m_commentsPage = nullptr;
     CreatePostPage* m_createPostPage = nullptr;
     PublicProfileWidget* m_publicProfilePage = nullptr;
-    int m_previousPageIndex = 0; 
+    int m_previousPageIndex = 0;
 
     User* m_currentUser;
     User** m_allUsers;

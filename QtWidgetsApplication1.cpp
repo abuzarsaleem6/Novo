@@ -201,6 +201,35 @@ QMessageBox QPushButton:hover {
     color: #AAAAEE;
     border-color: #4444AA;
 }
+QInputDialog QLineEdit, QInputDialog QTextEdit {
+    background: #1E1E2E;
+    color: #E2E2EC;
+    border: 1px solid #3A3A60;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+QInputDialog QLabel {
+    color: #C8C8E8;
+    font-size: 13px;
+    background: transparent;
+}
+QInputDialog {
+    background: #0F0F18;
+}
+QInputDialog QPushButton {
+    background: transparent;
+    border: 1px solid #2A2A48;
+    border-radius: 9px;
+    color: #6060AA;
+    font-size: 13px;
+    padding: 6px 20px;
+    min-width: 60px;
+}
+QInputDialog QPushButton:hover {
+    background: #18182A;
+    color: #AAAAEE;
+    border-color: #4444AA;
+}
 )";
 
     
@@ -281,7 +310,7 @@ namespace {
         outLayout = new QVBoxLayout(outContent);
         outLayout->setContentsMargins(0, 0, 6, 20);
         outLayout->setSpacing(12);
-        outLayout->addStretch(1);   // push cards to top
+        outLayout->addStretch(1);   
 
         sa->setWidget(outContent);
         sa->verticalScrollBar()->setSingleStep(25);
@@ -358,7 +387,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     auto* timeRightLbl = makeLabel(timeStr, "postTime");
     timeRightLbl->setStyleSheet("color: #888888; font-size: 11px;");
     timeRightLbl->setAlignment(Qt::AlignRight);
-    timeRightLbl->setFixedWidth(130); // Increased width for better date visibility
+    timeRightLbl->setFixedWidth(130); 
     headerRow->addWidget(timeRightLbl, 0, Qt::AlignVCenter);
 
     if (m_isOwner) {
@@ -924,7 +953,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     postsTitle->setStyleSheet("font-size:16px;font-weight:bold;color:#E8E8F8;");
     layout->addWidget(postsTitle);
 
-    if (targetUser->getPostCount() == 0)
+    
         targetUser->loadAllPosts();
     if (targetUser->getPostCount() == 0) {
         auto* empty = new QLabel("This user hasn't posted anything yet.");
@@ -1579,7 +1608,7 @@ void FeedPage::onSubmitPost() {
     loadPosts();
 }
 
-//  CreatePostPage  — standalone page for composing a new post
+//  CreatePostPage  
 CreatePostPage::CreatePostPage(User* currentUser, QWidget* parent)
     : QWidget(parent), m_user(currentUser)
 {
@@ -1985,10 +2014,13 @@ void SearchPage::onSearch() {
     QString query = m_searchInput->text().trimmed();
     if (query.isEmpty()) return;
 
-    clearResults(); 
+    
+    m_engine.setUsers(m_allUsers, m_userCount);
+
+    clearResults();
 
     int resultsCount = 0;
-    
+
     User** foundUsers = m_engine.searchUsersBySubstring(query.toStdString(), resultsCount);
 
     if (!foundUsers || resultsCount == 0) {
@@ -1999,12 +2031,12 @@ void SearchPage::onSearch() {
         return;
     }
 
-    
+
     for (int i = 0; i < resultsCount; i++) {
         showUserCard(foundUsers[i]);
     }
 
-   
+
     delete[] foundUsers;
 }
 
@@ -2976,7 +3008,7 @@ void ProfilePage::onDeleteAccount() {
         "⚠️ This will PERMANENTLY delete your account, all your posts, and all your data.\n\n"
         "This action CANNOT be undone. Are you absolutely sure?",
         QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No);   // default to No for safety
+        QMessageBox::No);   
     if (r != QMessageBox::Yes) return;
 
     m_user->deleteAccount(m_allUsers, *m_userCountPtr);
@@ -3031,14 +3063,17 @@ AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* pa
         sl->addLayout(c);
         };
 
-
     if (m_admin) {
         m_admin->loadReportsFromFile(m_allUsers, m_userCount);
         m_admin->loadAdminFromFile();
-        addAdminStat(m_reportedUsersStatLbl, QString::number(m_admin->getReportedUserCount()), "REPORTED USERS");
-        addAdminStat(m_reportedPostsStatLbl, QString::number(m_admin->getReportedPostCount()), "REPORTED POSTS");
-        addAdminStat(m_totalUsersStatLbl, QString::number(m_userCount), "TOTAL USERS");
+        addAdminStat(m_reportedUsersStatLbl,
+            QString::number(m_admin->getReportedUserCount()), "REPORTED USERS");
+        addAdminStat(m_reportedPostsStatLbl,
+            QString::number(m_admin->getReportedPostCount(m_allUsers, m_userCount)), "REPORTED POSTS");
+        addAdminStat(m_totalUsersStatLbl,
+            QString::number(m_userCount), "TOTAL USERS");
     }
+
     outer->addWidget(statsCard);
 
     // Action buttons
@@ -3087,18 +3122,46 @@ AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* pa
     m_scrollArea->setWidget(m_content);
     outer->addWidget(m_scrollArea, 1);
 
-    
     loadReportedUsers();
+} 
+
+void AdminPage::rebuildReportedUsersFile() {
+    
+    ofstream out("data/Admin/reported_users.txt", ios::out);
+    if (!out.is_open()) return;
+    for (int u = 0; u < m_userCount; u++) {
+        if (!m_allUsers[u]) continue;
+        string rPath = "data/Users/" + m_allUsers[u]->getUsername() + "_reporters.txt";
+        int count = 0;
+        ifstream rf(rPath);
+        if (rf.is_open()) {
+            string line;
+            while (getline(rf, line)) {
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (!line.empty()) count++;
+            }
+            rf.close();
+        }
+        
+        m_allUsers[u]->setIsReportedCount(count);
+        m_allUsers[u]->setIsReported(count >= 3);
+        if (count >=3)
+            out << "username|" << m_allUsers[u]->getUsername()
+            << "|reportCount|" << count << "\n";
+    }
+    out.close();
 }
 
 void AdminPage::refresh() {
+   
+    rebuildReportedUsersFile();
     if (m_admin) {
         m_admin->loadReportsFromFile(m_allUsers, m_userCount);
         m_admin->loadAdminFromFile();
         if (m_reportedUsersStatLbl)
             m_reportedUsersStatLbl->setText(QString::number(m_admin->getReportedUserCount()));
         if (m_reportedPostsStatLbl)
-            m_reportedPostsStatLbl->setText(QString::number(m_admin->getReportedPostCount()));
+            m_reportedPostsStatLbl->setText(QString::number(m_admin->getReportedPostCount(m_allUsers, m_userCount)));
         if (m_totalUsersStatLbl)
             m_totalUsersStatLbl->setText(QString::number(m_userCount));
     }
@@ -3109,7 +3172,6 @@ void AdminPage::onReviewReportedUsers() { loadReportedUsers(); }
 void AdminPage::onReviewReportedPosts() { loadReportedPosts(); }
 
 void AdminPage::loadAdminNotifications() {
-    // Clear list
     while (m_layout->count() > 1) {
         QLayoutItem* item = m_layout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
@@ -3122,20 +3184,21 @@ void AdminPage::loadAdminNotifications() {
         "font-size:14px;font-weight:700;color:#E0E0F8;margin-bottom:8px;");
     m_layout->insertWidget(0, sectionLbl);
 
-    int count = m_admin->getAdminNotifCount();
+    int count = 0;
+    Notification* notifs = m_admin->getAllNotifications(count);
     if (count == 0) {
         auto* empty = new QLabel("No admin notifications.");
         empty->setAlignment(Qt::AlignCenter);
         empty->setStyleSheet("color:#28284A;font-size:13px;padding:24px 0;");
         m_layout->insertWidget(1, empty);
+        delete[] notifs;
         return;
     }
-
-    Notification* notifs = m_admin->getAllNotifications();
     for (int i = count - 1; i >= 0; --i) {
         auto* item = new NotificationItem(notifs[i]);
         m_layout->insertWidget(m_layout->count() - 1, item);
     }
+    delete[] notifs;
 }
 
 void AdminPage::loadReportedUsers() {
@@ -3147,48 +3210,47 @@ void AdminPage::loadReportedUsers() {
     if (!m_admin) return;
 
     auto* sectionLbl = new QLabel("Reported Users");
-    sectionLbl->setStyleSheet(
-        "font-size:14px;font-weight:700;color:#E0E0F8;margin-bottom:8px;");
+    sectionLbl->setStyleSheet("font-size:14px;font-weight:700;color:#E0E0F8;margin-bottom:8px;");
     m_layout->insertWidget(0, sectionLbl);
 
-    int count = m_admin->getReportedUserCount();
-    if (count == 0) {
-        auto* empty = new QLabel("No reported users. 🎉");
-        empty->setAlignment(Qt::AlignCenter);
-        empty->setStyleSheet("color:#28284A;font-size:13px;padding:24px 0;");
-        m_layout->insertWidget(1, empty);
-        return;
-    }
+    ifstream f("data/Admin/reported_users.txt");
+    bool any = false;
+    string line;
+    while (getline(f, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.find("username|") != 0) continue;
+        size_t p1 = line.find('|');
+        size_t p2 = line.find('|', p1 + 1);
+        size_t p3 = line.find('|', p2 + 1);
+        if (p1 == string::npos || p2 == string::npos || p3 == string::npos) continue;
+        string uname = line.substr(p1 + 1, p2 - p1 - 1);
+        int    rCount = stoi(line.substr(p3 + 1));
 
-    User** reportedUsers = m_admin->getReportedUsers();
-    for (int i = 0; i < count; ++i) {
-        User* u = reportedUsers[i];
+        User* u = nullptr;
+        for (int i = 0; i < m_userCount; i++)
+            if (m_allUsers[i] && m_allUsers[i]->getUsername() == uname)
+            {
+                u = m_allUsers[i]; break;
+            }
         if (!u) continue;
-
-        // deduplicate
-        bool dup = false;
-        for (int j = 0; j < i; ++j) if (reportedUsers[j] == u) { dup = true; break; }
-        if (dup) continue;
+        if (rCount < 3) continue;
+        any = true;
 
         auto* card = new QFrame;
         card->setObjectName("resultCard");
         auto* cl = new QVBoxLayout(card);
         cl->setContentsMargins(16, 12, 16, 12);
         cl->setSpacing(8);
-
         auto* nameRow = new QHBoxLayout;
-        auto* nameLbl = new QLabel(QString::fromStdString(u->getUsername()));
+        auto* nameLbl = new QLabel(QString::fromStdString(uname));
         nameLbl->setStyleSheet("font-size:15px;font-weight:700;color:#DCDCF8;");
         nameRow->addWidget(nameLbl, 1);
-
-        
-        int rCount = u->getIsReportedCount();
         auto* reportBadge = new QLabel(QString("⚑ %1 reports").arg(rCount));
-        reportBadge->setStyleSheet("background:#1C0808;color:#CC4444;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;");
+        reportBadge->setStyleSheet(
+            "background:#1C0808;color:#CC4444;font-size:11px;"
+            "font-weight:600;padding:4px 8px;border-radius:6px;");
         nameRow->addWidget(reportBadge);
         nameRow->addSpacing(12);
-        
-
         auto* deleteBtn = new QPushButton("🗑 Delete User");
         deleteBtn->setObjectName("dangerBtn");
         deleteBtn->setFixedHeight(32);
@@ -3197,7 +3259,7 @@ void AdminPage::loadReportedUsers() {
         connect(deleteBtn, &QPushButton::clicked, this, [this, u]() {
             auto r = QMessageBox::question(this, "Delete User",
                 "Permanently delete @" +
-                QString::fromStdString(u->getUsername()) + " and all their data?",
+                QString::fromStdString(u->getUsername()) + "?",
                 QMessageBox::Yes | QMessageBox::No);
             if (r == QMessageBox::Yes) {
                 m_admin->deleteUser(m_allUsers, m_userCount, u->getUsername());
@@ -3205,17 +3267,20 @@ void AdminPage::loadReportedUsers() {
                 refresh();
             }
             });
-
         nameRow->addWidget(deleteBtn);
         cl->addLayout(nameRow);
-
         auto* bioLbl = new QLabel(QString::fromStdString(u->getBio()));
         bioLbl->setStyleSheet("font-size:12px;color:#56567A;");
         cl->addWidget(bioLbl);
-
         m_layout->insertWidget(m_layout->count() - 1, card);
     }
-}
+    if (!any) {
+        auto* empty = new QLabel("No reported users. 🎉");
+        empty->setAlignment(Qt::AlignCenter);
+        empty->setStyleSheet("color:#28284A;font-size:13px;padding:24px 0;");
+        m_layout->insertWidget(1, empty);
+    }
+} 
 
 void AdminPage::loadReportedPosts() {
     while (m_layout->count() > 1) {
@@ -3230,7 +3295,7 @@ void AdminPage::loadReportedPosts() {
         "font-size:14px;font-weight:700;color:#E0E0F8;margin-bottom:8px;");
     m_layout->insertWidget(0, sectionLbl);
 
-    int count = m_admin->getReportedPostCount();
+    int count = m_admin->getReportedPostCount(m_allUsers, m_userCount);
     if (count == 0) {
         auto* empty = new QLabel("No reported posts. 🎉");
         empty->setAlignment(Qt::AlignCenter);
@@ -3239,58 +3304,64 @@ void AdminPage::loadReportedPosts() {
         return;
     }
 
-    Posts** reportedPosts = m_admin->getReportedPosts();
-    for (int i = 0; i < count; ++i) {
-        Posts* p = reportedPosts[i];
-        if (!p) continue;
+    bool any = false;
+    for (int u = 0; u < m_userCount; u++) {
+        if (!m_allUsers[u]) continue;
+        int pc = m_allUsers[u]->getPostCount();
+        for (int j = 0; j < pc; j++) {
+            Posts* p = m_allUsers[u]->getPostByIndex(j);
+            if (!p || p->getReportCount() < 1) continue;
+            any = true;
 
-        bool dup = false;
-        for (int j = 0; j < i; ++j) if (reportedPosts[j] == p) { dup = true; break; }
-        if (dup) continue;
+            auto* card = new QFrame;
+            card->setObjectName("postCard");
+            auto* cl = new QVBoxLayout(card);
+            cl->setContentsMargins(16, 12, 16, 12);
+            cl->setSpacing(8);
 
-        auto* card = new QFrame;
-        card->setObjectName("postCard");
-        auto* cl = new QVBoxLayout(card);
-        cl->setContentsMargins(16, 12, 16, 12);
-        cl->setSpacing(8);
+            auto* topRow = new QHBoxLayout;
+            auto* authorLbl = new QLabel(
+                "@" + QString::fromStdString(p->getCreatorUsername()));
+            authorLbl->setStyleSheet("font-size:13px;font-weight:600;color:#AAAAEE;");
+            topRow->addWidget(authorLbl, 1);
+            auto* timeLbl = new QLabel(QString::fromStdString(p->getTimeOfCreation()));
+            timeLbl->setStyleSheet("font-size:11px;color:#44445A;");
+            topRow->addWidget(timeLbl);
+            cl->addLayout(topRow);
 
-        auto* topRow = new QHBoxLayout;
-        auto* authorLbl = new QLabel(
-            "@" + QString::fromStdString(p->getCreatorUsername()));
-        authorLbl->setStyleSheet("font-size:13px;font-weight:600;color:#AAAAEE;");
-        topRow->addWidget(authorLbl, 1);
+            auto* contentLbl = new QLabel(QString::fromStdString(p->getContent()));
+            contentLbl->setWordWrap(true);
+            contentLbl->setStyleSheet("font-size:13px;color:#BBBBCC;");
+            cl->addWidget(contentLbl);
 
-        auto* timeLbl = new QLabel(QString::fromStdString(p->getTimeOfCreation()));
-        timeLbl->setStyleSheet("font-size:11px;color:#44445A;");
-        topRow->addWidget(timeLbl);
-        cl->addLayout(topRow);
+            auto* btnRow = new QHBoxLayout;
+            btnRow->addStretch(1);
+            auto* delPostBtn = new QPushButton("🗑 Delete Post");
+            delPostBtn->setObjectName("dangerBtn");
+            delPostBtn->setFixedHeight(30);
+            delPostBtn->setFixedWidth(110);
+            delPostBtn->setCursor(Qt::PointingHandCursor);
+            connect(delPostBtn, &QPushButton::clicked, this, [this, p]() {
+                auto r = QMessageBox::question(this, "Delete Post",
+                    "Permanently delete this post?",
+                    QMessageBox::Yes | QMessageBox::No);
+                if (r == QMessageBox::Yes) {
+                    m_admin->deletePost(m_allUsers, m_userCount, p->getPostId());
+                    QMessageBox::information(this, "Admin", "Post deleted.");
+                    refresh();
+                }
+                });
+            btnRow->addWidget(delPostBtn);
+            cl->addLayout(btnRow);
+            m_layout->insertWidget(m_layout->count() - 1, card);
+        } 
+    } 
 
-        auto* contentLbl = new QLabel(QString::fromStdString(p->getContent()));
-        contentLbl->setWordWrap(true);
-        contentLbl->setStyleSheet("font-size:13px;color:#BBBBCC;");
-        cl->addWidget(contentLbl);
-
-        auto* btnRow = new QHBoxLayout;
-        btnRow->addStretch(1);
-        auto* delPostBtn = new QPushButton("🗑 Delete Post");
-        delPostBtn->setObjectName("dangerBtn");
-        delPostBtn->setFixedHeight(30);
-        delPostBtn->setFixedWidth(110);
-        delPostBtn->setCursor(Qt::PointingHandCursor);
-        connect(delPostBtn, &QPushButton::clicked, this, [this, p]() {
-            auto r = QMessageBox::question(this, "Delete Post",
-                "Permanently delete this post?",
-                QMessageBox::Yes | QMessageBox::No);
-            if (r == QMessageBox::Yes) {
-                m_admin->deletePost(m_allUsers, m_userCount, p->getPostId());
-                QMessageBox::information(this, "Admin", "Post deleted.");
-                refresh();  
-            }
-            });
-        btnRow->addWidget(delPostBtn);
-        cl->addLayout(btnRow);
-
-        m_layout->insertWidget(m_layout->count() - 1, card);
+    if (!any) {
+        auto* empty = new QLabel("No reported posts. 🎉");
+        empty->setAlignment(Qt::AlignCenter);
+        empty->setStyleSheet("color:#28284A;font-size:13px;padding:24px 0;");
+        m_layout->insertWidget(1, empty);
     }
 }
 

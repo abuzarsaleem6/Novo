@@ -71,7 +71,8 @@ public:
 	// setters
     void setBio(string bio);
     void setPassword(string password);
-
+    void setIsReported(bool val);
+    void setIsReportedCount(int val);
 	// Helper functions for following and followers management
     void followUser(User* target, User** allUsers, int userCount);
     void unfollowUser(string username);

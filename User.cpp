@@ -231,10 +231,10 @@ string User::validateBio(const string& bio) {
 }
 string User::validatePostContent(const string& content) {
     if (content.empty()) 
-        return "Post content cannot be empty.";
+        return "Post content cannot be empty ";
     for (int i = 0; i < (int)content.length(); i++)
         if (content[i] == '|') 
-            return "Post content cannot contain '|'.";
+            return "Post content cannot contain '|' ";
     return "";
 }
 
@@ -315,16 +315,26 @@ void User::loadFromFile(string username) {
         if (value.empty()) continue;
 
         try {
-            if (key == "username")        this->username = value;
-            else if (key == "password")        this->password = value;
-            else if (key == "bio")             this->bio = value;
-            else if (key == "isLoggedIn")      this->isLoggedIn = (value == "1");
-            else if (key == "isReported")      this->isReported = (value == "1");
-            else if (key == "isReportedCount") this->isReportedCount = stoi(value);
-            else if (key == "followingCount")  this->followingCount = stoi(value);
-            else if (key == "followersCount")  this->followersCount = stoi(value);
-            else if (key == "postCount")       this->postCount = stoi(value);
-            else if (key == "savedPostCount")  this->savedPostCount = stoi(value);
+            if (key == "username")        
+                this->username = value;
+            else if (key == "password")       
+                this->password = value;
+            else if (key == "bio")            
+                this->bio = value;
+            else if (key == "isLoggedIn")     
+                this->isLoggedIn = (value == "1");
+            else if (key == "isReported")     
+                this->isReported = (value == "1");
+            else if (key == "isReportedCount") 
+                this->isReportedCount = stoi(value);
+            else if (key == "followingCount") 
+                this->followingCount = stoi(value);
+            else if (key == "followersCount") 
+                this->followersCount = stoi(value);
+            else if (key == "postCount")      
+                this->postCount = stoi(value);
+            else if (key == "savedPostCount") 
+                this->savedPostCount = stoi(value);
         }
         catch (...) {
             cout << "Error parsing user field: " << key << endl;
@@ -408,6 +418,12 @@ void User::setBio(string bio) {
 void User::setPassword(string password) {
     this->password = password; 
 }
+void User::setIsReported(bool val) {
+    this->isReported = val;
+}
+void User::setIsReportedCount(int val) {
+    this->isReportedCount = val;
+}
 
 
 // FOLLOWING / FOLLOWERS
@@ -452,7 +468,8 @@ void User::followUser(User* target, User** allUsers, int userCount) {
 bool User::isFollowing(string username) {
     if (!following || followingCount == 0) return false;
     for (int i = 0; i < followingCount; i++)
-        if (following[i] && following[i]->getUsername() == username) return true;
+        if (following[i] && following[i]->getUsername() == username) 
+            return true;
     return false;
 }
 
@@ -460,8 +477,8 @@ void User::addFollower(User* ptr) {
     if (!ptr) return;
 
     for (int i = 0; i < followersCount; i++) {
-        if (followers && followers[i] &&
-            followers[i]->getUsername() == ptr->getUsername()) return;
+        if (followers && followers[i] && followers[i]->getUsername() == ptr->getUsername()) 
+                return;
     }
 
     User** newFollowers = new User * [followersCount + 1];
@@ -761,7 +778,11 @@ void User::savePost(string postId, User* postOwner) {
     if (!postOwner || postOwner->getUsername() == this->username) return;
 
     for (int i = 0; i < savedPostCount; i++)
-        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) return;
+    {
+        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) {
+            return;
+        }
+    }
 
     if (!postOwner->posts && postOwner->postCount > 0)
         postOwner->loadAllPosts();
@@ -786,9 +807,15 @@ void User::unsavePost(string postId) {
 
     int foundIdx = -1;
     for (int i = 0; i < savedPostCount; i++)
-        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) { foundIdx = i; break; }
+        if (savedPosts[i] && savedPosts[i]->getPostId() == postId) { 
+            foundIdx = i; 
+    break; 
+        }
 
-    if (foundIdx == -1) { cout << "Post not in saved list." << endl; return; }
+    if (foundIdx == -1) { 
+        cout << "Post not in saved list." << endl;
+        return;
+    }
 
     Posts** newSaved = savedPostCount > 1 ? new Posts * [savedPostCount - 1] : nullptr;
     int idx = 0;
@@ -806,7 +833,9 @@ void User::saveSavedPostsToFile() {
     string path = "data/Posts/" + this->username + "/saved_posts.txt";
     ofstream outFile(path, ios::out);
 
-    if (!outFile.is_open()) return;
+    if (!outFile.is_open()) {
+        return;
+    }
 
     for (int i = 0; i < savedPostCount; i++) {
         
@@ -825,21 +854,31 @@ void User::loadSavedPosts(User** allUsers, int userCount) {
 
     string path = "data/Posts/" + this->username + "/saved_posts.txt";
     ifstream file(path);
-    if (!file.is_open()) return;
+    if (!file.is_open()) {
+        return;
+    }
 
     int count = 0;
     string line;
     while (getline(file, line))
-        if (!line.empty() && line != "\r") count++;
+        if (!line.empty() && line != "\r") {
+            count++;
+        }
     file.close();
-    if (count == 0) return;
+    if (count == 0) {
+        return;
+    }
 
     savedPosts = new Posts * [count]();
 
     ifstream file2(path);
     while (getline(file2, line) && savedPostCount < count) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty()) continue;
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        if (line.empty()) {
+            continue;
+        }
 
         size_t sep = line.find('|');
         if (sep == string::npos) continue;
@@ -847,16 +886,26 @@ void User::loadSavedPosts(User** allUsers, int userCount) {
         string pid = line.substr(0, sep);
         string owner = line.substr(sep + 1);
 
-        while (!pid.empty() && (pid.back() == ' ' || pid.back() == '\r')) pid.pop_back();
-        while (!owner.empty() && (owner.back() == ' ' || owner.back() == '\r')) owner.pop_back();
-        if (pid.empty() || owner.empty()) continue;
+        while (!pid.empty() && (pid.back() == ' ' || pid.back() == '\r')) {
+            pid.pop_back();
+        }
+        while (!owner.empty() && (owner.back() == ' ' || owner.back() == '\r')) {
+            owner.pop_back();
+        }
+        if (pid.empty() || owner.empty()) {
+            continue;
+        }
 
         for (int i = 0; i < userCount; i++) {
-            if (!allUsers[i] || allUsers[i]->getUsername() != owner) continue;
+            if (!allUsers[i] || allUsers[i]->getUsername() != owner) {
+                continue;
+            }
             if (!allUsers[i]->posts && allUsers[i]->postCount > 0)
                 allUsers[i]->loadAllPosts();
             Posts* p = allUsers[i]->getPostById(pid);
-            if (p) savedPosts[savedPostCount++] = p;
+            if (p) {
+                savedPosts[savedPostCount++] = p;
+            }
             break;
         }
     }
@@ -871,12 +920,16 @@ void User::clearSavedPostsArray() {
 
 bool User::hasSavedPost(const string& postId) const {
     for (int i = 0; i < savedPostCount; ++i)
-        if (savedPosts[i] != nullptr && savedPosts[i]->getPostId() == postId) return true;
+        if (savedPosts[i] != nullptr && savedPosts[i]->getPostId() == postId) {
+            return true;
+        }
     return false;
 }
 
 Posts* User::getSavedPostByIndex(int index) {
-    if (index < 0 || index >= savedPostCount || !savedPosts) return nullptr;
+    if (index < 0 || index >= savedPostCount || !savedPosts) {
+        return nullptr;
+    }
     return savedPosts[index];
 }
 
@@ -909,14 +962,22 @@ void User::reportUser() {
             if (!line.empty() && line.back() == '\r') line.pop_back();
             
             size_t p1 = line.find('|');
-            if (p1 == string::npos) continue;
+            if (p1 == string::npos) {
+                continue;
+            }
             size_t p2 = line.find('|', p1 + 1);
-            if (p2 == string::npos) continue;
+            if (p2 == string::npos) {
+                continue;
+            }
             size_t p3 = line.find('|', p2 + 1);
-            if (p3 == string::npos) continue;
+            if (p3 == string::npos) {
+                continue;
+            }
             string name = line.substr(p1 + 1, p2 - p1 - 1);
             string count = line.substr(p3 + 1);
-            if (name.empty() || count.empty()) continue;
+            if (name.empty() || count.empty()) {
+                continue;
+            }
             rNames[rSize] = name;
             rCounts[rSize] = stoi(count);
             rSize++;
@@ -943,9 +1004,9 @@ void User::reportUser() {
     saveToFile();
 }
 
-bool User::hasReportedUser(const string& targetUsername) const {
+bool User::hasReportedUser(const string& reporterUsername) const {
     
-    string path = "data/Users/" + targetUsername + "_reporters.txt";
+    string path = "data/Users/" + this->username + "_reporters.txt";
     ifstream file(path);
 
     if (!file.is_open()) return false;
@@ -954,8 +1015,8 @@ bool User::hasReportedUser(const string& targetUsername) const {
     while (getline(file, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        if (line == this->username) {
-            return true; 
+        if (line == reporterUsername) {
+            return true;
         }
     }
     return false;
@@ -965,7 +1026,9 @@ void User::reportUserBy(const string& reporterUsername) {
     if (hasReportedUser(reporterUsername)) return;
     string path = "data/Users/" + this->username + "_reporters.txt";
     ofstream file(path, ios::app);
-    if (file.is_open()) { file << reporterUsername << "\n"; file.close(); }
+    if (file.is_open()) { 
+    file << reporterUsername << "\n"; 
+    file.close(); }
     reportUser();
 }
 int User::getIsReportedCount() const { 
@@ -975,14 +1038,14 @@ int User::getIsReportedCount() const {
 // ACCOUNT DELETION
 
 void User::deleteAccount(User**& allUsers, int& userCount) {
-    
+
     string uname = this->username;
     cout << "User: Initiating full system wipe for @" << uname << "..." << endl;
 
     loadFollowers(allUsers, userCount);
     loadFollowing(allUsers, userCount);
 
-   
+
     for (int i = 0; i < followersCount; i++) {
         if (!followers[i]) continue;
         followers[i]->loadFollowing(allUsers, userCount);
@@ -1015,7 +1078,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         follower->saveToFile();
     }
 
-   
+
     for (int i = 0; i < followingCount; i++) {
         if (!following[i]) continue;
         following[i]->loadFollowers(allUsers, userCount);
@@ -1055,7 +1118,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     system(msgCmd.c_str());
 #endif
 
-   
+
     string postDirPath = "data/Posts/" + uname;
 #ifdef _WIN32
     system(("rmdir /s /q \"" + postDirPath + "\" 2>nul").c_str());
@@ -1063,18 +1126,22 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     system(("rm -rf \"data/Posts/" + uname + "\""));
 #endif
 
-    
+
     string notifPath = "data/Notifications/" + uname + "_notif.txt";
     remove(notifPath.c_str());
 
     for (int u = 0; u < userCount; u++) {
-        if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
+        if (!allUsers[u] || allUsers[u]->getUsername() == uname) {
+            continue;
+        }
         allUsers[u]->loadAllPosts();
         for (int p = 0; p < allUsers[u]->getPostCount(); p++) {
             Posts* post = allUsers[u]->getPostByIndex(p);
-            if (!post || !post->isValid()) continue;
+            if (!post || !post->isValid()) {
+                continue;
+            }
             Comment* comments = post->getComments();
-            int      cCount = post->getCommentsCount();
+            int  cCount = post->getCommentsCount();
             for (int c = cCount - 1; c >= 0; c--) {
                 if (comments[c].getCreatorUsername() == uname)
                     post->deleteCommentAsAdmin(c);
@@ -1082,7 +1149,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
     }
 
-  
+
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         string savedPath = "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt";
@@ -1091,32 +1158,134 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         if (sf.is_open()) {
             string line;
             while (getline(sf, line)) {
-                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
                 size_t sep = line.find('|');
                 if (sep != string::npos) {
                     string owner = line.substr(sep + 1);
                     while (!owner.empty() && (owner.back() == ' ' || owner.back() == '\r'))
                         owner.pop_back();
-                    if (owner == uname) continue;
+                    if (owner == uname) {
+                        continue;
+                    }
                 }
-                if (!line.empty()) remaining += line + "\n";
+                if (!line.empty()) {
+                    remaining += line + "\n";
+                }
             }
             sf.close();
         }
         ofstream swf(savedPath, ios::out);
-        if (swf.is_open()) { swf << remaining; swf.close(); }
+        if (swf.is_open()) {
+            swf << remaining;
+            swf.close();
+        }
     }
 
-    
+
     removeFile("data/Following/" + uname + "_following.txt");
     removeFile("data/Following/" + uname + "_followers.txt");
     removeFile("data/Users/" + uname + "_reporters.txt");
     removeFile("data/Messages/" + uname + "_index.txt");
     removeFile("data/Users/" + uname + ".txt");
 
+    
+    for (int u = 0; u < userCount; u++) {
+        if (!allUsers[u] || allUsers[u]->getUsername() == uname) {
+            continue;
+        }
+        string rPath = "data/Users/" + allUsers[u]->getUsername() + "_reporters.txt";
+        string remaining;
+        int newCount = 0;
+        ifstream rIn(rPath);
+        if (rIn.is_open()) {
+            string line;
+            while (getline(rIn, line)) {
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
+                if (line.empty()) {
+                    continue;
+                }
+                if (line == uname) {
+                    continue;
+                }
+                remaining += line + "\n";
+                newCount++;
+            }
+            rIn.close();
+            ofstream rOut(rPath, ios::out);
+            if (rOut.is_open()) {
+                rOut << remaining; 
+            rOut.close();
+            }
+        }
+        else {
+            
+            newCount = 0;
+        }
+       
+        allUsers[u]->isReportedCount = newCount;
+        allUsers[u]->isReported = (newCount >= 3);
+        allUsers[u]->saveToFile();
+    }
+
+    
+    {
+        ofstream ruOut("data/Admin/reported_users.txt", ios::out);
+        if (ruOut.is_open()) {
+            for (int u = 0; u < userCount; u++) {
+                if (!allUsers[u] || allUsers[u]->getUsername() == uname) {
+                    continue;
+                }
+                if (allUsers[u]->isReportedCount > 0)
+                    ruOut << "username|" << allUsers[u]->getUsername()
+                    << "|reportCount|" << allUsers[u]->isReportedCount << "\n";
+            }
+            ruOut.close();
+        }
+    }
+
+    // Remove all notifications caused by the deleted user from every other user's notif file
+    for (int u = 0; u < userCount; u++) {
+        if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
+        string nPath = "data/Notifications/" + allUsers[u]->getUsername() + "_notif.txt";
+        string remaining;
+        ifstream nIn(nPath);
+        if (nIn.is_open()) {
+            string line;
+            while (getline(nIn, line)) {
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
+                if (line.empty()) {
+                    continue;
+                }
+                
+                size_t p1 = line.find('|');
+                if (p1 != string::npos) {
+                    size_t p2 = line.find('|', p1 + 1);
+                    string msg = (p2 != string::npos) ? line.substr(p1 + 1, p2 - p1 - 1) : line.substr(p1 + 1);
+      
+                    if (msg.find(uname) != string::npos) {
+                        continue;
+                    }
+                }
+                remaining += line + "\n";
+            }
+            nIn.close();
+            ofstream nOut(nPath, ios::out);
+            if (nOut.is_open()) { 
+                nOut << remaining; 
+                nOut.close();
+            }
+        }
+    }
+
     removeFromUser_List(uname);
 
-   
+
     {
         const int MAX_R = 256;
         string rNames[MAX_R];
@@ -1126,16 +1295,20 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         if (rIn.is_open()) {
             string line, pendingName;
             while (getline(rIn, line)) {
-                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
                 size_t sep = line.find('|');
-                if (sep == string::npos) continue;
+                if (sep == string::npos) {
+                    continue;
+                }
                 string key = line.substr(0, sep);
                 string val = line.substr(sep + 1);
                 if (key == "username") {
                     pendingName = val;
                 }
                 else if (key == "reportCount" && !pendingName.empty() && rSize < MAX_R) {
-                    if (pendingName != uname) { 
+                    if (pendingName != uname) {
                         rNames[rSize] = pendingName;
                         rCounts[rSize] = stoi(val);
                         rSize++;
@@ -1147,9 +1320,10 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
         ofstream rOut("data/Admin/reported_users.txt", ios::out);
         if (rOut.is_open()) {
-            for (int i = 0; i < rSize; i++)
-                rOut << "username|" << rNames[i] << "\n"
-                << "reportCount|" << rCounts[i] << "\n";
+            for (int i = 0; i < rSize; i++) {
+                rOut << "username|" << rNames[i] << "|reportCount|" << rCounts[i] << "\n";
+            }
+                
             rOut.close();
         }
     }
@@ -1163,7 +1337,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     }
 
     if (deleteIdx != -1) {
-        
+
         for (int i = deleteIdx; i < userCount - 1; i++) {
             allUsers[i] = allUsers[i + 1];
         }
@@ -1172,13 +1346,16 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
 
     cout << "Full system wipe complete for: " << uname << endl;
 }
-
 //  HELPERS
 
 
 bool User::hasPost(const string& postId) const {
-    for (int i = 0; i < postCount; i++)
-        if (posts[i] && posts[i]->getPostId() == postId) return true;
+    for (int i = 0; i < postCount; i++) {
+        if (posts[i] && posts[i]->getPostId() == postId) {
+            return true;
+        }
+    }
+       
     return false;
 }
 
@@ -1193,22 +1370,33 @@ string* User::getConversationHistory(const string& username, int& outCount) {
 
     string path = "data/Messages/" + username + "_index.txt";
     ifstream f(path);
-    if (!f.is_open()) return peers;
+    if (!f.is_open()) {
+        return peers;
+    }
 
     string line;
     while (getline(f, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty()) continue;
+        if (line.empty()) {
+            continue;
+        }
 
         bool already = false;
         for (int i = 0; i < outCount; i++)
-            if (peers[i] == line) { already = true; break; }
-        if (already) continue;
+            if (peers[i] == line) {
+                already = true; 
+                break; 
+            }
+        if (already) {
+            continue;
+        }
 
         if (outCount >= capacity) {
             capacity *= 2;
             string* tmp = new string[capacity];
-            for (int i = 0; i < outCount; i++) tmp[i] = peers[i];
+            for (int i = 0; i < outCount; i++) {
+                tmp[i] = peers[i];
+            }
             delete[] peers;
             peers = tmp;
         }
@@ -1227,8 +1415,13 @@ void User::addConversationToHistory(const string& username, const string& peerUs
     if (rf.is_open()) {
         string line;
         while (getline(rf, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line == peerUsername) { rf.close(); return; }
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            if (line == peerUsername) {
+                rf.close();
+                return;
+            }
         }
         rf.close();
     }
@@ -1244,8 +1437,12 @@ void User::removeConversationFromHistory(const string& username, const string& p
     if (f.is_open()) {
         string line;
         while (getline(f, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (!line.empty() && line != peerUsername) remaining += line + "\n";
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            if (!line.empty() && line != peerUsername) {
+                remaining += line + "\n";
+            }
         }
         f.close();
     }
@@ -1257,13 +1454,21 @@ void User::removeConversationFromHistory(const string& username, const string& p
 
 void loadAllUsers(User** allUsers, int& userCount) {
     ifstream userList("data/users_list.txt");
-    if (!userList.is_open()) { userCount = 0; return; }
+    if (!userList.is_open()) {
+        userCount = 0; 
+        return; 
+    }
 
     int index = 0;
     string username;
     while (getline(userList, username)) {
-        if (!username.empty() && username.back() == '\r') username.pop_back();
-        if (username.empty()) continue;
+        if (!username.empty() && username.back() == '\r') {
+            username.pop_back(); 
+        }
+        if (username.empty()) {
+
+            continue;
+        }
         allUsers[index] = new User();
         allUsers[index]->loadFromFile(username);
         index++;
@@ -1273,12 +1478,18 @@ void loadAllUsers(User** allUsers, int& userCount) {
 }
 
 User* signUp(User**& allUsers, int& userCount, string username, string password, string bio) {
-    for (int i = 0; i < userCount; i++)
-        if (allUsers[i] && allUsers[i]->getUsername() == username) return nullptr;
+    for (int i = 0; i < userCount; i++) {
+        if (allUsers[i] && allUsers[i]->getUsername() == username) {
+            return nullptr;
+        }
+    }
+       
 
     User* newUser = new User(username, password, bio);
     User** newArray = new User * [userCount + 1];
-    for (int i = 0; i < userCount; i++) newArray[i] = allUsers[i];
+    for (int i = 0; i < userCount; i++) {
+        newArray[i] = allUsers[i];
+    }
     newArray[userCount] = newUser;
     delete[] allUsers;
     allUsers = newArray;
@@ -1288,9 +1499,13 @@ User* signUp(User**& allUsers, int& userCount, string username, string password,
 
 User* findAndLogin(User**& allUsers, int userCount, string username, string password) {
     for (int i = 0; i < userCount; i++) {
-        if (!allUsers[i]) continue;
+        if (!allUsers[i]) {
+            continue;
+        }
         if (allUsers[i]->getUsername() == username) {
-            if (allUsers[i]->login(password)) return allUsers[i];
+            if (allUsers[i]->login(password)) {
+                return allUsers[i];
+            }
             return nullptr;
         }
     }
