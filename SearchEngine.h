@@ -10,6 +10,9 @@
 using namespace std;
 
 class SearchEngine {
+private:
+    User** allUsers;
+    int userCount;
 public:
     SearchEngine();
     SearchEngine(User** users, int count);
@@ -17,10 +20,6 @@ public:
 
     // Exact match ke bajaye substring search:
     User** searchUsersBySubstring(const string& query, int& outResultsCount) const;
-
-private:
-    User** allUsers;
-    int    userCount;
 };
 
 #endif

@@ -10,6 +10,8 @@ static string getCurrentTimeString() {
     return string(buffer);
 }
 
+//constructors
+
 Comment::Comment(string content, string commentId, string creatorUsername)
     : content(content), commentId(commentId), creatorUsername(creatorUsername),
     isReported(false), likeCount(0) {
@@ -46,23 +48,62 @@ void Comment::editText(const string& newContent) {
     content = newContent;
 }
 
-string Comment::getContent() const { return content; }
-string Comment::getCommentId() const { return commentId; }
-string Comment::getTimeOfCreation() const { return timeOfCreation; }
-string Comment::getCreatorUsername() const { return creatorUsername; }
-bool Comment::getIsReported() const { return isReported; }
-int Comment::getLikeCount() const { return likeCount; }
+//getters
 
-void Comment::setContent(const string& newContent) { content = newContent; }
-void Comment::setIsReported(bool reported) { isReported = reported; }
+string Comment::getContent() const {
+    return content;
+}
 
-void Comment::like() { likeCount++; }
-void Comment::unlike() { if (likeCount > 0) likeCount--; }
+string Comment::getCommentId() const {
+    return commentId;
+}
 
-void Comment::setTimeOfCreation(const string& time) { timeOfCreation = time; }
-void Comment::setLikeCount(int count) { likeCount = count; }
+string Comment::getTimeOfCreation() const {
+    return timeOfCreation; 
+}
+
+string Comment::getCreatorUsername() const {
+    return creatorUsername; 
+}
+
+bool Comment::getIsReported() const {
+    return isReported; 
+}
+
+int Comment::getLikeCount() const {
+    return likeCount;
+}
+
+//setters
+
+void Comment::setContent(const string& newContent) {
+    content = newContent; 
+}
+void Comment::setIsReported(bool reported) {
+    isReported = reported;
+}
+
+void Comment::setTimeOfCreation(const string& time) {
+    timeOfCreation = time; 
+}
+
+void Comment::setLikeCount(int count) { 
+    likeCount = count; 
+}
+
+//like counts
+
+void Comment::like() {
+    likeCount++;
+}
+
+void Comment::unlike() {
+    if (likeCount > 0)
+        likeCount--;
+}
 
 string Comment::getDisplayName() const {
-    if (creatorUsername.empty()) return "Unknown User";
+    if (creatorUsername.empty())
+        return "Unknown User";
     return creatorUsername;
 }

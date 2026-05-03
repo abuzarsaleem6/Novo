@@ -29,7 +29,10 @@ static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
 void Admin::expandReportedUsers() {
     int newCap = reportedUserCapacity * 2;
     User** tmp = new User * [newCap];
-    for (int i = 0; i < reportedUserCount; i++) tmp[i] = reportedUsers[i];
+
+    for (int i = 0; i < reportedUserCount; i++)
+        tmp[i] = reportedUsers[i];
+
     delete[] reportedUsers;
     reportedUsers = tmp;
     reportedUserCapacity = newCap;
@@ -38,7 +41,10 @@ void Admin::expandReportedUsers() {
 void Admin::expandReportedPosts() {
     int newCap = reportedPostCapacity * 2;
     Posts** tmp = new Posts * [newCap];
-    for (int i = 0; i < reportedPostCount; i++) tmp[i] = reportedPosts[i];
+
+    for (int i = 0; i < reportedPostCount; i++) 
+        tmp[i] = reportedPosts[i];
+
     delete[] reportedPosts;
     reportedPosts = tmp;
     reportedPostCapacity = newCap;
@@ -47,7 +53,10 @@ void Admin::expandReportedPosts() {
 void Admin::expandNotifications() {
     int newCap = adminNotifCapacity * 2;
     Notification* tmp = new Notification[newCap];
-    for (int i = 0; i < adminNotifCount; i++) tmp[i] = adminNotifications[i];
+
+    for (int i = 0; i < adminNotifCount; i++) 
+        tmp[i] = adminNotifications[i];
+
     delete[] adminNotifications;
     adminNotifications = tmp;
     adminNotifCapacity = newCap;
@@ -98,18 +107,21 @@ Admin::Admin(const Admin& other) : User(other) {
     reportedUserCapacity = other.reportedUserCapacity;
     reportedUserCount = other.reportedUserCount;
     reportedUsers = new User * [reportedUserCapacity];
+
     for (int i = 0; i < reportedUserCount; i++)
         reportedUsers[i] = other.reportedUsers[i];
 
     reportedPostCapacity = other.reportedPostCapacity;
     reportedPostCount = other.reportedPostCount;
     reportedPosts = new Posts * [reportedPostCapacity];
+
     for (int i = 0; i < reportedPostCount; i++)
         reportedPosts[i] = other.reportedPosts[i];
 
     adminNotifCapacity = other.adminNotifCapacity;
     adminNotifCount = other.adminNotifCount;
     adminNotifications = new Notification[adminNotifCapacity];
+
     for (int i = 0; i < adminNotifCount; i++)
         adminNotifications[i] = other.adminNotifications[i];
 }
@@ -121,6 +133,8 @@ Admin& Admin::operator=(const Admin& other) {
 
         delete[] reportedUsers;
         reportedUserCapacity = other.reportedUserCapacity;
+
+
         reportedUserCount = other.reportedUserCount;
         reportedUsers = new User * [reportedUserCapacity];
         for (int i = 0; i < reportedUserCount; i++)
@@ -128,6 +142,8 @@ Admin& Admin::operator=(const Admin& other) {
 
         delete[] reportedPosts;
         reportedPostCapacity = other.reportedPostCapacity;
+
+
         reportedPostCount = other.reportedPostCount;
         reportedPosts = new Posts * [reportedPostCapacity];
         for (int i = 0; i < reportedPostCount; i++)
@@ -135,6 +151,8 @@ Admin& Admin::operator=(const Admin& other) {
 
         delete[] adminNotifications;
         adminNotifCapacity = other.adminNotifCapacity;
+
+
         adminNotifCount = other.adminNotifCount;
         adminNotifications = new Notification[adminNotifCapacity];
         for (int i = 0; i < adminNotifCount; i++)
@@ -155,7 +173,8 @@ Admin::~Admin() {
 void Admin::receiveUserReport(User* user) {
     if (!user) return;
 
-    if (reportedUserCount >= reportedUserCapacity) expandReportedUsers();
+    if (reportedUserCount >= reportedUserCapacity)
+        expandReportedUsers();
     reportedUsers[reportedUserCount++] = user;
 
     addNotification("New report received for user: @" + user->getUsername());
@@ -169,7 +188,8 @@ void Admin::receiveUserReport(User* user) {
 void Admin::receivePostReport(Posts* post) {
     if (!post) return;
 
-    if (reportedPostCount >= reportedPostCapacity) expandReportedPosts();
+    if (reportedPostCount >= reportedPostCapacity)
+        expandReportedPosts();
     reportedPosts[reportedPostCount++] = post;
 
     addNotification("New report received for post: " + post->getPostId()
@@ -201,7 +221,8 @@ void Admin::deletePost(User** allUsers, int userCount, const string& postId) {
     cout << "Admin: Deleting post " << postId << endl;
 
     for (int i = 0; i < userCount; i++) {
-        if (!allUsers[i]) continue;
+        if (!allUsers[i])
+            continue;
 
         Posts* post = allUsers[i]->getPostById(postId);
         if (post != nullptr) {
@@ -253,7 +274,8 @@ void Admin::reviewReports(User**& allUsers, int& userCount) {
 
     for (int i = 0; i < reportedPostCount; i++) {
         Posts* post = reportedPosts[i];
-        if (!post) continue;
+        if (!post)
+            continue;
 
         int count = 0;
         for (int j = 0; j < reportedPostCount; j++)
@@ -290,7 +312,8 @@ int Admin::getReportedPostCount() const {
 void Admin::addNotification(const string& message) {
     string ts = currentTimestamp();
 
-    if (adminNotifCount >= adminNotifCapacity) expandNotifications();
+    if (adminNotifCount >= adminNotifCapacity)
+        expandNotifications();
     adminNotifications[adminNotifCount++] = Notification(message, "admin", ts);
 
     // Persist immediately so it survives session restarts
@@ -319,10 +342,7 @@ void Admin::viewAllNotifications() const {
         const Notification& n = adminNotifications[i];
         cout << n.getMessage()
             << " | Type: " << n.getType()
-            << " | Time: " << n.getTimestamp()
-           
-           
-            << endl;
+            << " | Time: " << n.getTimestamp()<< endl;
     }
 }
 
@@ -343,17 +363,23 @@ void Admin::saveReportsToFile() {
         // deduplicate: write each unique post once
         for (int i = 0; i < reportedPostCount; i++) {
             Posts* post = reportedPosts[i];
-            if (!post) continue;
+            if (!post) 
+                continue;
 
             // check if already written
             bool already = false;
             for (int j = 0; j < i; j++)
-                if (reportedPosts[j] == post) { already = true; break; }
-            if (already) continue;
+                if (reportedPosts[j] == post) {
+                    already = true;
+                    break; 
+                }
+            if (already) 
+                continue;
 
             int count = 0;
             for (int j = 0; j < reportedPostCount; j++)
-                if (reportedPosts[j] == post) count++;
+                if (reportedPosts[j] == post) 
+                    count++;
 
             postsFile << "postId|" << post->getPostId() << "\n"
                 << "creator|" << post->getCreatorUsername() << "\n"
@@ -368,16 +394,21 @@ void Admin::saveReportsToFile() {
     if (usersFile.is_open()) {
         for (int i = 0; i < reportedUserCount; i++) {
             User* user = reportedUsers[i];
-            if (!user) continue;
+            if (!user)
+                continue;
 
             bool already = false;
             for (int j = 0; j < i; j++)
-                if (reportedUsers[j] == user) { already = true; break; }
+                if (reportedUsers[j] == user) {
+                    already = true; 
+                    break;
+                }
             if (already) continue;
 
             int count = 0;
             for (int j = 0; j < reportedUserCount; j++)
-                if (reportedUsers[j] == user) count++;
+                if (reportedUsers[j] == user) 
+                    count++;
 
             usersFile << "username|" << user->getUsername() << "\n"
                 << "reportCount|" << count << "\n";
@@ -395,24 +426,29 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     //Load reported posts by scanning _reported.txt files
     if (allUsers && userCount > 0) {
         for (int i = 0; i < userCount; i++) {
-            if (!allUsers[i]) continue;
+            if (!allUsers[i]) 
+                continue;
 
             string uname = allUsers[i]->getUsername();
-            if (uname.empty()) continue;
+            if (uname.empty())
+                continue;
 
             allUsers[i]->loadAllPosts();
 
             int postCount = allUsers[i]->getPostCount();
             for (int j = 0; j < postCount; j++) {
                 Posts* post = allUsers[i]->getPostByIndex(j);
-                if (!post || !post->isValid()) continue;
+                if (!post || !post->isValid()) 
+                    continue;
 
                 string pid = post->getPostId();
-                if (pid.empty()) continue;
+                if (pid.empty())
+                    continue;
 
                 string reportedPath = "data/Posts/" + uname + "/" + pid + "_reported.txt";
                 ifstream rf(reportedPath);
-                if (!rf.is_open()) continue;
+                if (!rf.is_open())
+                    continue;
 
                 int reporterCount = 0;
                 string line;
@@ -421,7 +457,8 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
                 rf.close();
 
                 if (reporterCount >= 3) {
-                    if (reportedPostCount >= reportedPostCapacity) expandReportedPosts();
+                    if (reportedPostCount >= reportedPostCapacity)
+                        expandReportedPosts();
                     reportedPosts[reportedPostCount++] = post;
                 }
             }
@@ -432,7 +469,8 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     //Load reported users by checking isReported flag on each user
     if (allUsers && userCount > 0) {
         for (int i = 0; i < userCount; i++) {
-            if (!allUsers[i]) continue;
+            if (!allUsers[i]) 
+                continue;
 
             // Check if the user is flagged as reported
             if (allUsers[i]->getIsReported()) {
@@ -447,7 +485,8 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
                 }
 
                 if (!alreadyLoaded) {
-                    if (reportedUserCount >= reportedUserCapacity) expandReportedUsers();
+                    if (reportedUserCount >= reportedUserCapacity) 
+                        expandReportedUsers();
                     reportedUsers[reportedUserCount++] = allUsers[i];
                 }
             }
@@ -476,9 +515,11 @@ void Admin::loadAdminFromFile() {
     if (file.is_open()) {
         string line;
         while (getline(file, line)) {
-            if (line.empty()) continue;
+            if (line.empty()) 
+                continue;
             size_t sep = line.find('|');
-            if (sep == string::npos) continue;
+            if (sep == string::npos) 
+                continue;
             string key = line.substr(0, sep);
             string val = line.substr(sep + 1);
 
@@ -499,28 +540,36 @@ void Admin::loadAdminFromFile() {
     if (nf.is_open()) {
         string line;
         while (getline(nf, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line.empty()) continue;
+            if (!line.empty() && line.back() == '\r') 
+                line.pop_back();
+            if (line.empty())
+                continue;
 
             // Format: timestamp|type|message
             size_t p1 = line.find('|');
-            if (p1 == string::npos) continue;
+            if (p1 == string::npos) 
+                continue;
 
             size_t p2 = line.find('|', p1 + 1);
-            if (p2 == string::npos) continue;
+            if (p2 == string::npos) 
+                continue;
 
             string ts = line.substr(0, p1);
             string type = line.substr(p1 + 1, p2 - p1 - 1);
             string msg = line.substr(p2 + 1);
 
             // trim \r
-            while (!ts.empty() && ts.back() == '\r') ts.pop_back();
-            while (!type.empty() && type.back() == '\r') type.pop_back();
-            while (!msg.empty() && msg.back() == '\r') msg.pop_back();
+            while (!ts.empty() && ts.back() == '\r') 
+                ts.pop_back();
+            while (!type.empty() && type.back() == '\r')
+                type.pop_back();
+            while (!msg.empty() && msg.back() == '\r')
+                msg.pop_back();
 
             if (ts.empty() || msg.empty()) continue;
 
-            if (adminNotifCount >= adminNotifCapacity) expandNotifications();
+            if (adminNotifCount >= adminNotifCapacity)
+                expandNotifications();
             adminNotifications[adminNotifCount++] = Notification(msg, type, ts);
         }
         nf.close();
@@ -544,17 +593,22 @@ void Admin::displayReportedUsers() {
 
     for (int i = 0; i < reportedUserCount; i++) {
         User* user = reportedUsers[i];
-        if (!user) continue;
+        if (!user) 
+            continue;
 
         // skip duplicates
         bool already = false;
         for (int j = 0; j < i; j++)
-            if (reportedUsers[j] == user) { already = true; break; }
+            if (reportedUsers[j] == user) {
+                already = true;
+                break; 
+            }
         if (already) continue;
 
         int count = 0;
         for (int j = 0; j < reportedUserCount; j++)
-            if (reportedUsers[j] == user) count++;
+            if (reportedUsers[j] == user)
+                count++;
 
         cout << "User: " << user->getUsername() << " | Reports: " << count << endl;
     }
@@ -565,16 +619,22 @@ void Admin::displayReportedPosts() {
 
     for (int i = 0; i < reportedPostCount; i++) {
         Posts* post = reportedPosts[i];
-        if (!post) continue;
+        if (!post) 
+            continue;
 
         bool already = false;
         for (int j = 0; j < i; j++)
-            if (reportedPosts[j] == post) { already = true; break; }
-        if (already) continue;
+            if (reportedPosts[j] == post) {
+                already = true;
+                break; 
+            }
+        if (already)
+            continue;
 
         int count = 0;
         for (int j = 0; j < reportedPostCount; j++)
-            if (reportedPosts[j] == post) count++;
+            if (reportedPosts[j] == post)
+                count++;
 
         cout << "Post: " << post->getPostId() << " | Reports: " << count << endl;
     }
