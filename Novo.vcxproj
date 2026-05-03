@@ -28,8 +28,6 @@
   <ItemGroup>
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="Message.cpp" />
-    <ClCompile Include="Novo.cpp" />
-    <ClCompile Include="Post.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
