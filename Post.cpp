@@ -8,9 +8,7 @@
 
 using namespace std;
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  HELPERS
-// ──────────────────────────────────────────────────────────────────────────────
+// Helper Functions
 
 static void mkdirRecursive(const string& path) {
 #ifdef _WIN32
@@ -58,7 +56,6 @@ static void removeFromLikedFile(const string& username, const string& postId) {
     ifstream file(path);
     if (!file.is_open()) return;
 
-    // Read all lines except the one to remove
     string* lines = new string[1000];
     int count = 0;
     string line;
@@ -76,10 +73,7 @@ static void removeFromLikedFile(const string& username, const string& postId) {
     delete[] lines;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  CONSTRUCTORS / DESTRUCTOR
-// ──────────────────────────────────────────────────────────────────────────────
-
+// CONSTRUCTORS / DESTRUCTOR
 Posts::Posts(string authorUsername, string content) {
     this->content = content;
     this->postId = generatePostId();
@@ -119,9 +113,7 @@ void Posts::expandComments() {
     commentList = newList;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  ID GENERATION
-// ──────────────────────────────────────────────────────────────────────────────
+// ID GENERATION
 
 string Posts::generatePostId() {
     mkdirRecursive("data");
@@ -142,9 +134,7 @@ string Posts::generatePostId() {
     return id;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  FILE I/O
-// ──────────────────────────────────────────────────────────────────────────────
+// FILE I/O
 
 void Posts::savePostToFile() {
     mkdirRecursive("data/Posts/" + this->creatorUsername);
@@ -208,24 +198,40 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
     if (isValid()) loadCommentsFromFile();
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  GETTERS / SETTERS
-// ──────────────────────────────────────────────────────────────────────────────
+//GETTERS / SETTERS
 
 string Posts::getPostId() const {
     if (postId.empty() || postId.length() > 10000) return "";
     return postId;
 }
-string Posts::getContent()         const { return content; }
-string Posts::getCreatorUsername() const { return creatorUsername; }
-string Posts::getTimeOfCreation()  const { return timeOfCreation; }
-int    Posts::getLikeCount()       const { return likeCount; }
-int    Posts::getReportCount()     const { return reportCount; }
-int    Posts::getCommentsCount()   const { return commentsCount; }
-bool   Posts::getIsReported()      const { return isReported; }
+string Posts::getContent() const {
+    return content;
+}
+string Posts::getCreatorUsername() const { 
+    return creatorUsername; 
+}
+string Posts::getTimeOfCreation() const { 
+    return timeOfCreation; 
+}
+int    Posts::getLikeCount() const {
+    return likeCount; 
+}
+int    Posts::getReportCount() const {
+    return reportCount;
+}
+int    Posts::getCommentsCount() const {
+    return commentsCount; 
+}
+bool   Posts::getIsReported() const {
+    return isReported;
+}
 
-void Posts::setContent(const string& newContent) { content = newContent; }
-void Posts::setTimeOfCreation(const string& time) { timeOfCreation = time; }
+void Posts::setContent(const string& newContent) {
+    content = newContent; 
+}
+void Posts::setTimeOfCreation(const string& time) {
+    timeOfCreation = time;
+}
 
 bool Posts::isValid() const {
     if (postId.empty() || postId.length() > 20) return false;
@@ -234,12 +240,12 @@ bool Posts::isValid() const {
     return true;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  LIKES
-// ──────────────────────────────────────────────────────────────────────────────
+// LIKES
 
 void Posts::likePost(const string& likerUsername) {
-    if (likerUsername == creatorUsername) { cerr << "Cannot like own post.\n"; return; }
+    if (likerUsername == creatorUsername) { cerr << "Cannot like own post\n";
+    return; 
+    }
     if (hasUserLikedPost(likerUsername, postId)) {
         likeCount = likeCount > 0 ? likeCount - 1 : 0;
         removeFromLikedFile(likerUsername, postId);
@@ -272,10 +278,7 @@ bool Posts::isLikedBy(const string& username) const {
     return hasUserLikedPost(username, postId);
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  REPORTING
-// ──────────────────────────────────────────────────────────────────────────────
-
+//REPORTING
 void Posts::reportPost(const string& reporterUsername) {
     string reportedFilePath = "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt";
 
@@ -333,20 +336,27 @@ bool Posts::hasReportedBy(const string& username) const {
     return false;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  COMMENTS
-// ──────────────────────────────────────────────────────────────────────────────
-
+// COMMENTS
 void Posts::addComment(const string& commentContent, const string& cUsername) {
     if (commentContent.empty()) { cerr << "Comment content cannot be empty.\n"; return; }
 
-    // Generate timestamp-based ID
-    time_t now = time(0);
-    string id = "C";
+   
+    
+    mkdirRecursive("data");
+    ifstream cntFile("data/comment_counter.txt");
+    int cCounter = 1000;
+    if (cntFile.is_open()) { cntFile >> cCounter; cntFile.close(); }
+
     string num;
-    long long t = (long long)now;
-    while (t > 0) { num = char('0' + (t % 10)) + num; t /= 10; }
-    id += num;
+    int temp = cCounter;
+    while (temp > 0) {
+        num = char('0' + (temp % 10)) + num;
+        temp /= 10;
+    }
+    string id = "C" + num;
+
+    ofstream cntOut("data/comment_counter.txt");
+    if (cntOut.is_open()) { cntOut << cCounter + 1; cntOut.close(); }
 
     Comment c(commentContent, id, cUsername);
     if (commentsCount >= commentCapacity) expandComments();
@@ -389,7 +399,10 @@ void Posts::editComment(int index, const string& newContent, const string& rUser
 }
 
 void Posts::deleteCommentAsAdmin(int index) {
-    if (index < 0 || index >= commentsCount) { cerr << "Invalid comment index.\n"; return; }
+    if (index < 0 || index >= commentsCount) {
+        cerr << "Invalid comment index.\n"; 
+        return;
+    }
     for (int i = index; i < commentsCount - 1; i++)
         commentList[i] = commentList[i + 1];
     commentsCount--;

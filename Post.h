@@ -1,27 +1,21 @@
 #pragma once
-#ifndef POST_H
-#define POST_H
-
 #include <string>
 #include <iostream>
 #include <fstream>
 #include "Comment.h"
-
 using namespace std;
-
 class Posts {
 private:
-    string content;
-    string postId;
+    string  content;
+    string  postId;
     string timeOfCreation;
     string creatorUsername;
     bool isReported;
-    int reportCount;
+    int  reportCount;
     int likeCount;
     Comment* commentList;
     int commentsCount;
     int commentCapacity;
-
     void expandComments();
 
 public:
@@ -69,5 +63,3 @@ public:
     void reportPost(const string& reporterUsername);
     bool hasReportedBy(const string& username) const;
 };
-
-#endif

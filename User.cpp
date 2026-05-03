@@ -11,7 +11,7 @@
 
 using namespace std;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+//HELPERS 
 
 #ifdef _WIN32
 #include <direct.h>
@@ -46,9 +46,7 @@ static string currentTimestamp() {
     return string(buf);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  CONSTRUCTORS & DESTRUCTOR
-// ══════════════════════════════════════════════════════════════════════════════
+// CONSTRUCTORS & DESTRUCTOR
 
 User::User() {
     username = "";
@@ -121,7 +119,6 @@ User::User(const User& o) {
             posts[i] = new Posts(*o.posts[i]);
     }
 
-    // savedPosts are non-owned pointers — shallow copy only
     savedPosts = nullptr;
     if (o.savedPostCount > 0 && o.savedPosts) {
         savedPosts = new Posts * [o.savedPostCount];
@@ -180,7 +177,7 @@ User& User::operator=(const User& o) {
     return *this;
 }
 User::~User() {
-    // posts[i] are owned — deep delete
+   
     if (posts) {
         for (int i = 0; i < postCount; i++) {
             delete posts[i];
@@ -190,13 +187,9 @@ User::~User() {
         posts = nullptr;
     }
     postCount = 0;
-
-    // savedPosts are NON-OWNED — only delete the array, never the elements
     delete[] savedPosts;
     savedPosts = nullptr;
     savedPostCount = 0;
-
-    // following/followers are NON-OWNED — only delete the arrays
     delete[] following;
     following = nullptr;
     followingCount = 0;
@@ -205,42 +198,47 @@ User::~User() {
     followers = nullptr;
     followersCount = 0;
 }
-// ══════════════════════════════════════════════════════════════════════════════
-//  VALIDATION
-// ══════════════════════════════════════════════════════════════════════════════
+
+// VALIDATION
 
 string User::validateUsername(const string& username) {
-    if (username.length() < 6)  return "Username must be at least 6 characters";
-    if (username.length() > 16) return "Username cannot exceed 16 characters";
+    if (username.length() < 6) 
+        return  "Username must be at least 6 characters";
+    if (username.length() > 16) 
+        return "Username cannot exceed 16 characters";
     for (int i = 0; i < (int)username.length(); i++)
         if (username[i] == '|' || username[i] == ' ')
             return "Username cannot contain '|' or spaces";
     return "";
 }
 string User::validatePassword(const string& password) {
-    if (password.length() < 8)  return "Password must be at least 8 characters";
-    if (password.length() > 16) return "Password cannot exceed 16 characters";
+    if (password.length() < 8)  
+        return "Password must be at least 8 characters";
+    if (password.length() > 16) 
+        return "Password cannot exceed 16 characters";
     for (int i = 0; i < (int)password.length(); i++)
         if (password[i] == '|' || password[i] == ' ')
             return "Password cannot contain '|' or spaces";
     return "";
 }
 string User::validateBio(const string& bio) {
-    if (bio.length() > 100) return "Bio cannot exceed 100 characters";
+    if (bio.length() > 100) 
+        return "Bio cannot exceed 100 characters";
     for (int i = 0; i < (int)bio.length(); i++)
-        if (bio[i] == '|') return "Bio cannot contain '|'";
+        if (bio[i] == '|') 
+            return  "Bio cannot contain '|'";
     return "";
 }
 string User::validatePostContent(const string& content) {
-    if (content.empty()) return "Post content cannot be empty.";
+    if (content.empty()) 
+        return "Post content cannot be empty.";
     for (int i = 0; i < (int)content.length(); i++)
-        if (content[i] == '|') return "Post content cannot contain '|'.";
+        if (content[i] == '|') 
+            return "Post content cannot contain '|'.";
     return "";
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  AUTH
-// ══════════════════════════════════════════════════════════════════════════════
+//   AUTH
 
 bool User::login(string password) {
     if (password == this->password) {
@@ -255,9 +253,7 @@ void User::logOut() {
     saveToFile();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  PROFILE UPDATES
-// ══════════════════════════════════════════════════════════════════════════════
+// PROFILE UPDATES
 
 bool User::updatePassword(const string& newPassword) {
     string err = validatePassword(newPassword);
@@ -274,9 +270,7 @@ bool User::updateBio(const string& newBio) {
     return true;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  FILE I/O
-// ══════════════════════════════════════════════════════════════════════════════
+// FILE I/O
 
 void User::saveToFile() {
     mkdirIfNeeded("data");
@@ -378,26 +372,45 @@ void User::addToReviewList() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  GETTERS / SETTERS
-// ══════════════════════════════════════════════════════════════════════════════
+//GETTERS / SETTERS
 
-string User::getUsername()       const { return this->username; }
-string User::getBio()            const { return this->bio; }
-string User::getPassword()       const { return this->password; }
-bool   User::getIsReported()     const { return this->isReported; }
-bool   User::getIsLoggedIn()     const { return this->isLoggedIn; }
-int    User::getFollowingCount() const { return this->followingCount; }
-int    User::getFollowersCount() const { return this->followersCount; }
-int    User::getPostCount()      const { return this->postCount; }
-int    User::getSavedPostCount() const { return this->savedPostCount; }
+string User::getUsername() const { 
+    return this->username; 
+}
+string User::getBio() const {
+    return this->bio; 
+}
+string User::getPassword() const {
+    return this->password; 
+}
+bool   User::getIsReported()  const {
+    return this->isReported;
+}
+bool   User::getIsLoggedIn()  const {
+    return this->isLoggedIn; 
+}
+int    User::getFollowingCount() const {
+    return this->followingCount;
+}
+int    User::getFollowersCount() const {
+    return this->followersCount; 
+}
+int    User::getPostCount() const { 
+    return this->postCount; 
+}
+int    User::getSavedPostCount() const { 
+return this->savedPostCount;
+}
 
-void User::setBio(string bio) { this->bio = bio; }
-void User::setPassword(string password) { this->password = password; }
+void User::setBio(string bio) { 
+    this->bio = bio;
+}
+void User::setPassword(string password) {
+    this->password = password; 
+}
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  FOLLOWING / FOLLOWERS
-// ══════════════════════════════════════════════════════════════════════════════
+
+// FOLLOWING / FOLLOWERS
 
 void User::followUser(User* target, User** allUsers, int userCount) {
     if (!target) return;
@@ -591,10 +604,7 @@ void User::loadFollowers(User** allUsers, int userCount) {
     file.close();
     followersCount = loaded;
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
 //  POSTS
-// ══════════════════════════════════════════════════════════════════════════════
 
 void User::createPost(string content) {
     Posts** newPosts = new Posts * [postCount + 1];
@@ -723,7 +733,7 @@ void User::deletePost(string postId) {
         }
     }
     else {
-        // only one post — just delete it
+        
         delete posts[0];
     }
     delete[] posts;
@@ -745,9 +755,7 @@ void User::reportPost(string postId, User* postOwner) {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  SAVED POSTS
-// ══════════════════════════════════════════════════════════════════════════════
+// SAVED POSTS
 
 void User::savePost(string postId, User* postOwner) {
     if (!postOwner || postOwner->getUsername() == this->username) return;
@@ -801,7 +809,7 @@ void User::saveSavedPostsToFile() {
     if (!outFile.is_open()) return;
 
     for (int i = 0; i < savedPostCount; i++) {
-        // CRITICAL FIX: Ensure the post pointer is valid before calling its methods
+        
         if (savedPosts[i] != nullptr && savedPosts[i]->isValid()) {
             outFile << savedPosts[i]->getPostId() << "|"
                 << savedPosts[i]->getCreatorUsername() << "\n";
@@ -872,9 +880,7 @@ Posts* User::getSavedPostByIndex(int index) {
     return savedPosts[index];
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  REPORTING
-// ══════════════════════════════════════════════════════════════════════════════
+// REPORTING
 
 void User::reportUser() {
     isReportedCount++;
@@ -901,8 +907,7 @@ void User::reportUser() {
         string line;
         while (getline(rf, line) && rSize < MAX_REPORTED) {
             if (!line.empty() && line.back() == '\r') line.pop_back();
-            // format: username|NAME|reportCount|N
-            // parse all 4 parts
+            
             size_t p1 = line.find('|');
             if (p1 == string::npos) continue;
             size_t p2 = line.find('|', p1 + 1);
@@ -939,7 +944,7 @@ void User::reportUser() {
 }
 
 bool User::hasReportedUser(const string& targetUsername) const {
-    // 1. Target user ki file open karein, kyunke reports uske account par lagti hain
+    
     string path = "data/Users/" + targetUsername + "_reporters.txt";
     ifstream file(path);
 
@@ -949,9 +954,8 @@ bool User::hasReportedUser(const string& targetUsername) const {
     while (getline(file, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        // 2. Check karein ke kya MERA naam (this->username) uski file mein hai?
         if (line == this->username) {
-            return true; // Haan, maine isay report kiya hua hai
+            return true; 
         }
     }
     return false;
@@ -964,22 +968,21 @@ void User::reportUserBy(const string& reporterUsername) {
     if (file.is_open()) { file << reporterUsername << "\n"; file.close(); }
     reportUser();
 }
-int User::getIsReportedCount() const { return this->isReportedCount; }
-// ══════════════════════════════════════════════════════════════════════════════
-//  ACCOUNT DELETION
-// ══════════════════════════════════════════════════════════════════════════════
+int User::getIsReportedCount() const { 
+    return this->isReportedCount; 
+}
+
+// ACCOUNT DELETION
 
 void User::deleteAccount(User**& allUsers, int& userCount) {
-    // 1. Store username locally to ensure it is available throughout the wipe process
+    
     string uname = this->username;
     cout << "User: Initiating full system wipe for @" << uname << "..." << endl;
 
-    // ─── PART 1: SOCIAL GRAPH CLEANUP ───
-    // Load lists to identify which other users need their records updated
     loadFollowers(allUsers, userCount);
     loadFollowing(allUsers, userCount);
 
-    // Remove this user from every follower's following list
+   
     for (int i = 0; i < followersCount; i++) {
         if (!followers[i]) continue;
         followers[i]->loadFollowing(allUsers, userCount);
@@ -1012,7 +1015,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         follower->saveToFile();
     }
 
-    // Remove this user from every followed user's followers list
+   
     for (int i = 0; i < followingCount; i++) {
         if (!following[i]) continue;
         following[i]->loadFollowers(allUsers, userCount);
@@ -1044,9 +1047,6 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         followedUser->saveToFile();
     }
 
-    // ─── PART 2: THE 3 FILESYSTEM WIPES ───
-
-    // 1. Wipe all Message files involving this user (Wildcard Deletion)
 #ifdef _WIN32
     string msgCmd = "del /q \"data\\Messages\\*" + uname + "*\" 2>nul";
     system(msgCmd.c_str());
@@ -1055,7 +1055,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     system(msgCmd.c_str());
 #endif
 
-    // 2. Wipe entire Posts Folder recursively (Posts, Comments, Reports)
+   
     string postDirPath = "data/Posts/" + uname;
 #ifdef _WIN32
     system(("rmdir /s /q \"" + postDirPath + "\" 2>nul").c_str());
@@ -1063,13 +1063,10 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     system(("rm -rf \"data/Posts/" + uname + "\""));
 #endif
 
-    // 3. Wipe Notification File
+    
     string notifPath = "data/Notifications/" + uname + "_notif.txt";
     remove(notifPath.c_str());
 
-    // ─── PART 3: CLEANUP REMAINING DATA ON OTHER USERS ───
-
-    // Remove user's comments from other users' posts
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         allUsers[u]->loadAllPosts();
@@ -1085,7 +1082,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
     }
 
-    // Remove user's saved post references from other users' records
+  
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         string savedPath = "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt";
@@ -1110,17 +1107,16 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         if (swf.is_open()) { swf << remaining; swf.close(); }
     }
 
-    // Delete stray management files
+    
     removeFile("data/Following/" + uname + "_following.txt");
     removeFile("data/Following/" + uname + "_followers.txt");
     removeFile("data/Users/" + uname + "_reporters.txt");
     removeFile("data/Messages/" + uname + "_index.txt");
     removeFile("data/Users/" + uname + ".txt");
 
-    // ─── PART 4: LOGICAL SYSTEM DELETE ───
     removeFromUser_List(uname);
 
-    // Remove from reported_users.txt
+   
     {
         const int MAX_R = 256;
         string rNames[MAX_R];
@@ -1139,7 +1135,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
                     pendingName = val;
                 }
                 else if (key == "reportCount" && !pendingName.empty() && rSize < MAX_R) {
-                    if (pendingName != uname) { // skip the deleted user
+                    if (pendingName != uname) { 
                         rNames[rSize] = pendingName;
                         rCounts[rSize] = stoi(val);
                         rSize++;
@@ -1167,7 +1163,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
     }
 
     if (deleteIdx != -1) {
-        // Shift global array to fill the gap left by the deleted user
+        
         for (int i = deleteIdx; i < userCount - 1; i++) {
             allUsers[i] = allUsers[i + 1];
         }
@@ -1176,9 +1172,9 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
 
     cout << "Full system wipe complete for: " << uname << endl;
 }
-// ══════════════════════════════════════════════════════════════════════════════
+
 //  HELPERS
-// ══════════════════════════════════════════════════════════════════════════════
+
 
 bool User::hasPost(const string& postId) const {
     for (int i = 0; i < postCount; i++)
@@ -1186,9 +1182,9 @@ bool User::hasPost(const string& postId) const {
     return false;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+
 //  CONVERSATION HISTORY (Messages)
-// ══════════════════════════════════════════════════════════════════════════════
+
 
 string* User::getConversationHistory(const string& username, int& outCount) {
     outCount = 0;
@@ -1257,9 +1253,7 @@ void User::removeConversationFromHistory(const string& username, const string& p
     if (wf.is_open()) { wf << remaining; wf.close(); }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  FREE FUNCTIONS
-// ══════════════════════════════════════════════════════════════════════════════
 
 void loadAllUsers(User** allUsers, int& userCount) {
     ifstream userList("data/users_list.txt");
