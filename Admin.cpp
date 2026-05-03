@@ -475,7 +475,7 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
             
             if (allUsers[i]->getIsReported()) {
 
-                y
+                
                 bool alreadyLoaded = false;
                 for (int j = 0; j < reportedUserCount; j++) {
                     if (reportedUsers[j] == allUsers[i]) {
