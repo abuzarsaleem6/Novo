@@ -3,7 +3,7 @@
 
 using namespace std;
 
-
+// Helper function
 void Timer::allocateAndCopy(char*& dest, const char* source) {
 
     if (source != nullptr) {
@@ -21,7 +21,7 @@ void Timer::allocateAndCopy(char*& dest, const char* source) {
     }
 }
 
-
+// Constructors, Destructor, and Assignment Operator
 Timer::Timer(const char* username) {
 
     ownerUsername = nullptr;
@@ -70,6 +70,7 @@ Timer::~Timer() {
 
 }
 
+//Helper Functions
 
 void Timer::start() {
 

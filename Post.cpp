@@ -73,7 +73,7 @@ static void removeFromLikedFile(const string& username, const string& postId) {
     delete[] lines;
 }
 
-// CONSTRUCTORS / DESTRUCTOR
+// Constructors / Destructor
 Posts::Posts(string authorUsername, string content) {
     this->content = content;
     this->postId = generatePostId();
@@ -113,7 +113,7 @@ void Posts::expandComments() {
     commentList = newList;
 }
 
-// ID GENERATION
+// Id Generation
 
 string Posts::generatePostId() {
     mkdirRecursive("data");
@@ -134,7 +134,7 @@ string Posts::generatePostId() {
     return id;
 }
 
-// FILE I/O
+// File I/O
 
 void Posts::savePostToFile() {
     mkdirRecursive("data/Posts/" + this->creatorUsername);
@@ -198,7 +198,7 @@ void Posts::loadPostFromFile(string ownerUsername, string postId) {
     if (isValid()) loadCommentsFromFile();
 }
 
-//GETTERS / SETTERS
+//Getters / Setters
 
 string Posts::getPostId() const {
     if (postId.empty() || postId.length() > 10000) return "";
@@ -240,7 +240,7 @@ bool Posts::isValid() const {
     return true;
 }
 
-// LIKES
+// Likes
 
 void Posts::likePost(const string& likerUsername) {
     if (likerUsername == creatorUsername) { cerr << "Cannot like own post\n";
@@ -278,7 +278,7 @@ bool Posts::isLikedBy(const string& username) const {
     return hasUserLikedPost(username, postId);
 }
 
-//REPORTING
+//Reporting
 void Posts::reportPost(const string& reporterUsername) {
     string reportedFilePath = "data/Posts/" + creatorUsername + "/" + postId + "_reported.txt";
 
@@ -336,7 +336,7 @@ bool Posts::hasReportedBy(const string& username) const {
     return false;
 }
 
-// COMMENTS
+// Comments
 void Posts::addComment(const string& commentContent, const string& cUsername) {
     if (commentContent.empty()) { cerr << "Comment content cannot be empty.\n"; return; }
 

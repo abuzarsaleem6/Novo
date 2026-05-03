@@ -6,7 +6,7 @@
 
 using namespace std;
 
-
+// Constructor
 Feed::Feed(string username) {
 
 
@@ -34,7 +34,7 @@ Feed::~Feed() {
     }
 }
 
-
+//Helper functions
 void Feed::addPostToFeed(Posts* p) {
 
     if (!p) return;

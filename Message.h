@@ -18,6 +18,8 @@ private:
 
 public:
 
+	// Constructors, destructor, and assignment operator
+
     Message();
 
     Message(const std::string& text, const std::string& sender, const std::string& receiver);
@@ -27,6 +29,8 @@ public:
     Message& operator=(const Message& source) = default;
 
     ~Message() = default;
+
+	// Helper functions 
 
     const std::string& getContent() const;
 

@@ -10,6 +10,7 @@ private:
 
     int minLength;
 
+	// Helper functions 
 
     bool hasSpecialChar(const string& password);
 

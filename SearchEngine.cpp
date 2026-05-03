@@ -1,5 +1,6 @@
-// SearchEngine.cpp
 #include "SearchEngine.h"
+
+// Implementation of SearchEngine class
 
 SearchEngine::SearchEngine() : allUsers(nullptr), userCount(0) {}
 
@@ -15,12 +16,12 @@ User** SearchEngine::searchUsersBySubstring(const string& query, int& outResults
     if (query.empty() || !allUsers) 
         return nullptr;
 
-    //First pass: Count matching users while skipping Admin
+    
     for (int i = 0; i < userCount; i++) {
         if (allUsers[i]) {
             string uname = allUsers[i]->getUsername();
 
-            // Skip the admin account specifically
+            
             if (uname == "admin123") 
                 continue;
 
@@ -32,11 +33,11 @@ User** SearchEngine::searchUsersBySubstring(const string& query, int& outResults
 
     if (outResultsCount == 0) return nullptr;
 
-    //Allocate results array
+    
     User** results = new User * [outResultsCount];
     int currentMatch = 0;
 
-    //Second pass: Populate array while skipping Admin
+    
     for (int i = 0; i < userCount; i++) {
         if (allUsers[i]) {
             string uname = allUsers[i]->getUsername();

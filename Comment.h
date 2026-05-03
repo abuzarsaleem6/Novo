@@ -17,11 +17,14 @@ private:
     int likeCount;
 
 public:
+
+	// Constructors and assignment operator
     Comment(string content, string commentId, string creatorUsername);
     Comment();
     Comment(const Comment& other);
     Comment& operator=(const Comment& other);
 
+	//Helper function 
     void editText(const string& newContent);
     string getContent() const;
     string getCommentId() const;

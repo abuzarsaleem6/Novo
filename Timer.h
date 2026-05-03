@@ -22,6 +22,8 @@ private:
 
 public:
 
+	// Constructors, Destructor, and Assignment Operator
+
     Timer(const char* username);
 
     Timer(const Timer& other);
@@ -30,7 +32,8 @@ public:
 
     ~Timer();
 
-
+	// Helper Functions
+    
     void start();
 
     void stop();

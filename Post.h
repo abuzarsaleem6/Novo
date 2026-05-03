@@ -19,11 +19,13 @@ private:
     void expandComments();
 
 public:
+
+	//Constructors and assignment operator and Destructor
     Posts();
     Posts(string authorUsername, string content);
     ~Posts();
 
-    // ─── BASIC GETTERS ───
+	// Helper functions
     string getTimeOfCreation() const;
     string getPostId() const;
     string getContent() const;
@@ -34,18 +36,18 @@ public:
     bool getIsReported() const;
     bool isValid() const;
 
-    // ─── SETTERS ───
+	// setters
     void setContent(const string& newContent);
     void setTimeOfCreation(const string& time);
 
-    // ─── ID GENERATION ───
+   
     string generatePostId();
 
-    // ─── FILE I/O ───
+	//Helper functions for file handling
     void savePostToFile();
     void loadPostFromFile(string ownerUsername, string postId);
 
-    // ─── COMMENTS ───
+	// Helper functions for comment management
     void addComment(const string& commentContent, const string& cUsername);
     void deleteComment(int index, const string& rUsername);
     void editComment(int index, const string& newContent, const string& rUsername);
@@ -54,12 +56,11 @@ public:
     void saveCommentsToFile() const;
     void loadCommentsFromFile();
 
-    // ─── LIKES ───
+	//Helper functions for like and report management
     void likePost(const string& likerUsername);
     void unlikePost(const string& likerUsername);
     bool isLikedBy(const string& username) const;
 
-    // ─── REPORTING ───
     void reportPost(const string& reporterUsername);
     bool hasReportedBy(const string& username) const;
 };

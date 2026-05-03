@@ -3,7 +3,7 @@
 #include <ctime>
 
 using namespace std;
-
+// Constructors
 Message::Message() : content(""), senderUsername("System"), receiverUsername("System"), timestamp("")
 {
     generateTimestamp();
@@ -15,6 +15,7 @@ Message::Message(const string& text, const string& sender, const string& receive
     generateTimestamp();
 }
 
+// Getters and Setters
 const string& Message::getContent() const {
     return content; 
 }
@@ -42,7 +43,7 @@ void Message::setSenderUsername(const string& sender) {
 void Message::setReceiverUsername(const string& receiver) { 
     receiverUsername = receiver; 
 }
-
+// Helper Functions
 void Message::generateTimestamp() {
 
     time_t now = time(0);

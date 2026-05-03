@@ -9,7 +9,9 @@ class Notification;
 class Comment;
 
 class User {
+
 private:
+
     string username;
     string password;
     string bio;
@@ -26,34 +28,35 @@ private:
     int postCount;
 
 public:
+	// Constructors, Destructor, and Assignment Operator
     User();
     User(string username, string password, string bio);
     User(const User& o);
     User& operator=(const User& o);
     ~User();
 
-    // ─── VALIDATION ───
+	//Helper functions 
     static string validateUsername(const string& username);
     static string validatePassword(const string& password);
     static string validateBio(const string& bio);
     static string validatePostContent(const string& content);
 
-    // ─── AUTH ───
+    
     bool login(string password);
     void logOut();
 
-    // ─── PROFILE ───
+    
     bool updateBio(const string& newBio);
     bool updatePassword(const string& newPassword);
 
-    // ─── FILE I/O ───
+    
     void saveToFile();
     void loadFromFile(string username);
     void addToUserList();
     void removeFromUser_List(string username);
     void addToReviewList();
 
-    // ─── GETTERS ───
+	// Getters
     string getUsername()      const;
     string getBio()           const;
     string getPassword()      const;
@@ -65,11 +68,11 @@ public:
     int    getPostCount()     const;
     int    getSavedPostCount()const;
 
-    // ─── SETTERS ───
+	// setters
     void setBio(string bio);
     void setPassword(string password);
 
-    // ─── FOLLOWING / FOLLOWERS ───
+	// Helper functions for following and followers management
     void followUser(User* target, User** allUsers, int userCount);
     void unfollowUser(string username);
     bool isFollowing(string username);
@@ -78,7 +81,7 @@ public:
     void loadFollowing(User** allUsers, int userCount);
     void loadFollowers(User** allUsers, int userCount);
 
-    // ─── POSTS ───
+	// Helper functions for post management
     void   createPost(string content);
     void   loadAllPosts();
     Posts* getPostById(string postId);
@@ -87,7 +90,7 @@ public:
     void   deletePost(string postId);
     void   reportPost(string postId, User* postOwner);
 
-    // ─── SAVED POSTS ───
+	// Helper functions for saved posts management
     void   savePost(string postId, User* postOwner);
     void   unsavePost(string postId);
     void   loadSavedPosts(User** allUsers, int userCount);
@@ -96,24 +99,24 @@ public:
     Posts* getSavedPostByIndex(int index);
     bool   hasSavedPost(const string& postId) const;
 
-    // ─── REPORTING ───
+    
     void reportUser();
     bool hasReportedUser(const string& reporterUsername) const;
     void reportUserBy(const string& reporterUsername);
 
-    // ─── ACCOUNT ───
+    
     void deleteAccount(User**& allUsers, int& userCount);
 
-    // ─── HELPERS ───
+   
     bool hasPost(const string& postId) const;
 
-    // ─── CONVERSATION HISTORY (Messages) ───
+    
     static string* getConversationHistory(const string& username, int& outCount);
     static void addConversationToHistory(const string& username, const string& peerUsername);
     static void removeConversationFromHistory(const string& username, const string& peerUsername);
 };
 
-// ─── FREE FUNCTIONS ───
+
 void  loadAllUsers(User** allUsers, int& userCount);
 User* signUp(User**& allUsers, int& userCount, string username, string password, string bio);
 User* findAndLogin(User**& allUsers, int userCount, string username, string password);

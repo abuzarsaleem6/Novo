@@ -11,7 +11,7 @@
 
 using namespace std;
 
-//HELPERS 
+//Helper functions 
 
 #ifdef _WIN32
 #include <direct.h>
@@ -46,7 +46,7 @@ static string currentTimestamp() {
     return string(buf);
 }
 
-// CONSTRUCTORS & DESTRUCTOR
+// Constructors, Destructor, and Assignment Operator
 
 User::User() {
     username = "";

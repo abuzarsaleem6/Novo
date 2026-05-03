@@ -25,10 +25,13 @@ private:
 
 public:
 
+	// Constructor and Destructor 
 
     Feed(string username);
 
     ~Feed();
+
+	// Helper functions
 
     void loadFeedFromFollowedUsers(User* currentUser, User** allUsers, int userCount);
 

@@ -22,14 +22,9 @@
 
 using namespace std;
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  APPLICATION NAME
-// ──────────────────────────────────────────────────────────────────────────────
 static const QString APP_NAME = "Novo";
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  GLOBAL STYLESHEET
-// ──────────────────────────────────────────────────────────────────────────────
+
 static const QString APP_STYLE = R"(
 * {
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -208,9 +203,8 @@ QMessageBox QPushButton:hover {
 }
 )";
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  ANONYMOUS NAMESPACE — UI FACTORY HELPERS
-// ──────────────────────────────────────────────────────────────────────────────
+    
+    
 namespace {
 
     QPushButton* makePrimary(const QString& t, QWidget* p = nullptr) {
@@ -272,7 +266,7 @@ namespace {
         return l;
     }
 
-    // Scrollable content helper — creates QScrollArea + inner widget + layout
+    
     QScrollArea* makeScrollArea(QWidget*& outContent, QVBoxLayout*& outLayout,
         QWidget* parent = nullptr)
     {
@@ -294,11 +288,10 @@ namespace {
         return sa;
     }
 
-} // anonymous namespace
+} 
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  SidebarButton
-// ══════════════════════════════════════════════════════════════════════════════
+
+
 SidebarButton::SidebarButton(const QString& icon, const QString& label, QWidget* parent)
     : QPushButton(parent)
 {
@@ -317,9 +310,8 @@ void SidebarButton::setActive(bool active) {
     update();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  PostCard
-// ══════════════════════════════════════════════════════════════════════════════
+// PostCard Implementation
+
 PostCard::PostCard(Posts* post, const QString& authorUsername,
     bool isOwner, bool isSaved,
     const QString& viewerUsername,
@@ -341,7 +333,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     root->setContentsMargins(16, 16, 16, 16);
     root->setSpacing(12);
 
-    // ── Header row ──────────────────────────────────────────────────────────
+    
     auto* headerRow = new QHBoxLayout;
     headerRow->setSpacing(12);
     headerRow->setContentsMargins(0, 0, 0, 0);
@@ -392,14 +384,14 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
 
     root->addLayout(headerRow);
 
-    // ── Content ─────────────────────────────────────────────────────────────
+    
     auto* contentLbl = makeLabel(QString::fromStdString(post->getContent()), "postContent");
     contentLbl->setWordWrap(true);
     contentLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     contentLbl->setStyleSheet("color: #FFFFFF; font-size: 15px; line-height: 1.6; padding: 8px 0;");
     root->addWidget(contentLbl);
 
-    // ── Action row ──────────────────────────────────────────────────────────
+    
     auto* actRow = new QHBoxLayout;
     actRow->setContentsMargins(0, 10, 0, 0);
     actRow->setSpacing(20);
@@ -468,7 +460,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     commentLayout->addWidget(commentCountLbl);
     actRow->addLayout(commentLayout);
 
-    // ── Save button (Refactored to use members) ───────────────────────────
+    // Save button 
     if (!m_isOwner) {
         auto* saveCol = new QVBoxLayout;
         saveCol->setSpacing(2);
@@ -496,12 +488,12 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
                 emit saveClicked(m_post, m_authorUsername);
                 m_isSaved = true;
             }
-            updateSaveStatus(m_isSaved); // Use the helper function here
+            updateSaveStatus(m_isSaved); 
             });
 
         actRow->addLayout(saveCol);
 
-        // ── Report post button ───────────────────────────────────────────────
+        // Report post button 
         auto* reportCol = new QVBoxLayout;
         reportCol->setSpacing(2);
         reportCol->setAlignment(Qt::AlignCenter);
@@ -541,7 +533,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
             });
         actRow->addLayout(reportCol);
 
-        // ── Report user button ───────────────────────────────────────────────
+        // Report user button 
         auto* reportUserCol = new QVBoxLayout;
         reportUserCol->setSpacing(2);
         reportUserCol->setAlignment(Qt::AlignCenter);
@@ -585,7 +577,7 @@ PostCard::PostCard(Posts* post, const QString& authorUsername,
     root->addLayout(actRow);
 }
 
-// ── Helper Function for Styling ──────────────────────────────────────────
+// Helper Function for Styling 
 void PostCard::updateSaveStatus(bool isSaved) {
     if (!m_saveBtn || !m_saveLbl) return;
 
@@ -608,9 +600,9 @@ void PostCard::updateSaveStatus(bool isSaved) {
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
+
 //  CommentsPage
-// ══════════════════════════════════════════════════════════════════════════════
+
 CommentsPage::CommentsPage(const QString& currentUser, QWidget* parent)
     : QWidget(parent), m_currentUser(currentUser), m_post(nullptr)
 {
@@ -677,7 +669,8 @@ void CommentsPage::loadPost(Posts* post) {
 }
 
 void CommentsPage::loadComments() {
-    // Remove everything except the trailing stretch
+   
+   
     while (m_commentsLayout->count() > 1) {
         QLayoutItem* item = m_commentsLayout->takeAt(0);
         if (item->widget()) item->widget()->deleteLater();
@@ -686,7 +679,7 @@ void CommentsPage::loadComments() {
 
     if (!m_post) return;
 
-    // Use pure C++ array from backend
+    
     Comment* comments = m_post->getComments();
     int      count = m_post->getCommentsCount();
 
@@ -773,7 +766,7 @@ void CommentsPage::onAddComment() {
 void CommentsPage::onEditComment(const QString& commentId) {
     if (!m_post) return;
 
-    // Resolve ID → current index at call time (safe against concurrent mutations)
+    
     Comment* comments = m_post->getComments();
     int      count = m_post->getCommentsCount();
     int      index = -1;
@@ -820,9 +813,8 @@ void CommentsPage::onDeleteComment(const QString& commentId) {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+
 //  PublicProfileWidget
-// ══════════════════════════════════════════════════════════════════════════════
 PublicProfileWidget::PublicProfileWidget(QWidget* parent)
     : QWidget(parent), m_allUsers(nullptr), m_userCount(0)
 {
@@ -830,18 +822,18 @@ PublicProfileWidget::PublicProfileWidget(QWidget* parent)
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
 }
 void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** allUsers, int userCount) {
-    // 1. Context aur data refresh karein
+    
     m_targetUser = targetUser;
     m_viewer = viewer;
     m_allUsers = allUsers;
     m_userCount = userCount;
 
-    // Latest saved posts load karein taake Save/Saved status sahi show ho
+    
     if (m_viewer) {
         m_viewer->loadSavedPosts(allUsers, userCount);
     }
 
-    // 2. Purane widgets ko layout se saaf karein
+   
     QLayoutItem* item;
     while ((item = m_mainLayout->takeAt(0)) != nullptr) {
         if (item->widget()) item->widget()->deleteLater();
@@ -851,8 +843,6 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
 
-    // PART A: THE PROTECTED HEADER (Physical Shield)
-    // Is wrapper ko fixed height aur solid background diya gaya hai
     auto* headerWrapper = new QWidget;
     headerWrapper->setObjectName("fixedHeader");
     headerWrapper->setFixedHeight(80);
@@ -867,16 +857,16 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     backBtn->setFixedHeight(40);
     backBtn->setCursor(Qt::PointingHandCursor);
 
-    // Back button connection
+    
     connect(backBtn, &QPushButton::clicked, this, &PublicProfileWidget::backClicked);
 
     topRow->addWidget(backBtn);
     topRow->addStretch(1);
 
-    // Header ko layout mein sab se uper lock karein
+    
     m_mainLayout->addWidget(headerWrapper, 0, Qt::AlignTop);
 
-    // PART B: THE SCROLL AREA
+    
     auto* scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
@@ -887,7 +877,6 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     layout->setContentsMargins(28, 10, 28, 24);
     layout->setSpacing(20);
 
-    // --- Profile Identity Card (Avatar & Stats) ---
     auto* headerCard = new QFrame;
     headerCard->setObjectName("postCard");
     auto* hLayout = new QVBoxLayout(headerCard);
@@ -930,7 +919,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     hLayout->addLayout(statsRow);
     layout->addWidget(headerCard);
 
-    // --- User's Recent Posts ---
+    // User's Recent Posts
     auto* postsTitle = new QLabel("Recent Posts");
     postsTitle->setStyleSheet("font-size:16px;font-weight:bold;color:#E8E8F8;");
     layout->addWidget(postsTitle);
@@ -948,7 +937,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
             Posts* p = targetUser->getPostByIndex(i);
             if (!p || !p->isValid()) continue;
 
-            // Null check fix applied here
+            
             bool isSaved = viewer ? viewer->hasSavedPost(p->getPostId()) : false;
             QString viewerName = viewer ? QString::fromStdString(viewer->getUsername()) : "";
             bool isAuthorReported = viewer ? viewer->hasReportedUser(targetUser->getUsername()) : false;
@@ -958,7 +947,7 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
                 false, isSaved, viewerName,
                 isAuthorReported, isPostReported);
 
-            // Helper lambda jo header ko hamesha z-order mein top par rakhega
+            
             auto ensureHeaderTop = [headerWrapper]() {
                 headerWrapper->raise();
                 headerWrapper->update();
@@ -974,8 +963,8 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
 
             connect(card, &PostCard::unsaveClicked, this, [this, viewer, card, ensureHeaderTop](Posts* post) {
                 if (viewer && post) {
-                    viewer->unsavePost(post->getPostId()); // removes from memory + writes file
-                    card->updateSaveStatus(false);         // immediately show ☆ Save
+                    viewer->unsavePost(post->getPostId()); 
+                    card->updateSaveStatus(false);         
                     ensureHeaderTop();
                 }
                 });
@@ -986,17 +975,17 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
 
             connect(card, &PostCard::reportClicked, this, [this, viewer, ensureHeaderTop](Posts* post, const QString&) {
                 if (viewer && post) {
-                    post->reportPost(viewer->getUsername()); // ← Actually report it
-                    post->savePostToFile();                  // ← PERSIST to disk
+                    post->reportPost(viewer->getUsername()); 
+                    post->savePostToFile();                  
                     ensureHeaderTop();
                 }
                 });
 
-            // Report logic fix applied here
+            
             connect(card, &PostCard::reportUserClicked, this, [this, viewer, targetUser, ensureHeaderTop](const QString&) {
                 if (viewer && targetUser) {
                     targetUser->reportUserBy(viewer->getUsername());
-                    targetUser->saveToFile(); // ← PERSIST to disk
+                    targetUser->saveToFile();
                     ensureHeaderTop();
                     QMessageBox::information(this, "Reported", "User has been reported.");
                 }
@@ -1013,24 +1002,23 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
     layout->addStretch(1);
     scroll->setWidget(container);
 
-    // Scroll area baaqi space le lega lekin header ke niche rahega
+    
     m_mainLayout->addWidget(scroll, 1);
 
-    // Final raise taake layout bante hi header top par ho
     headerWrapper->raise();
 }
 void PublicProfileWidget::refresh() {
     if (m_targetUser && m_viewer) {
-        // Must reload target's posts FIRST so loadSavedPosts() can find them by ID
+        
         m_targetUser->loadAllPosts();
-        // Now reload viewer's saved list — it will correctly find the fresh Posts* pointers
+       
         m_viewer->loadSavedPosts(m_allUsers, m_userCount);
         loadProfile(m_targetUser, m_viewer, m_allUsers, m_userCount);
     }
 }
-// ══════════════════════════════════════════════════════════════════════════════
+
 //  NotificationItem
-// ══════════════════════════════════════════════════════════════════════════════
+
 NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
     : QFrame(parent)
 {
@@ -1066,15 +1054,12 @@ NotificationItem::NotificationItem(const Notification& notif, QWidget* parent)
     row->addLayout(col, 1);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  AuthPage
-// ══════════════════════════════════════════════════════════════════════════════
 AuthPage::AuthPage(QWidget* parent)
     : QWidget(parent), m_userCount(0), m_adminUser(nullptr), m_adminPass(nullptr)
 {
     setObjectName("authBg");
 
-    // Count lines in users_list.txt to size the array
     int count = 0;
     {
         ifstream f("data/users_list.txt");
@@ -1252,7 +1237,7 @@ QWidget* AuthPage::createAdminLoginWidget() {
             m_adminUser->clear();
             m_adminPass->clear();
 
-            // ── ADD THIS: Transfer ownership of the users array to MainWindow
+            
             User** arr = m_allUsers;
             int    cnt = m_userCount;
             m_allUsers = nullptr;
@@ -1356,9 +1341,7 @@ void AuthPage::onSignUp() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  FeedPage
-// ══════════════════════════════════════════════════════════════════════════════
 FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* parent)
     : QWidget(parent), m_user(currentUser), m_allUsers(allUsers), m_userCount(userCount)
 {
@@ -1373,7 +1356,7 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
     hRow->addStretch(1);
     outer->addLayout(hRow);
 
-    // Composer card (hidden until the + button is pressed)
+    // Composer card 
     m_composerCard = new QFrame;
     m_composerCard->setObjectName("composerCard");
     m_composerCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -1495,7 +1478,7 @@ void FeedPage::loadPosts() {
     }
 }
 
-void FeedPage::onLikePost(Posts*) {}   // like is handled inline inside PostCard
+void FeedPage::onLikePost(Posts*) {}   
 
 void FeedPage::onCommentPost(Posts* post) {
     if (!post || !m_user) return;
@@ -1561,7 +1544,7 @@ void FeedPage::onReportUserFromPost(const QString& username) {
         }
     }
     if (!target) return;
-    // Correct check: is currentUser's name in target's reporters file?
+
     bool alreadyReported = [&]() -> bool {
         string path = "data/Users/" + target->getUsername() + "_reporters.txt";
         ifstream f(path);
@@ -1578,7 +1561,7 @@ void FeedPage::onReportUserFromPost(const QString& username) {
         return;
     }
     target->reportUserBy(m_user->getUsername());
-    target->saveToFile(); // ← persist so refresh reads correct state
+    target->saveToFile(); 
     QMessageBox::information(this, "Reported", "User @" + username + " has been reported.");
 }
 
@@ -1596,9 +1579,7 @@ void FeedPage::onSubmitPost() {
     loadPosts();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  CreatePostPage  — standalone page for composing a new post
-// ══════════════════════════════════════════════════════════════════════════════
 CreatePostPage::CreatePostPage(User* currentUser, QWidget* parent)
     : QWidget(parent), m_user(currentUser)
 {
@@ -1620,7 +1601,7 @@ CreatePostPage::CreatePostPage(User* currentUser, QWidget* parent)
     cl->setContentsMargins(20, 18, 20, 18);
     cl->setSpacing(14);
 
-    // Avatar + prompt row
+    // Avatar 
     auto* topRow = new QHBoxLayout;
     topRow->setSpacing(12);
     QString ini = currentUser
@@ -1704,9 +1685,7 @@ void CreatePostPage::focusInput() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  MyPostsPage
-// ══════════════════════════════════════════════════════════════════════════════
 MyPostsPage::MyPostsPage(User* currentUser, QWidget* parent)
     : QWidget(parent), m_user(currentUser)
 {
@@ -1746,12 +1725,12 @@ void MyPostsPage::loadPosts() {
         Posts* p = m_user->getPostByIndex(i);
         if (!p || !p->isValid()) continue;
         auto* card = new PostCard(p,
-            QString::fromStdString(m_user->getUsername()), // 1: authorUsername
-            true,                                          // 2: isOwner
-            false,                                         // 3: isSaved
-            QString::fromStdString(m_user->getUsername()), // 4: viewerUsername
-            m_user->getIsReported(),                       // 5: isAuthorReported
-            false                                          // 6: isPostReported
+            QString::fromStdString(m_user->getUsername()), 
+            true,                                          
+            false,                                       
+            QString::fromStdString(m_user->getUsername()),
+            m_user->getIsReported(),                       
+            false                                         
         );
         connect(card, &PostCard::deleteClicked, this, &MyPostsPage::onDeletePost);
         connect(card, &PostCard::editClicked, this, &MyPostsPage::onEditPost);
@@ -1791,9 +1770,7 @@ void MyPostsPage::onCommentPost(Posts* post) {
     emit requestOpenComments(post);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  SavedPostsPage
-// ══════════════════════════════════════════════════════════════════════════════
 SavedPostsPage::SavedPostsPage(User* currentUser, User** allUsers, int userCount,
     QWidget* parent)
     : QWidget(parent), m_user(currentUser), m_allUsers(allUsers), m_userCount(userCount)
@@ -1890,9 +1867,7 @@ void SavedPostsPage::onUnsavePost(Posts* post) {
     loadSaved();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  NotificationsPage
-// ══════════════════════════════════════════════════════════════════════════════
 NotificationsPage::NotificationsPage(User* currentUser, QWidget* parent)
     : QWidget(parent), m_user(currentUser)
 {
@@ -1946,7 +1921,6 @@ void NotificationsPage::loadNotifications() {
 
     if (!m_user) return;
 
-    // Pure C++ backend call — returns raw array + count
     int count = 0;
     Notification* notifications =
         NotificationManager::loadAllNotifications(m_user->getUsername(), count);
@@ -1960,7 +1934,7 @@ void NotificationsPage::loadNotifications() {
         return;
     }
 
-    // Newest first
+   
     for (int i = count - 1; i >= 0; --i) {
         auto* item = new NotificationItem(notifications[i]);
         m_listLayout->insertWidget(m_listLayout->count(), item);
@@ -1969,9 +1943,7 @@ void NotificationsPage::loadNotifications() {
     delete[] notifications;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  SearchPage
-// ══════════════════════════════════════════════════════════════════════════════
 SearchPage::SearchPage(User**& allUsers, int& userCount, User* currentUser, QWidget* parent)
     : QWidget(parent),
     m_currentUser(currentUser),
@@ -2013,10 +1985,10 @@ void SearchPage::onSearch() {
     QString query = m_searchInput->text().trimmed();
     if (query.isEmpty()) return;
 
-    clearResults(); // Purane results saaf karein
+    clearResults(); 
 
     int resultsCount = 0;
-    // New engine method call karein
+    
     User** foundUsers = m_engine.searchUsersBySubstring(query.toStdString(), resultsCount);
 
     if (!foundUsers || resultsCount == 0) {
@@ -2027,12 +1999,12 @@ void SearchPage::onSearch() {
         return;
     }
 
-    // Har dhoonde gaye user ke liye card banayein
+    
     for (int i = 0; i < resultsCount; i++) {
         showUserCard(foundUsers[i]);
     }
 
-    // Memory cleanup (Sirf array delete karein, users nahi!)
+   
     delete[] foundUsers;
 }
 
@@ -2055,7 +2027,7 @@ void SearchPage::showUserCard(User* user) {
     cl->setContentsMargins(22, 18, 22, 18);
     cl->setSpacing(14);
 
-    // Avatar + info
+    
     auto* topRow = new QHBoxLayout;
     topRow->setSpacing(14);
     topRow->setContentsMargins(0, 0, 0, 0);
@@ -2108,7 +2080,7 @@ void SearchPage::showUserCard(User* user) {
         btnRow->setContentsMargins(0, 0, 0, 0);
         btnRow->addStretch(1);
 
-        // 1. View Profile (Captured lambda - already working)
+        
         auto* profileBtn = new QPushButton("👤 View Profile");
         profileBtn->setObjectName("secondaryBtn");
         profileBtn->setFixedWidth(130);
@@ -2120,13 +2092,13 @@ void SearchPage::showUserCard(User* user) {
         btnRow->addWidget(profileBtn);
         btnRow->addSpacing(10);
 
-        // 2. Follow Button (Local pointer instead of member variable)
+        
         bool following = m_currentUser->isFollowing(user->getUsername());
         auto* followBtn = following ? makeSecondary("✓ Following") : makePrimary("+ Follow");
         followBtn->setFixedWidth(130);
         followBtn->setFixedHeight(36);
 
-        // Lambda captures 'user' and 'followBtn' specifically for THIS card
+        
         connect(followBtn, &QPushButton::clicked, this, [this, user, followBtn]() {
             string targetName = user->getUsername();
             if (m_currentUser->isFollowing(targetName)) {
@@ -2146,8 +2118,6 @@ void SearchPage::showUserCard(User* user) {
         btnRow->addWidget(followBtn);
         btnRow->addSpacing(10);
 
-        // 3. Report Button (Local pointer)
-       // Correct check: is currentUser's name in the TARGET user's reporters file?
         bool alreadyReported = [&]() -> bool {
             string path = "data/Users/" + user->getUsername() + "_reporters.txt";
             ifstream f(path);
@@ -2170,7 +2140,7 @@ void SearchPage::showUserCard(User* user) {
                 QMessageBox::Yes | QMessageBox::No);
             if (r == QMessageBox::Yes) {
                 user->reportUserBy(m_currentUser->getUsername());
-                user->saveToFile(); // ← persist so next search reads correct state
+                user->saveToFile(); 
                 reportBtn->setText("⚑ Reported");
                 reportBtn->setEnabled(false);
                 reportBtn->setStyleSheet("background:#1C0808;color:#CC4444;border-radius:9px;");
@@ -2185,19 +2155,8 @@ void SearchPage::showUserCard(User* user) {
 }
 
 
-// ============================================================================
-//  QtWidgetsApplication1_completion.cpp
-//
-//  HOW TO USE:
-//  1. Make sure the VERY FIRST LINE of QtWidgetsApplication1.cpp is:
-//        #define _CRT_SECURE_NO_WARNINGS
-//  2. Paste everything below this comment block at the END of
-//     QtWidgetsApplication1.cpp, after SearchPage::onReportUser().
-// ============================================================================
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  ChatView
-// ══════════════════════════════════════════════════════════════════════════════
 ChatView::ChatView(const QString& currentUser, const QString& peerUsername,
     QWidget* parent)
     : QWidget(parent), m_currentUser(currentUser), m_peer(peerUsername)
@@ -2206,7 +2165,6 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername,
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // ── Chat header ──────────────────────────────────────────────────────────
     auto* header = new QFrame;
     header->setStyleSheet(
         "QFrame{background:#0F0F16;border-bottom:1px solid #1C1C28;padding:0;}");
@@ -2237,7 +2195,6 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername,
 
     root->addWidget(header);
 
-    // ── Bubble scroll area ───────────────────────────────────────────────────
     m_scroll = new QScrollArea;
     m_scroll->setWidgetResizable(true);
     m_scroll->setFrameShape(QFrame::NoFrame);
@@ -2254,7 +2211,6 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername,
     m_scroll->setWidget(m_bubbleContainer);
     root->addWidget(m_scroll, 1);
 
-    // ── Input row ────────────────────────────────────────────────────────────
     auto* inputFrame = new QFrame;
     inputFrame->setStyleSheet(
         "QFrame{background:#0F0F16;border-top:1px solid #1C1C28;}");
@@ -2282,7 +2238,7 @@ ChatView::ChatView(const QString& currentUser, const QString& peerUsername,
 }
 
 QString ChatView::chatFilePath() const {
-    // Canonical: sort usernames alphabetically so both sides share one file
+
     QStringList pair = { m_currentUser, m_peer };
     pair.sort();
     return "data/Messages/" + pair[0] + "_" + pair[1] + ".txt";
@@ -2298,17 +2254,16 @@ void ChatView::loadMessages() {
     while (!in.atEnd()) {
         QString line = in.readLine().trimmed();
         if (line.isEmpty()) continue;
-        // Format: sender|receiver|timestamp|content
         QStringList parts = line.split('|');
         if (parts.size() < 4) continue;
         QString sender = parts[0];
-        // parts[1] = receiver, parts[2] = timestamp
-        QString content = parts.mid(3).join('|');   // content may contain '|'
+     
+        QString content = parts.mid(3).join('|');   
         appendBubble(sender, content);
     }
     f.close();
 
-    // Scroll to bottom
+   
     QApplication::processEvents();
     m_scroll->verticalScrollBar()->setValue(
         m_scroll->verticalScrollBar()->maximum());
@@ -2395,8 +2350,6 @@ void ChatView::refresh() {
 }
 
 void ChatView::markConversationUnread(const QString& receiver, const QString& sender) {
-    // Writes a marker file so the receiver's conversation list can show an
-    // unread indicator. The marker is cleared when the receiver opens the chat.
     QDir().mkpath("data/Messages");
     QString markerPath = "data/Messages/" + receiver + "_unread_" + sender + ".flag";
     QFile f(markerPath);
@@ -2404,9 +2357,7 @@ void ChatView::markConversationUnread(const QString& receiver, const QString& se
     f.close();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  MessagesPage
-// ══════════════════════════════════════════════════════════════════════════════
 MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
     QWidget* parent)
     : QWidget(parent),
@@ -2420,7 +2371,6 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // ── Left panel: conversation list ─────────────────────────────────────────
     m_leftPanel = new QWidget;
     m_leftPanel->setFixedWidth(240);
     m_leftPanel->setStyleSheet(
@@ -2443,7 +2393,7 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
     lhRow->addWidget(msgTitle, 1);
     leftLayout->addWidget(leftHeader);
 
-    // Search / new chat input
+    
     m_searchInput = new QLineEdit;
     m_searchInput->setPlaceholderText("New chat: enter username");
     m_searchInput->setFixedHeight(38);
@@ -2470,10 +2420,8 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
     leftLayout->addWidget(convScroll, 1);
     root->addWidget(m_leftPanel);
 
-    // ── Right panel: chat view ────────────────────────────────────────────────
     m_rightStack = new QStackedWidget;
 
-    // Placeholder when no chat selected
     auto* placeholder = new QWidget;
     placeholder->setStyleSheet("background:#0C0C10;");
     auto* phLayout = new QVBoxLayout(placeholder);
@@ -2481,7 +2429,7 @@ MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
     phLabel->setAlignment(Qt::AlignCenter);
     phLabel->setStyleSheet("color:#28284A;font-size:15px;");
     phLayout->addWidget(phLabel);
-    m_rightStack->addWidget(placeholder);   // index 0
+    m_rightStack->addWidget(placeholder);   
 
     root->addWidget(m_rightStack, 1);
 
@@ -2494,7 +2442,6 @@ void MessagesPage::loadConversationList() {
 
     QString me = QString::fromStdString(m_currentUser->getUsername());
 
-    // Scan data/Messages/ for files involving this user
     QDir msgDir("data/Messages");
     if (!msgDir.exists()) return;
 
@@ -2505,12 +2452,12 @@ void MessagesPage::loadConversationList() {
         return false;
         };
     for (const QString& fname : files) {
-        // filename: userA_userB.txt
+        
         QString base = fname;
         base.remove(".txt");
         QStringList parts = base.split('_');
         if (parts.size() < 2) continue;
-        // Might have underscores in names; try both splits
+      
         if (parts[0] == me) {
             QString p = parts.mid(1).join('_');
             if (!peersContains(p)) peers.append(p);
@@ -2548,7 +2495,6 @@ void MessagesPage::addConversationButton(const QString& peer) {
     btn->setCursor(Qt::PointingHandCursor);
     btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    // Use first letter of username; fall back to '#' if username starts with digit
     QChar firstChar = peer.isEmpty() ? QChar('?') : peer.at(0).toUpper();
     QString ini = firstChar.isLetter() ? QString(firstChar) : QString("#");
     btn->setText("  " + ini + "  @" + peer);
@@ -2560,7 +2506,7 @@ void MessagesPage::addConversationButton(const QString& peer) {
     btn->setCheckable(true);
 
     connect(btn, &QPushButton::clicked, this, [this, peer, btn]() {
-        // uncheck siblings
+        
         for (int i = 0; i < m_convListLayout->count() - 1; ++i) {
             QLayoutItem* it = m_convListLayout->itemAt(i);
             if (it && it->widget()) {
@@ -2586,7 +2532,7 @@ void MessagesPage::onSearchUser() {
         return;
     }
 
-    // Verify user exists
+    
     bool found = false;
     for (int i = 0; i < m_userCount; ++i) {
         if (m_allUsers[i] &&
@@ -2602,7 +2548,6 @@ void MessagesPage::onSearchUser() {
     m_searchInput->clear();
     openChatWith(peer);
 
-    // Add to conversation list if not already there
     bool alreadyListed = false;
     for (int i = 0; i < m_convListLayout->count() - 1; ++i) {
         QLayoutItem* it = m_convListLayout->itemAt(i);
@@ -2624,7 +2569,6 @@ void MessagesPage::openChatWith(const QString& peer) {
     if (!m_currentUser) return;
     m_activePeer = peer;
 
-    // Remove old ChatView if any
     if (m_chatView) {
         m_rightStack->removeWidget(m_chatView);
         m_chatView->deleteLater();
@@ -2641,7 +2585,7 @@ void MessagesPage::openChatWith(const QString& peer) {
 }
 
 void MessagesPage::onChatDeleted(const QString& peer) {
-    // Remove conversation button
+ 
     for (int i = 0; i < m_convListLayout->count() - 1; ++i) {
         QLayoutItem* it = m_convListLayout->itemAt(i);
         if (it && it->widget()) {
@@ -2654,7 +2598,7 @@ void MessagesPage::onChatDeleted(const QString& peer) {
         }
     }
 
-    // Remove chat view
+    
     if (m_chatView) {
         m_rightStack->setCurrentIndex(0);
         m_rightStack->removeWidget(m_chatView);
@@ -2669,9 +2613,7 @@ void MessagesPage::refresh() {
     if (m_chatView) m_chatView->refresh();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  TimeSpentPage
-// ══════════════════════════════════════════════════════════════════════════════
 TimeSpentPage::TimeSpentPage(QWidget* parent)
     : QWidget(parent), m_elapsed(0)
 {
@@ -2746,9 +2688,7 @@ void TimeSpentPage::updateDisplay() {
         .arg(s, 2, 10, QChar('0')));
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  ProfilePage
-// ══════════════════════════════════════════════════════════════════════════════
 ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     QWidget* parent)
     : QWidget(parent),
@@ -2756,7 +2696,6 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     m_allUsers(allUsers),
     m_userCountPtr(userCount)
 {
-    // ── Scroll wrapper so all profile content is scrollable ───────────────────
     auto* outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->setSpacing(0);
@@ -2774,14 +2713,13 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     scrollArea->setWidget(scrollContent);
     outerLayout->addWidget(scrollArea);
 
-    // ── Profile header ────────────────────────────────────────────────────────
     auto* headerCard = new QFrame;
     headerCard->setObjectName("postCard");
     auto* hl = new QVBoxLayout(headerCard);
     hl->setContentsMargins(24, 20, 24, 20);
     hl->setSpacing(16);
 
-    // Avatar + name row
+   
     auto* topRow = new QHBoxLayout;
     topRow->setSpacing(18);
     QString ini = m_user
@@ -2829,7 +2767,6 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     outer->addWidget(headerCard);
     outer->addSpacing(18);
 
-    // ── Edit bio ──────────────────────────────────────────────────────────────
     auto* editCard = new QFrame;
     editCard->setObjectName("postCard");
     auto* ecl = new QVBoxLayout(editCard);
@@ -2857,7 +2794,6 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     outer->addWidget(editCard);
     outer->addSpacing(10);
 
-    // ── Change password ────────────────────────────────────────────────────────
     auto* passCard = new QFrame;
     passCard->setObjectName("postCard");
     auto* pcl = new QVBoxLayout(passCard);
@@ -2886,7 +2822,6 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     outer->addWidget(passCard);
     outer->addSpacing(10);
 
-    // ── Danger zone ────────────────────────────────────────────────────────────
     auto* dangerCard = new QFrame;
     dangerCard->setObjectName("postCard");
     dangerCard->setStyleSheet(
@@ -2909,7 +2844,6 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
     outer->addWidget(dangerCard);
     outer->addSpacing(18);
 
-    // ── Tabs: My Posts / Saved ─────────────────────────────────────────────────
     auto* tabRow = new QHBoxLayout;
     tabRow->setSpacing(0);
     tabRow->setContentsMargins(0, 0, 0, 0);
@@ -2972,7 +2906,7 @@ ProfilePage::ProfilePage(User* currentUser, User**& allUsers, int* userCount,
         m_savedPage->refresh();
         });
 
-    // Forward comment requests
+    
     connect(m_myPostsPage, &MyPostsPage::requestOpenComments,
         this, &ProfilePage::requestOpenComments);
     connect(m_savedPage, &SavedPostsPage::requestOpenComments,
@@ -3050,9 +2984,7 @@ void ProfilePage::onDeleteAccount() {
     emit accountDeleted();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  AdminPage
-// ══════════════════════════════════════════════════════════════════════════════
 AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* parent)
     : QWidget(parent),
     m_admin(admin),
@@ -3155,7 +3087,7 @@ AdminPage::AdminPage(Admin* admin, User**& allUsers, int& userCount, QWidget* pa
     m_scrollArea->setWidget(m_content);
     outer->addWidget(m_scrollArea, 1);
 
-    // Start by loading reported users
+    
     loadReportedUsers();
 }
 
@@ -3249,13 +3181,13 @@ void AdminPage::loadReportedUsers() {
         nameLbl->setStyleSheet("font-size:15px;font-weight:700;color:#DCDCF8;");
         nameRow->addWidget(nameLbl, 1);
 
-        // ── REPORT BADGE ADDED HERE ──
+        
         int rCount = u->getIsReportedCount();
         auto* reportBadge = new QLabel(QString("⚑ %1 reports").arg(rCount));
         reportBadge->setStyleSheet("background:#1C0808;color:#CC4444;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;");
         nameRow->addWidget(reportBadge);
         nameRow->addSpacing(12);
-        // ─────────────────────────────
+        
 
         auto* deleteBtn = new QPushButton("🗑 Delete User");
         deleteBtn->setObjectName("dangerBtn");
@@ -3362,9 +3294,7 @@ void AdminPage::loadReportedPosts() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 //  MainWindow
-// ══════════════════════════════════════════════════════════════════════════════
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
     m_currentUser(nullptr),
@@ -3418,14 +3348,12 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow() {
     tearDownShell();
-    // m_allUsers array is owned by whoever last passed it to us
     if (m_allUsers) {
         for (int i = 0; i < m_userCount; ++i) delete m_allUsers[i];
         delete[] m_allUsers;
     }
 }
 
-// ── Shell builders ────────────────────────────────────────────────────────────
 void MainWindow::buildSidebar() {
     m_sidebar = new QWidget;
     m_sidebar->setObjectName("sidebar");
@@ -3489,17 +3417,17 @@ void MainWindow::buildSidebar() {
 void MainWindow::buildPages() {
     m_pages = new QStackedWidget;
 
-    // 0 — Feed
+    // Feed
     m_feedPage = new FeedPage(m_currentUser, m_allUsers, m_userCount);
     connect(m_feedPage, &FeedPage::requestOpenComments,
         this, &MainWindow::onOpenComments);
     m_pages->addWidget(m_feedPage);
 
-    // 1 — Notifications
+    // Notifications
     m_notifPage = new NotificationsPage(m_currentUser);
     m_pages->addWidget(m_notifPage);
 
-    // 2 — Search
+    //  Search
     m_searchPage = new SearchPage(m_allUsers, m_userCount, m_currentUser);
     connect(m_searchPage, &SearchPage::requestOpenComments,
         this, &MainWindow::onOpenComments);
@@ -3523,11 +3451,11 @@ void MainWindow::buildPages() {
         });
     m_pages->addWidget(m_searchPage);
 
-    // 3 — Messages
+    //  Messages
     m_messagesPage = new MessagesPage(m_currentUser, m_allUsers, m_userCount);
     m_pages->addWidget(m_messagesPage);
 
-    // 4 — Profile
+    //  Profile
     m_profilePage = new ProfilePage(m_currentUser, m_allUsers, &m_userCount);
     connect(m_profilePage, &ProfilePage::accountDeleted,
         this, &MainWindow::onLogout);
@@ -3535,29 +3463,28 @@ void MainWindow::buildPages() {
         this, &MainWindow::onOpenComments);
     m_pages->addWidget(m_profilePage);
 
-    // 5 — Time Spent
+    // Time Spent
     m_timeSpentPage = new TimeSpentPage;
     m_timeSpentPage->startSession();
     m_pages->addWidget(m_timeSpentPage);
 
-    // 6 — Create Post (standalone page)
+    //  Create Post (standalone page)
     m_createPostPage = new CreatePostPage(m_currentUser);
     connect(m_createPostPage, &CreatePostPage::postPublished, this, [this]() {
-        // After posting, switch to Feed so user sees the result
+        
         onNavFeed();
         });
     m_pages->addWidget(m_createPostPage);
 
-    // 7 — Comments (hidden until triggered)
+    //  Comments (hidden until triggered)
     m_commentsPage = new CommentsPage(m_currentUser ? QString::fromStdString(m_currentUser->getUsername()) : "");
 
     connect(m_commentsPage, &CommentsPage::backClicked, this, [this]() {
         m_pages->setCurrentIndex(m_previousPageIndex);
 
-        // --- FIX: Agar hum Public Profile se aaye thay, toh usay refresh karein ---
         if (m_pages->currentWidget() == m_publicProfilePage && m_publicProfilePage) {
             
-            m_publicProfilePage->refresh(); // Agar aapne refresh() function banaya hai
+            m_publicProfilePage->refresh();
         }
 
         if (m_previousPageIndex == 0) m_feedPage->refresh();
@@ -3588,7 +3515,6 @@ void MainWindow::tearDownShell() {
     m_btnProfile = m_btnTimeSpent = m_btnLogout = nullptr;
 }
 
-// ── Login slots ───────────────────────────────────────────────────────────────
 void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
     m_currentUser = user;
     m_allUsers = allUsers;
@@ -3613,11 +3539,11 @@ void MainWindow::onLoginSuccess(User* user, User** allUsers, int userCount) {
 }
 
 void MainWindow::onLoginAdminSuccess(User** allUsers, int userCount) {
-    // Save the global user list to the admin shell
+    
     m_allUsers = allUsers;
     m_userCount = userCount;
 
-    // Build minimal admin shell (no user, no posts)
+    
     m_currentUser = nullptr;
 
     auto* adminUser = new Admin("admin123", "", "Platform Administrator");
@@ -3670,7 +3596,6 @@ void MainWindow::onLoginAdminSuccess(User** allUsers, int userCount) {
         this, [this]() { if (m_adminPage) m_adminPage->refresh(); });
 }
 
-// ── Navigation slots ──────────────────────────────────────────────────────────
 void MainWindow::setActiveSidebarButton(SidebarButton* active) {
     for (SidebarButton* b : {
         m_btnFeed, m_btnCreatePost, m_btnNotifications, m_btnSearch,
@@ -3686,7 +3611,7 @@ void MainWindow::onNavFeed() {
     m_previousPageIndex = 0;
     m_pages->setCurrentIndex(0);
     if (m_feedPage) {
-        m_feedPage->m_composerCard->hide();  // never show composer on plain feed nav
+        m_feedPage->m_composerCard->hide();  
         m_feedPage->refresh();
     }
 }
@@ -3739,22 +3664,20 @@ void MainWindow::onSidebarCreatePost() {
 
 void MainWindow::onOpenComments(Posts* post) {
     if (!m_commentsPage || !post) return;
-    // If currently on public profile, we want back-from-comments to 
-    // return to public profile widget index, not overwrite with 2
     m_previousPageIndex = m_pages->currentIndex();
     m_commentsPage->loadPost(post);
     m_pages->setCurrentWidget(m_commentsPage);
     setActiveSidebarButton(nullptr);
 }
 
-// REPLACE entire onLogout() with:
+
 void MainWindow::onLogout() {
     auto r = QMessageBox::question(this, "Logout",
         "Are you sure you want to logout?",
         QMessageBox::Yes | QMessageBox::No);
     if (r != QMessageBox::Yes) return;
 
-    // Mark current user as logged out and persist it
+    
     if (m_currentUser)
         m_currentUser->logOut();
 
@@ -3765,7 +3688,6 @@ void MainWindow::onLogout() {
 
     m_currentUser = nullptr;
 
-    // Clear non-owned savedPosts pointers on ALL users before any destructor runs
     if (m_allUsers) {
         for (int i = 0; i < m_userCount; ++i)
             if (m_allUsers[i]) m_allUsers[i]->clearSavedPostsArray();

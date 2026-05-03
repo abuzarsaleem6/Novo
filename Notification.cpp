@@ -12,7 +12,7 @@ static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
 
 using namespace std;
 
-
+// Constructors
 Notification::Notification() {
 
     this->message = "";
@@ -29,6 +29,7 @@ Notification::Notification(string msg, string t, string time) {
 
 }
 
+// File I/O
 void Notification::saveNotificationToFile(string username) {
 
     mkdirIfNeeded("data");
@@ -156,7 +157,7 @@ Notification* NotificationManager::loadAllNotifications(const string& username, 
     cout << "Successfully loaded " << outCount << " notifications." << endl;
     return notifications;
 }
-
+// Helper functions
 void NotificationManager::saveAllNotifications(const string& username, Notification* notifications, int count) {
     mkdirIfNeeded("data");
     mkdirIfNeeded("data/Notifications");

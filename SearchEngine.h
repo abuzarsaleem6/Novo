@@ -1,4 +1,3 @@
-// SearchEngine.h
 #pragma once
 #ifndef SEARCHENGINE_H
 #define SEARCHENGINE_H
@@ -14,11 +13,12 @@ private:
     User** allUsers;
     int userCount;
 public:
+
     SearchEngine();
     SearchEngine(User** users, int count);
     void setUsers(User** users, int count);
 
-    // Exact match ke bajaye substring search:
+    
     User** searchUsersBySubstring(const string& query, int& outResultsCount) const;
 };
 

@@ -18,10 +18,14 @@ private:
 
 public:
   
+	// Constructors, destructor, and assignment operator
+
     Notification();
 
     Notification(string msg, string t, string time);
     
+	// Helper functions
+
     void saveNotificationToFile(string username);
 
     string getMessage()   const;

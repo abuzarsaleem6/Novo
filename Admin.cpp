@@ -466,16 +466,16 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     }
     cout << "Reported posts loaded: " << reportedPostCount << endl;
 
-    //Load reported users by checking isReported flag on each user
+    
     if (allUsers && userCount > 0) {
         for (int i = 0; i < userCount; i++) {
             if (!allUsers[i]) 
                 continue;
 
-            // Check if the user is flagged as reported
+            
             if (allUsers[i]->getIsReported()) {
 
-                // Prevent duplicate entries in the array
+                y
                 bool alreadyLoaded = false;
                 for (int j = 0; j < reportedUserCount; j++) {
                     if (reportedUsers[j] == allUsers[i]) {
@@ -545,7 +545,7 @@ void Admin::loadAdminFromFile() {
             if (line.empty())
                 continue;
 
-            // Format: timestamp|type|message
+            
             size_t p1 = line.find('|');
             if (p1 == string::npos) 
                 continue;
@@ -579,24 +579,23 @@ void Admin::loadAdminFromFile() {
 // display functions
 
 void Admin::displayAdminDashboard() {
-    cout << "╔════ ADMIN DASHBOARD ════╗" << endl;
+    cout << "|---- ADMIN DASHBOARD ----|" << endl;
     cout << "Username: " << getUsername() << endl;
     cout << "Admin Level: " << adminLevel << endl;
     cout << "Reported Users: " << reportedUserCount << endl;
     cout << "Reported Posts: " << reportedPostCount << endl;
     cout << "Pending Notifications: " << adminNotifCount << endl;
-    cout << "╚═══════════════════════════╝" << endl;
+    cout << "|-------------------------|" << endl;
 }
 
 void Admin::displayReportedUsers() {
-    cout << "═══ REPORTED USERS ═══" << endl;
-
+    cout << "|---- REPORTED USERS ----| " << endl;
     for (int i = 0; i < reportedUserCount; i++) {
         User* user = reportedUsers[i];
         if (!user) 
             continue;
 
-        // skip duplicates
+      
         bool already = false;
         for (int j = 0; j < i; j++)
             if (reportedUsers[j] == user) {
@@ -615,7 +614,7 @@ void Admin::displayReportedUsers() {
 }
 
 void Admin::displayReportedPosts() {
-    cout << "═══ REPORTED POSTS ═══" << endl;
+    cout << "--- REPORTED POSTS ---" << endl;
 
     for (int i = 0; i < reportedPostCount; i++) {
         Posts* post = reportedPosts[i];

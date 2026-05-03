@@ -8,7 +8,7 @@
 using namespace std;
 
 
-
+// Constructor
 PasswordChecker::PasswordChecker(int min) {
 
     this->minLength = min;
@@ -16,7 +16,8 @@ PasswordChecker::PasswordChecker(int min) {
 
 }
 
-
+// Helper Functions
+// Helper Functions
 
 bool PasswordChecker::hasSpecialChar(const string& password) {
 
