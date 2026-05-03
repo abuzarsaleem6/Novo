@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-    // Create necessary directories
+    
     QDir().mkpath("data");
     QDir().mkpath("data/Users");
     QDir().mkpath("data/Posts");
@@ -13,15 +13,18 @@ int main(int argc, char* argv[])
     QDir().mkpath("data/Admin");
     QDir().mkpath("data/Messages");
 
-    // NEW: Initialize admin on first run
+    
     QFile adminFile("data/Admin/admin_credentials.txt");
     if (!adminFile.exists()) {
+
         if (adminFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
             QTextStream out(&adminFile);
             out << "admin123|Admin#123|Platform Administrator\n";
            
             adminFile.close();
             qDebug() << "Admin credentials file created";
+
         }
     }
 

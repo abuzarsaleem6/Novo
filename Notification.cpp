@@ -12,23 +12,25 @@ static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
 
 using namespace std;
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  NOTIFICATION CLASS IMPLEMENTATION
-// ══════════════════════════════════════════════════════════════════════════════
 
 Notification::Notification() {
+
     this->message = "";
     this->type = "";
     this->timestamp = "";
+
 }
 
 Notification::Notification(string msg, string t, string time) {
+
     this->message = msg;
     this->type = t;
     this->timestamp = time;
+
 }
 
 void Notification::saveNotificationToFile(string username) {
+
     mkdirIfNeeded("data");
     mkdirIfNeeded("data/Notifications");
 
@@ -36,42 +38,49 @@ void Notification::saveNotificationToFile(string username) {
     ofstream outFile(path, ios::app);
 
     if (outFile.is_open()) {
+
         outFile << type << "|\n"
             << message << "|\n"
             << timestamp << "|\n---\n";
         outFile.close();
+
     }
 }
 
-// ─── GETTERS ───
+
 string Notification::getMessage() const {
+
     return this->message;
+
 }
 
 string Notification::getType() const {
+
     return this->type;
+
 }
 
 string Notification::getTimestamp() const {
+
     return this->timestamp;
+
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  NOTIFICATION MANAGER - STATIC HELPER CLASS
-// ══════════════════════════════════════════════════════════════════════════════
 
 Notification* NotificationManager::loadAllNotifications(const string& username, int& outCount) {
+
     outCount = 0;
 
     string path = "data/Notifications/" + username + "_notif.txt";
     ifstream file(path);
 
     if (!file.is_open()) {
+
         cout << "No notifications file found for " << username << endl;
         return nullptr;
+
     }
 
-    // first pass: count lines to allocate
     int capacity = 16;
     Notification* notifications = new Notification[capacity];
 
@@ -79,35 +88,64 @@ Notification* NotificationManager::loadAllNotifications(const string& username, 
     while (getline(file, line)) {
         if (line.empty()) continue;
 
-        // Format: type|message|timestamp|isRead
-        // split on first 3 pipes only — protects against | in message
+        
         size_t p1 = line.find('|');
-        if (p1 == string::npos) { cout << "WARNING: bad notif line (no sep): " << line << endl; continue; }
+        if (p1 == string::npos) {
+            cout << "WARNING: bad notif line (no sep): " << line << endl;
+            continue;
+        }
 
         size_t p2 = line.find('|', p1 + 1);
-        if (p2 == string::npos) { cout << "WARNING: bad notif line (1 sep): " << line << endl; continue; }
+
+        if (p2 == string::npos) {
+            cout << "WARNING: bad notif line (1 sep): " << line << endl;
+            continue; 
+        }
 
         size_t p3 = line.rfind('|');
-        if (p3 == p2) { cout << "WARNING: bad notif line (2 sep): " << line << endl; continue; }
+
+        if (p3 == p2) { 
+            cout << "WARNING: bad notif line (2 sep): " << line << endl;
+            continue;
+        }
 
         string typeStr = line.substr(0, p1);
         string msgStr = line.substr(p1 + 1, p2 - p1 - 1);
         string timeStr = line.substr(p2 + 1, p3 - p2 - 1);
 
-        // trim whitespace
-        while (!typeStr.empty() && (typeStr.back() == ' ' || typeStr.back() == '\r')) typeStr.pop_back();
-        while (!msgStr.empty() && (msgStr.back() == ' ' || msgStr.back() == '\r')) msgStr.pop_back();
-        while (!timeStr.empty() && (timeStr.back() == ' ' || timeStr.back() == '\r')) timeStr.pop_back();
+        
+        while (!typeStr.empty() && (typeStr.back() == ' ' || typeStr.back() == '\r')) {
 
-        if (typeStr.empty() || msgStr.empty() || timeStr.empty()) continue;
+            typeStr.pop_back();
 
-        // expand if needed
+        }
+
+        while (!msgStr.empty() && (msgStr.back() == ' ' || msgStr.back() == '\r')) {
+
+            msgStr.pop_back(); 
+
+        }
+
+        while (!timeStr.empty() && (timeStr.back() == ' ' || timeStr.back() == '\r')) {
+
+            timeStr.pop_back();
+
+        }
+
+        if (typeStr.empty() || msgStr.empty() || timeStr.empty()) {
+
+            continue;
+
+        }
+        
         if (outCount >= capacity) {
+
             capacity *= 2;
             Notification* tmp = new Notification[capacity];
             for (int i = 0; i < outCount; i++) tmp[i] = notifications[i];
             delete[] notifications;
             notifications = tmp;
+
         }
 
         Notification notif(msgStr, typeStr, timeStr);
@@ -124,28 +162,32 @@ void NotificationManager::saveAllNotifications(const string& username, Notificat
     mkdirIfNeeded("data/Notifications");
 
     string path = "data/Notifications/" + username + "_notif.txt";
-    ofstream file(path);   // truncate mode (default)
+    ofstream file(path);   
 
     if (!file.is_open()) {
+
         cout << "ERROR: Could not open notification file for writing: " << path << endl;
         return;
+
     }
 
     int savedCount = 0;
     for (int i = 0; i < count; i++) {
-        file << notifications[i].getType() << "|"
-            << notifications[i].getMessage() << "|"
-            << notifications[i].getTimestamp() << "\n";
+
+        file << notifications[i].getType() << "|" << notifications[i].getMessage() << "|" << notifications[i].getTimestamp() << "\n";
         savedCount++;
+
     }
 
     file.close();
     cout << "Saved " << savedCount << " notifications for " << username << endl;
+
 }
 
 void NotificationManager::clearAllNotifications(const string& username) {
+
     string path = "data/Notifications/" + username + "_notif.txt";
-    // open in truncate mode to wipe the file (same effect as QFile::remove then recreate)
     ofstream file(path, ios::trunc);
     file.close();
+
 }

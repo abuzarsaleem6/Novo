@@ -10,25 +10,39 @@
 using namespace std;
 
 class Feed {
+
 private:
+
     Posts** feedPosts;
     int postCount;
     int postCapacity;
     string ownerUsername;
 
+
     void addPostToFeed(Posts* p);
+
     void clearFeed();
 
 public:
+
+
     Feed(string username);
+
     ~Feed();
 
     void loadFeedFromFollowedUsers(User* currentUser, User** allUsers, int userCount);
+
     void sortByNewest();
 
+
     Posts** getPosts() const;
+
     int getPostCount() const;
+
     string getOwner() const;
+
+
+
 };
 
 #endif
