@@ -8,7 +8,7 @@
 
 using namespace std;
 
-// ─── HELPER: get current timestamp as string ─────────────────────────────────
+//getting current time
 static string currentTimestamp() {
     time_t now = time(nullptr);
     char buf[64];
@@ -16,7 +16,7 @@ static string currentTimestamp() {
     return string(buf);
 }
 
-// ─── HELPER: create directory (Windows / POSIX) ──────────────────────────────
+//directory creation helper (cross-platform)
 #ifdef _WIN32
 #include <direct.h>
 static void mkdirIfNeeded(const char* path) { _mkdir(path); }
@@ -25,10 +25,7 @@ static void mkdirIfNeeded(const char* path) { _mkdir(path); }
 static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
 #endif
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  EXPAND HELPERS
-// ══════════════════════════════════════════════════════════════════════════════
-
+//helper functions to expand dynamic arrays when capacity is reached
 void Admin::expandReportedUsers() {
     int newCap = reportedUserCapacity * 2;
     User** tmp = new User * [newCap];
@@ -56,9 +53,7 @@ void Admin::expandNotifications() {
     adminNotifCapacity = newCap;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  CONSTRUCTORS & DESTRUCTORS
-// ══════════════════════════════════════════════════════════════════════════════
+//constructors and destructor
 
 Admin::Admin() : User() {
     adminLevel = "Super Admin";
@@ -155,9 +150,7 @@ Admin::~Admin() {
     cout << "Admin destroyed" << endl;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  REPORT MANAGEMENT
-// ══════════════════════════════════════════════════════════════════════════════
+//report handling
 
 void Admin::receiveUserReport(User* user) {
     if (!user) return;
@@ -187,9 +180,7 @@ void Admin::receivePostReport(Posts* post) {
     saveReportsToFile();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  ACTION METHODS - DELETE/BAN USERS AND POSTS
-// ══════════════════════════════════════════════════════════════════════════════
+//deleting users, posts, comments
 
 void Admin::deleteUser(User**& allUsers, int& userCount, const string& username) {
     cout << "Admin: Deleting user " << username << endl;
@@ -241,9 +232,7 @@ void Admin::deleteComment(Posts* post, int commentIndex) {
     cout << "Comment deleted by admin at index: " << commentIndex << endl;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  REPORT REVIEW & THRESHOLD CHECKING
-// ══════════════════════════════════════════════════════════════════════════════
+// reviewing reports
 
 void Admin::reviewReports(User**& allUsers, int& userCount) {
     cout << "=== REVIEWING ALL REPORTS ===" << endl;
@@ -278,9 +267,7 @@ void Admin::checkReportThresholds(User* user, const string& username) {
     addNotification("ALERT: User @" + username + " reached 3+ reports!");
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  GETTERS
-// ══════════════════════════════════════════════════════════════════════════════
+//getters
 
 User** Admin::getReportedUsers() const {
     return reportedUsers;
@@ -298,9 +285,7 @@ int Admin::getReportedPostCount() const {
     return reportedPostCount;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  NOTIFICATION MANAGEMENT
-// ══════════════════════════════════════════════════════════════════════════════
+// notification handling
 
 void Admin::addNotification(const string& message) {
     string ts = currentTimestamp();
@@ -346,15 +331,13 @@ void Admin::clearNotifications() {
     cout << "Admin notifications cleared" << endl;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  FILE I/O OPERATIONS
-// ══════════════════════════════════════════════════════════════════════════════
+//file handling
 
 void Admin::saveReportsToFile() {
     mkdirIfNeeded("data");
     mkdirIfNeeded("data/Admin");
 
-    // ── Save reported posts ───────────────────────────────────────────────────
+    //Save reported posts
     ofstream postsFile("data/Admin/reported_posts.txt");
     if (postsFile.is_open()) {
         // deduplicate: write each unique post once
@@ -380,7 +363,7 @@ void Admin::saveReportsToFile() {
         cout << "Reported posts saved." << endl;
     }
 
-    // ── Save reported users ───────────────────────────────────────────────────
+    //Save reported users
     ofstream usersFile("data/Admin/reported_users.txt");
     if (usersFile.is_open()) {
         for (int i = 0; i < reportedUserCount; i++) {
@@ -409,7 +392,7 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     reportedUserCount = 0;
     reportedPostCount = 0;
 
-    // ── Load reported posts by scanning _reported.txt files ──────────────────
+    //Load reported posts by scanning _reported.txt files
     if (allUsers && userCount > 0) {
         for (int i = 0; i < userCount; i++) {
             if (!allUsers[i]) continue;
@@ -446,7 +429,7 @@ void Admin::loadReportsFromFile(User**& allUsers, int& userCount) {
     }
     cout << "Reported posts loaded: " << reportedPostCount << endl;
 
-    // ── Load reported users by checking isReported flag on each user ──────────
+    //Load reported users by checking isReported flag on each user
     if (allUsers && userCount > 0) {
         for (int i = 0; i < userCount; i++) {
             if (!allUsers[i]) continue;
@@ -544,9 +527,7 @@ void Admin::loadAdminFromFile() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  DISPLAY METHODS (Console)
-// ══════════════════════════════════════════════════════════════════════════════
+// display functions
 
 void Admin::displayAdminDashboard() {
     cout << "╔════ ADMIN DASHBOARD ════╗" << endl;

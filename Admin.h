@@ -16,62 +16,62 @@ private:
     string adminLevel;
 
     User** reportedUsers;
-    int           reportedUserCount;
-    int           reportedUserCapacity;
+    int reportedUserCount;
+    int reportedUserCapacity;
 
     Posts** reportedPosts;
-    int           reportedPostCount;
-    int           reportedPostCapacity;
+    int reportedPostCount;
+    int reportedPostCapacity;
 
     Notification* adminNotifications;
-    int           adminNotifCount;
-    int           adminNotifCapacity;
+    int adminNotifCount;
+    int adminNotifCapacity;
 
     void expandReportedUsers();
     void expandReportedPosts();
     void expandNotifications();
 
 public:
-    // ─── CONSTRUCTORS & DESTRUCTORS ───
+    //constructor n destruxtor
     Admin();
     Admin(string username, string password, string bio = "Admin");
     Admin(const Admin& other);
     Admin& operator=(const Admin& other);
     ~Admin();
 
-    // ─── REPORT MANAGEMENT ───
+    //report handling
     void receiveUserReport(User* user);
     void receivePostReport(Posts* post);
 
-    // ─── ACTION METHODS (DELETE/BAN) ───
+	//deleteing users, posts, comments
     void deleteUser(User**& allUsers, int& userCount, const string& username);
     void deletePost(User** allUsers, int userCount, const string& postId);
     void deleteComment(Posts* post, int commentIndex);
 
-    // ─── REPORT REVIEW ───
+	//reviewing reports
     void reviewReports(User**& allUsers, int& userCount);
     void checkReportThresholds(User* user, const string& username);
 
-    // ─── GETTERS ───
+    //getters
     User** getReportedUsers()     const;
     Posts** getReportedPosts()     const;
-    int           getReportedUserCount() const;
-    int           getReportedPostCount() const;
+    int getReportedUserCount() const;
+    int getReportedPostCount() const;
 
-    // ─── NOTIFICATION MANAGEMENT ───
-    void          addNotification(const string& message);
+    //notification handling
+    void addNotification(const string& message);
     Notification* getAllNotifications()  const;
-    int           getAdminNotifCount()   const;
-    void          clearNotifications();
-    void          viewAllNotifications() const;
+    int getAdminNotifCount()   const;
+    void clearNotifications();
+    void viewAllNotifications() const;
 
-    // ─── FILE I/O ───
+    //file handling
     void saveReportsToFile();
     void loadReportsFromFile(User**& allUsers, int& userCount);
     void saveAdminToFile();
     void loadAdminFromFile();
 
-    // ─── DISPLAY ───
+	//display functions
     void displayAdminDashboard();
     void displayReportedUsers();
     void displayReportedPosts();
