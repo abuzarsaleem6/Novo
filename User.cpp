@@ -284,7 +284,6 @@ void User::saveToFile() {
     file << "username|" << this->username << "\n";
     file << "password|" << this->password << "\n";
     file << "bio|" << this->bio << "\n";
-    file << "isLoggedIn|" << (this->isLoggedIn ? 1 : 0) << "\n";
     file << "isReported|" << (this->isReported ? 1 : 0) << "\n";
     file << "isReportedCount|" << this->isReportedCount << "\n";
     file << "followingCount|" << this->followingCount << "\n";
@@ -321,8 +320,7 @@ void User::loadFromFile(string username) {
                 this->password = value;
             else if (key == "bio")            
                 this->bio = value;
-            else if (key == "isLoggedIn")     
-                this->isLoggedIn = (value == "1");
+            
             else if (key == "isReported")     
                 this->isReported = (value == "1");
             else if (key == "isReportedCount") 
@@ -680,10 +678,10 @@ void User::loadAllPosts() {
         }
         else {
             delete p;
-            cout << "Skipping invalid post: " << postId << endl;
         }
     }
     listFile2.close();
+    saveToFile(); // ← ADD THIS: sync the correct postCount back to disk
 }
 
 Posts* User::getPostById(string postId) {
@@ -761,12 +759,17 @@ void User::deletePost(string postId) {
 
 void User::reportPost(string postId, User* postOwner) {
     if (!postOwner) return;
-    postOwner->loadAllPosts();
+
+    // Only load if posts aren't in memory yet
+    if (!postOwner->posts && postOwner->postCount > 0)
+        postOwner->loadAllPosts();
+
     for (int i = 0; i < postOwner->getPostCount(); ++i) {
         Posts* p = postOwner->getPostByIndex(i);
         if (!p || !p->isValid()) continue;
         if (p->getPostId() == postId) {
             p->reportPost(this->username);
+            p->savePostToFile();
             return;
         }
     }

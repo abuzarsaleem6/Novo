@@ -969,7 +969,19 @@ void PublicProfileWidget::loadProfile(User* targetUser, User* viewer, User** all
             
             bool isSaved = viewer ? viewer->hasSavedPost(p->getPostId()) : false;
             QString viewerName = viewer ? QString::fromStdString(viewer->getUsername()) : "";
-            bool isAuthorReported = viewer ? viewer->hasReportedUser(targetUser->getUsername()) : false;
+            bool isAuthorReported = false;
+            if (viewer) {
+                string rPath = "data/Users/" + targetUser->getUsername() + "_reporters.txt";
+                ifstream rFile(rPath);
+                if (rFile.is_open()) {
+                    string rLine;
+                    while (getline(rFile, rLine)) {
+                        if (!rLine.empty() && rLine.back() == '\r') rLine.pop_back();
+                        if (rLine == viewer->getUsername()) { isAuthorReported = true; break; }
+                    }
+                    rFile.close();
+                }
+            }
             bool isPostReported = p->hasReportedBy(viewerName.toStdString());
 
             auto* card = new PostCard(p, QString::fromStdString(targetUser->getUsername()),
@@ -1435,7 +1447,9 @@ FeedPage::FeedPage(User* currentUser, User** allUsers, int userCount, QWidget* p
     loadPosts();
 }
 
-void FeedPage::refresh() { loadPosts(); }
+void FeedPage::refresh() {
+    loadPosts();
+}
 
 void FeedPage::clearFeed() {
     while (m_feedLayout->count() > 1) {
@@ -1560,6 +1574,7 @@ void FeedPage::onReportPost(Posts* post, const QString& ownerUsername) {
     }
     if (!owner) return;
     m_user->reportPost(post->getPostId(), owner);
+    post->savePostToFile();
     QMessageBox::information(this, APP_NAME, "Post has been reported.");
 }
 
@@ -3508,8 +3523,9 @@ void MainWindow::buildPages() {
                 m_publicProfilePage = new PublicProfileWidget;
                 connect(m_publicProfilePage, &PublicProfileWidget::backClicked,
                     this, [this]() {
-                        m_pages->setCurrentIndex(2); // Always go back to Search (index 2)
+                        m_pages->setCurrentIndex(2);
                         setActiveSidebarButton(m_btnSearch);
+                        if (m_searchPage) m_searchPage->onSearch(); 
                     });
                 connect(m_publicProfilePage, &PublicProfileWidget::requestOpenComments,
                     this, &MainWindow::onOpenComments);

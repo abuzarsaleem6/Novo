@@ -427,7 +427,7 @@ class SearchPage : public QWidget {
 
 public:
     SearchPage(User**& allUsers, int& userCount, User* currentUser, QWidget* parent = nullptr);
-
+    void onSearch();
 signals:
 
     void requestOpenComments(Posts* post);
@@ -435,7 +435,7 @@ signals:
 
 private slots:
 
-    void onSearch();
+    
 
 private:
 
