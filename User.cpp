@@ -14,7 +14,7 @@ using namespace std;
 //Helper functions 
 
 #ifdef _WIN32
-#include <direct.h>
+ #include <direct.h>
 static void mkdirIfNeeded(const char* path) { _mkdir(path); }
 #include <cstdio>
 static void removeFile(const string& path) { remove(path.c_str()); }
