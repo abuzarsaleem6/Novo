@@ -5,9 +5,9 @@
 #ifdef _WIN32
 #include <direct.h>
 static void mkdirIfNeeded(const char* path) { _mkdir(path); }
-#else
-#include <sys/stat.h>
-static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
+//#else
+//#include <sys/stat.h>
+//static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
 #endif
 
 using namespace std;
@@ -28,27 +28,6 @@ Notification::Notification(string msg, string t, string time) {
     this->timestamp = time;
 
 }
-
-// File I/O
-void Notification::saveNotificationToFile(string username) {
-
-    mkdirIfNeeded("data");
-    mkdirIfNeeded("data/Notifications");
-
-    string path = "data/Notifications/" + username + "_notif.txt";
-    ofstream outFile(path, ios::app);
-
-    if (outFile.is_open()) {
-
-        outFile << type << "|\n"
-            << message << "|\n"
-            << timestamp << "|\n---\n";
-        outFile.close();
-
-    }
-}
-
-
 string Notification::getMessage() const {
 
     return this->message;
@@ -157,33 +136,8 @@ Notification* NotificationManager::loadAllNotifications(const string& username, 
     cout << "Successfully loaded " << outCount << " notifications." << endl;
     return notifications;
 }
-// Helper functions
-void NotificationManager::saveAllNotifications(const string& username, Notification* notifications, int count) {
-    mkdirIfNeeded("data");
-    mkdirIfNeeded("data/Notifications");
 
-    string path = "data/Notifications/" + username + "_notif.txt";
-    ofstream file(path);   
 
-    if (!file.is_open()) {
-
-        cout << "ERROR: Could not open notification file for writing: " << path << endl;
-        return;
-
-    }
-
-    int savedCount = 0;
-    for (int i = 0; i < count; i++) {
-
-        file << notifications[i].getType() << "|" << notifications[i].getMessage() << "|" << notifications[i].getTimestamp() << "\n";
-        savedCount++;
-
-    }
-
-    file.close();
-    cout << "Saved " << savedCount << " notifications for " << username << endl;
-
-}
 
 void NotificationManager::clearAllNotifications(const string& username) {
 

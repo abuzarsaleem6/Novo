@@ -3,8 +3,6 @@
 #include <fstream>
 #include <string>
 #include <ctime>
-#include <cstdlib>
-#include <cstdio>
 #include "User.h"
 #include "Post.h"
 #include "Notification.h"
@@ -15,28 +13,38 @@ using namespace std;
 
 #ifdef _WIN32
  #include <direct.h>
-static void mkdirIfNeeded(const char* path) { _mkdir(path); }
-#include <cstdio>
-static void removeFile(const string& path) { remove(path.c_str()); }
-static void removeDirRecursive(const string&) { /* handled per-file above */ }
-#else
-#include <sys/stat.h>
-#include <cstdio>
-#include <dirent.h>
-static void mkdirIfNeeded(const char* path) { mkdir(path, 0755); }
-static void removeFile(const string& path) { remove(path.c_str()); }
-static void removeDirRecursive(const string& path) {
-    DIR* d = opendir(path.c_str());
-    if (!d) return;
-    struct dirent* e;
-    while ((e = readdir(d))) {
-        string name(e->d_name);
-        if (name == "." || name == "..") continue;
-        remove((path + "/" + name).c_str());
-    }
-    closedir(d);
-    rmdir(path.c_str());
+static void mkdirIfNeeded(const char* path) {
+    _mkdir(path); 
 }
+#include <cstdio>
+static void removeFile(const string& path) { 
+    remove(path.c_str());
+}
+static void removeDirRecursive(const string&) {
+    /* handled per-file above */
+}
+//#else
+//#include <sys/stat.h>
+//#include <cstdio>
+//#include <dirent.h>
+//static void mkdirIfNeeded(const char* path) { 
+//    mkdir(path, 0755); 
+//}
+//static void removeFile(const string& path) { 
+//    remove(path.c_str());
+//}
+//static void removeDirRecursive(const string& path) {
+//    DIR* d = opendir(path.c_str());
+//    if (!d) return;
+//    struct dirent* e;
+//    while ((e = readdir(d))) {
+//        string name(e->d_name);
+//        if (name == "." || name == "..") continue;
+//        remove((path + "/" + name).c_str());
+//    }
+//    closedir(d);
+//    rmdir(path.c_str());
+//}
 #endif
 
 static string currentTimestamp() {
@@ -46,7 +54,7 @@ static string currentTimestamp() {
     return string(buf);
 }
 
-// Constructors, Destructor, and Assignment Operator
+// Constructors, Destructor 
 
 User::User() {
     username = "";
@@ -85,96 +93,6 @@ User::User(string username, string password, string bio) {
     mkdirIfNeeded(("data/Posts/" + username).c_str());
     this->saveToFile();
     this->addToUserList();
-}
-User::User(const User& o) {
-    username = o.username;
-    password = o.password;
-    bio = o.bio;
-    isReported = o.isReported;
-    isLoggedIn = o.isLoggedIn;
-    isReportedCount = o.isReportedCount;
-    followingCount = o.followingCount;
-    followersCount = o.followersCount;
-    postCount = o.postCount;
-    savedPostCount = o.savedPostCount;
-
-    following = nullptr;
-    if (o.followingCount > 0 && o.following) {
-        following = new User * [o.followingCount];
-        for (int i = 0; i < o.followingCount; i++)
-            following[i] = o.following[i];
-    }
-
-    followers = nullptr;
-    if (o.followersCount > 0 && o.followers) {
-        followers = new User * [o.followersCount];
-        for (int i = 0; i < o.followersCount; i++)
-            followers[i] = o.followers[i];
-    }
-
-    posts = nullptr;
-    if (o.postCount > 0 && o.posts) {
-        posts = new Posts * [o.postCount];
-        for (int i = 0; i < o.postCount; i++)
-            posts[i] = new Posts(*o.posts[i]);
-    }
-
-    savedPosts = nullptr;
-    if (o.savedPostCount > 0 && o.savedPosts) {
-        savedPosts = new Posts * [o.savedPostCount];
-        for (int i = 0; i < o.savedPostCount; i++)
-            savedPosts[i] = o.savedPosts[i];
-    }
-}
-User& User::operator=(const User& o) {
-    if (this == &o) return *this;
-
-    for (int i = 0; i < postCount; i++) delete posts[i];
-    delete[] posts;
-    delete[] following;
-    delete[] followers;
-    delete[] savedPosts;
-
-    username = o.username;
-    password = o.password;
-    bio = o.bio;
-    isReported = o.isReported;
-    isLoggedIn = o.isLoggedIn;
-    isReportedCount = o.isReportedCount;
-    followingCount = o.followingCount;
-    followersCount = o.followersCount;
-    postCount = o.postCount;
-    savedPostCount = o.savedPostCount;
-
-    following = nullptr;
-    if (o.followingCount > 0 && o.following) {
-        following = new User * [o.followingCount];
-        for (int i = 0; i < o.followingCount; i++)
-            following[i] = o.following[i];
-    }
-
-    followers = nullptr;
-    if (o.followersCount > 0 && o.followers) {
-        followers = new User * [o.followersCount];
-        for (int i = 0; i < o.followersCount; i++)
-            followers[i] = o.followers[i];
-    }
-
-    posts = nullptr;
-    if (o.postCount > 0 && o.posts) {
-        posts = new Posts * [o.postCount];
-        for (int i = 0; i < o.postCount; i++)
-            posts[i] = new Posts(*o.posts[i]);
-    }
-
-    savedPosts = nullptr;
-    if (o.savedPostCount > 0 && o.savedPosts) {
-        savedPosts = new Posts * [o.savedPostCount];
-        for (int i = 0; i < o.savedPostCount; i++)
-            savedPosts[i] = o.savedPosts[i];
-    }
-
-    return *this;
 }
 User::~User() {
    
@@ -243,14 +161,14 @@ string User::validatePostContent(const string& content) {
 bool User::login(string password) {
     if (password == this->password) {
         isLoggedIn = true;
-        saveToFile();
+        
         return true;
     }
     return false;
 }
 void User::logOut() {
     isLoggedIn = false;
-    saveToFile();
+   
 }
 
 // PROFILE UPDATES
@@ -277,7 +195,7 @@ void User::saveToFile() {
     mkdirIfNeeded("data/Users");
     string path = "data/Users/" + this->username + ".txt";
     ofstream file(path);
-    if (!file.is_open()) {
+    if (!file.is_open()) {  // agr file khul gyi to  skip hojye ga
         cout << "Cannot save user file: " << path << endl;
         return;
     }
@@ -346,7 +264,10 @@ void User::addToUserList() {
     string line;
     while (getline(checkFile, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line == this->username) { checkFile.close(); return; }
+        if (line == this->username) {
+            checkFile.close();
+            return; 
+        }
     }
     checkFile.close();
 
@@ -371,14 +292,8 @@ void User::removeFromUser_List(string username) {
     out.close();
 }
 
-void User::addToReviewList() {
-    mkdirIfNeeded("data");
-    ofstream file("data/users_to_review.txt", ios::app);
-    if (file.is_open()) {
-        file << this->username << "\n";
-        file.close();
-    }
-}
+
+
 
 //GETTERS / SETTERS
 
@@ -545,7 +460,7 @@ void User::removeFollower(const string& usernameToRemove) {
     string path = "data/Following/" + this->username + "_followers.txt";
 
     string updatedContent;
-    int    newCount = 0;
+    int newCount = 0;
     ifstream rf(path);
     if (rf.is_open()) {
         string line;
@@ -560,12 +475,17 @@ void User::removeFollower(const string& usernameToRemove) {
     }
 
     ofstream wf(path, ios::out);
-    if (wf.is_open()) { wf << updatedContent; wf.close(); }
+    if (wf.is_open()) {
+        wf << updatedContent;
+        wf.close();
+    }
 
     delete[] followers;
     followers = nullptr;
     followersCount = newCount;
     saveToFile();
+
+
 }
 
 void User::loadFollowing(User** allUsers, int userCount) {
@@ -575,7 +495,10 @@ void User::loadFollowing(User** allUsers, int userCount) {
 
     string path = "data/Following/" + this->username + "_following.txt";
     ifstream file(path);
-    if (!file.is_open()) { followingCount = 0; return; }
+    if (!file.is_open()) {
+        followingCount = 0;
+        return; 
+    }
 
     following = new User * [followingCount]();
     int loaded = 0;
@@ -601,7 +524,10 @@ void User::loadFollowers(User** allUsers, int userCount) {
 
     string path = "data/Following/" + this->username + "_followers.txt";
     ifstream file(path);
-    if (!file.is_open()) { followersCount = 0; return; }
+    if (!file.is_open()) {
+        followersCount = 0;
+        return;
+    }
 
     followers = new User * [followersCount]();
     int loaded = 0;
@@ -681,7 +607,7 @@ void User::loadAllPosts() {
         }
     }
     listFile2.close();
-    saveToFile(); // ← ADD THIS: sync the correct postCount back to disk
+    saveToFile(); 
 }
 
 Posts* User::getPostById(string postId) {
@@ -701,7 +627,9 @@ bool User::editPost(const string& postId, const string& newContent, string& erro
     if (!errorOut.empty()) return false;
 
     Posts* p = getPostById(postId);
-    if (!p) { errorOut = "Post not found."; return false; }
+    if (!p) {
+        errorOut = "Post not found.";
+        return false; }
 
     p->setContent(newContent);
     p->savePostToFile();
@@ -710,7 +638,10 @@ bool User::editPost(const string& postId, const string& newContent, string& erro
 
 void User::deletePost(string postId) {
     Posts* p = getPostById(postId);
-    if (!p) { cout << "Post not found." << endl; return; }
+    if (!p) {
+        cout << "Post not found." << endl;
+        return;
+    }
 
     string base = "data/Posts/" + this->username + "/" + postId;
     removeFile(base + ".txt");
@@ -730,7 +661,10 @@ void User::deletePost(string postId) {
         listIn.close();
     }
     ofstream listOut(listPath, ios::out);
-    if (listOut.is_open()) { listOut << updatedList; listOut.close(); }
+    if (listOut.is_open()) {
+        listOut << updatedList; 
+        listOut.close(); 
+    }
 
     int idx = 0;
     Posts** newPosts = nullptr;
@@ -812,7 +746,7 @@ void User::unsavePost(string postId) {
     for (int i = 0; i < savedPostCount; i++)
         if (savedPosts[i] && savedPosts[i]->getPostId() == postId) { 
             foundIdx = i; 
-    break; 
+               break; 
         }
 
     if (foundIdx == -1) { 
@@ -954,9 +888,9 @@ void User::reportUser() {
 
     mkdirIfNeeded("data/Admin");
     const int MAX_REPORTED = 256;
-    string    rNames[MAX_REPORTED];
-    int       rCounts[MAX_REPORTED];
-    int       rSize = 0;
+    string rNames[MAX_REPORTED];
+    int  rCounts[MAX_REPORTED];
+    int rSize = 0;
 
     ifstream rf("data/Admin/reported_users.txt");
     if (rf.is_open()) {
@@ -1042,13 +976,13 @@ int User::getIsReportedCount() const {
 
 void User::deleteAccount(User**& allUsers, int& userCount) {
 
-    string uname = this->username;
+    string uname = this->username;  // save krlo name
     cout << "User: Initiating full system wipe for @" << uname << "..." << endl;
 
     loadFollowers(allUsers, userCount);
     loadFollowing(allUsers, userCount);
 
-
+     // user k followes ki following update
     for (int i = 0; i < followersCount; i++) {
         if (!followers[i]) continue;
         followers[i]->loadFollowing(allUsers, userCount);
@@ -1081,7 +1015,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         follower->saveToFile();
     }
 
-
+    // user jinko follow krta he unke followers updaet
     for (int i = 0; i < followingCount; i++) {
         if (!following[i]) continue;
         following[i]->loadFollowers(allUsers, userCount);
@@ -1113,23 +1047,24 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         followedUser->saveToFile();
     }
 
+    // user k messages delte
 #ifdef _WIN32
     string msgCmd = "del /q \"data\\Messages\\*" + uname + "*\" 2>nul";
     system(msgCmd.c_str());
-#else
-    string msgCmd = "rm -f data/Messages/*" + uname + "*";
-    system(msgCmd.c_str());
+//#else
+//    string msgCmd = "rm -f data/Messages/*" + uname + "*";
+//    system(msgCmd.c_str());
 #endif
 
 
     string postDirPath = "data/Posts/" + uname;
 #ifdef _WIN32
     system(("rmdir /s /q \"" + postDirPath + "\" 2>nul").c_str());
-#else
-    system(("rm -rf \"data/Posts/" + uname + "\""));
+//#else
+//    system(("rm -rf \"data/Posts/" + uname + "\""));
 #endif
 
-
+    //users k notifications delete + comments
     string notifPath = "data/Notifications/" + uname + "_notif.txt";
     remove(notifPath.c_str());
 
@@ -1152,7 +1087,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
     }
 
-
+    // saved posts delted
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) continue;
         string savedPath = "data/Posts/" + allUsers[u]->getUsername() + "/saved_posts.txt";
@@ -1186,14 +1121,14 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
         }
     }
 
-
+    // apna data dlete 
     removeFile("data/Following/" + uname + "_following.txt");
     removeFile("data/Following/" + uname + "_followers.txt");
     removeFile("data/Users/" + uname + "_reporters.txt");
     removeFile("data/Messages/" + uname + "_index.txt");
     removeFile("data/Users/" + uname + ".txt");
 
-    
+    // reporte updated
     for (int u = 0; u < userCount; u++) {
         if (!allUsers[u] || allUsers[u]->getUsername() == uname) {
             continue;
@@ -1352,7 +1287,7 @@ void User::deleteAccount(User**& allUsers, int& userCount) {
 //  HELPERS
 
 
-bool User::hasPost(const string& postId) const {
+ bool User::hasPost(const string& postId) const {
     for (int i = 0; i < postCount; i++) {
         if (posts[i] && posts[i]->getPostId() == postId) {
             return true;
@@ -1366,92 +1301,7 @@ bool User::hasPost(const string& postId) const {
 //  CONVERSATION HISTORY (Messages)
 
 
-string* User::getConversationHistory(const string& username, int& outCount) {
-    outCount = 0;
-    int capacity = 16;
-    string* peers = new string[capacity];
 
-    string path = "data/Messages/" + username + "_index.txt";
-    ifstream f(path);
-    if (!f.is_open()) {
-        return peers;
-    }
-
-    string line;
-    while (getline(f, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty()) {
-            continue;
-        }
-
-        bool already = false;
-        for (int i = 0; i < outCount; i++)
-            if (peers[i] == line) {
-                already = true; 
-                break; 
-            }
-        if (already) {
-            continue;
-        }
-
-        if (outCount >= capacity) {
-            capacity *= 2;
-            string* tmp = new string[capacity];
-            for (int i = 0; i < outCount; i++) {
-                tmp[i] = peers[i];
-            }
-            delete[] peers;
-            peers = tmp;
-        }
-        peers[outCount++] = line;
-    }
-    f.close();
-    return peers;
-}
-
-void User::addConversationToHistory(const string& username, const string& peerUsername) {
-    mkdirIfNeeded("data");
-    mkdirIfNeeded("data/Messages");
-    string path = "data/Messages/" + username + "_index.txt";
-
-    ifstream rf(path);
-    if (rf.is_open()) {
-        string line;
-        while (getline(rf, line)) {
-            if (!line.empty() && line.back() == '\r') {
-                line.pop_back();
-            }
-            if (line == peerUsername) {
-                rf.close();
-                return;
-            }
-        }
-        rf.close();
-    }
-
-    ofstream wf(path, ios::app);
-    if (wf.is_open()) { wf << peerUsername << "\n"; wf.close(); }
-}
-
-void User::removeConversationFromHistory(const string& username, const string& peerUsername) {
-    string path = "data/Messages/" + username + "_index.txt";
-    string remaining;
-    ifstream f(path);
-    if (f.is_open()) {
-        string line;
-        while (getline(f, line)) {
-            if (!line.empty() && line.back() == '\r') {
-                line.pop_back();
-            }
-            if (!line.empty() && line != peerUsername) {
-                remaining += line + "\n";
-            }
-        }
-        f.close();
-    }
-    ofstream wf(path, ios::out);
-    if (wf.is_open()) { wf << remaining; wf.close(); }
-}
 
 //  FREE FUNCTIONS
 

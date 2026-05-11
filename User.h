@@ -31,8 +31,7 @@ public:
 	// Constructors, Destructor, and Assignment Operator
     User();
     User(string username, string password, string bio);
-    User(const User& o);
-    User& operator=(const User& o);
+    
     ~User();
 
 	//Helper functions 
@@ -54,7 +53,7 @@ public:
     void loadFromFile(string username);
     void addToUserList();
     void removeFromUser_List(string username);
-    void addToReviewList();
+    
 
 	// Getters
     string getUsername()      const;
@@ -112,9 +111,7 @@ public:
     bool hasPost(const string& postId) const;
 
     
-    static string* getConversationHistory(const string& username, int& outCount);
-    static void addConversationToHistory(const string& username, const string& peerUsername);
-    static void removeConversationFromHistory(const string& username, const string& peerUsername);
+   
 };
 
 

@@ -12,14 +12,13 @@ using namespace std;
 
 class Admin : public User {
 private:
-    string adminLevel;
+
 
 public:
     // constructors and destructor
-    Admin();
+  
     Admin(string username, string password, string bio = "Admin");
-    Admin(const Admin& other);
-    Admin& operator=(const Admin& other);
+    
     ~Admin();
 
     // report handling
@@ -29,7 +28,7 @@ public:
     // deleting users, posts, comments
     void deleteUser(User**& allUsers, int& userCount, const string& username);
     void deletePost(User** allUsers, int userCount, const string& postId);
-    void deleteComment(Posts* post, int commentIndex);
+
 
     // reviewing reports
     void reviewReports(User**& allUsers, int& userCount);
@@ -51,11 +50,6 @@ public:
     void loadReportsFromFile(User**& allUsers, int& userCount);
     void saveAdminToFile();
     void loadAdminFromFile();
-
-    // display functions
-    void displayAdminDashboard(User** allUsers, int userCount);
-    void displayReportedUsers();
-    void displayReportedPosts(User** allUsers, int userCount);
 };
 
 #endif

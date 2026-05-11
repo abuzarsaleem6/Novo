@@ -13,8 +13,8 @@ using namespace std;
 static void mkdirRecursive(const string& path) {
 #ifdef _WIN32
     system(("mkdir \"" + path + "\" 2>nul").c_str());
-#else
-    system(("mkdir -p \"" + path + "\"").c_str());
+//#else
+//    system(("mkdir -p \"" + path + "\"").c_str());
 #endif
 }
 
@@ -53,23 +53,34 @@ static void addToLikedFile(const string& username, const string& postId) {
 
 static void removeFromLikedFile(const string& username, const string& postId) {
     string path = likedFilePath(username);
+
+    
     ifstream file(path);
     if (!file.is_open()) return;
 
-    string* lines = new string[1000];
     int count = 0;
     string line;
-    while (getline(file, line)) {
+    while (getline(file, line))
+        if (!line.empty() && line != postId) count++;
+    file.close();
+
+    
+    string* lines = new string[count];
+    int idx = 0;
+
+    ifstream file2(path);
+    while (getline(file2, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (!line.empty() && line != postId)
-            lines[count++] = line;
+            lines[idx++] = line;
     }
-    file.close();
+    file2.close();
 
     ofstream out(path);
     for (int i = 0; i < count; i++)
         out << lines[i] << "\n";
     out.close();
+
     delete[] lines;
 }
 
@@ -243,7 +254,7 @@ bool Posts::isValid() const {
 // Likes
 
 void Posts::likePost(const string& likerUsername) {
-    if (likerUsername == creatorUsername) { cerr << "Cannot like own post\n";
+    if (likerUsername == creatorUsername) { cout << "Cannot like own post\n";
     return; 
     }
     if (hasUserLikedPost(likerUsername, postId)) {
@@ -288,26 +299,21 @@ void Posts::reportPost(const string& reporterUsername) {
         string line;
         while (getline(checkFile, line)) {
             if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line == reporterUsername) { checkFile.close(); return; }
+            if (line == reporterUsername) {
+                checkFile.close();
+                return;
+            }
         }
         checkFile.close();
     }
 
     ofstream outFile(reportedFilePath, ios::app);
-    if (outFile.is_open()) { outFile << reporterUsername << "\n"; outFile.close(); }
-
-    // Count reporters
-    int actualCount = 0;
-    ifstream countFile(reportedFilePath);
-    if (countFile.is_open()) {
-        string line;
-        while (getline(countFile, line)) {
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (!line.empty()) actualCount++;
-        }
-        countFile.close();
+    if (outFile.is_open()) { outFile << reporterUsername << "\n";
+    outFile.close();
     }
-    reportCount = actualCount;
+
+    
+    reportCount++;
 
     if (reportCount == 3) {
         isReported = true;
@@ -345,7 +351,10 @@ void Posts::addComment(const string& commentContent, const string& cUsername) {
     mkdirRecursive("data");
     ifstream cntFile("data/comment_counter.txt");
     int cCounter = 1000;
-    if (cntFile.is_open()) { cntFile >> cCounter; cntFile.close(); }
+    if (cntFile.is_open()) { 
+        cntFile >> cCounter; 
+    cntFile.close();
+    }
 
     string num;
     int temp = cCounter;

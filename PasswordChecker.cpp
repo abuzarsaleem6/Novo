@@ -16,8 +16,6 @@ PasswordChecker::PasswordChecker(int min) {
 
 }
 
-// Helper Functions
-// Helper Functions
 
 bool PasswordChecker::hasSpecialChar(const string& password) {
 

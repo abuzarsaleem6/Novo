@@ -2396,13 +2396,13 @@ void ChatView::refresh() {
     loadMessages();
 }
 
-void ChatView::markConversationUnread(const QString& receiver, const QString& sender) {
-    QDir().mkpath("data/Messages");
-    QString markerPath = "data/Messages/" + receiver + "_unread_" + sender + ".flag";
-    QFile f(markerPath);
-    f.open(QIODevice::WriteOnly);
-    f.close();
-}
+//void ChatView::markConversationUnread(const QString& receiver, const QString& sender) {
+//    QDir().mkpath("data/Messages");
+//    QString markerPath = "data/Messages/" + receiver + "_unread_" + sender + ".flag";
+//    QFile f(markerPath);
+//    f.open(QIODevice::WriteOnly);
+//    f.close();
+//}
 
 //  MessagesPage
 MessagesPage::MessagesPage(User* currentUser, User** allUsers, int userCount,
