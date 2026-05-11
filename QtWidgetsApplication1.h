@@ -404,7 +404,7 @@ private slots:
 
     void onSend();
     void onDeleteChat();
-    void markConversationUnread(const QString& receiver, const QString& sender);
+    
 
 private:
 
